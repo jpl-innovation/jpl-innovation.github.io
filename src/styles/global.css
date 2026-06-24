@@ -1,0 +1,388 @@
+/* Global variables */
+:root {
+	/* Colors */
+	--gray-0: #090b11;
+	--gray-50: #141925;
+	--gray-100: #283044;
+	--gray-200: #3d4663;
+	--gray-300: #505d84;
+	--gray-400: #6474a2;
+	--gray-500: #8490b5;
+	--gray-600: #a3acc8;
+	--gray-700: #c3cadb;
+	--gray-800: #e3e6ee;
+	--gray-900: #f3f4f7;
+	--gray-999-basis: 0, 0%, 100%;
+	--gray-999_40: hsla(var(--gray-999-basis), 0.4);
+	--gray-999: #ffffff;
+
+	--accent-light: #1daef1;
+	--accent-regular: #116fa6;
+	--accent-dark: #002b56;
+	--accent-overlay: hsla(209, 89%, 67%, 0.33);
+	--accent-subtle-overlay: var(--accent-overlay);
+	--accent-text-over: var(--gray-999);
+
+	--link-color: var(--accent-regular);
+
+	/* Gradients */
+	--gradient-stop-1: var(--accent-light);
+	--gradient-stop-2: var(--accent-regular);
+	--gradient-stop-3: var(--accent-dark);
+	--gradient-subtle: linear-gradient(150deg, var(--gray-900) 19%, var(--gray-999) 150%);
+	--gradient-accent: linear-gradient(150deg,
+			var(--gradient-stop-1),
+			var(--gradient-stop-2),
+			var(--gradient-stop-3));
+	--gradient-accent-orange: linear-gradient(150deg,
+			#9378ca,
+			var(--accent-regular),
+			var(--accent-dark));
+	--gradient-stroke: linear-gradient(180deg, var(--gray-900), var(--gray-700));
+
+	/* Shadows */
+	--shadow-sm:
+		0px 2px 4px rgba(9, 11, 17, 0.06);
+	--shadow-md:
+		0px 8px 16px rgba(9, 11, 17, 0.12), 0px 2px 4px rgba(9, 11, 17, 0.06);
+	--shadow-lg:
+		0px 24px 48px rgba(9, 11, 17, 0.18), 0px 12px 24px rgba(9, 11, 17, 0.12);
+	--shadow-xl:
+		0px 32px 64px rgba(9, 11, 17, 0.22), 0px 16px 32px rgba(9, 11, 17, 0.14);
+
+	/* Text Sizes */
+	--text-sm: 0.875rem;
+	--text-base: 1rem;
+	--text-md: 1.125rem;
+	--text-lg: 1.25rem;
+	--text-xl: 1.625rem;
+	--text-2xl: 2.125rem;
+	--text-3xl: 2.625rem;
+	--text-4xl: 3.5rem;
+	--text-5xl: 4.5rem;
+
+	/* Fonts */
+	--font-system:
+		system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+		"Open Sans", "Helvetica Neue", sans-serif;
+	--font-body: "Public Sans", var(--font-system);
+	--font-brand: Rubik, var(--font-system);
+
+	/* Transitions */
+	--theme-transition: 0.2s ease-in-out;
+
+	/* Accent color soft variants */
+	--accent-soft: rgba(29, 174, 241, 0.1);
+	--accent-glow: rgba(29, 174, 241, 0.2);
+}
+
+:root.theme-dark {
+	--gray-0: #ffffff;
+	--gray-50: #f3f4f7;
+	--gray-100: #e3e6ee;
+	--gray-200: #c3cadb;
+	--gray-300: #a3acc8;
+	--gray-400: #8490b5;
+	--gray-500: #6474a2;
+	--gray-600: #505d84;
+	--gray-700: #3d4663;
+	--gray-800: #283044;
+	--gray-900: #141925;
+	--gray-999-basis: 225, 31%, 5%;
+	--gray-999: #090b11;
+
+	--accent-dark: #1daef1;
+	--accent-regular: #116fa6;
+	--accent-light: #002b56;
+	--accent-overlay: hsla(209, 89%, 67%, 0.33);
+	--accent-subtle-overlay: var(--accent-overlay);
+	--accent-text-over: var(--gray-999);
+
+	--link-color: var(--accent-dark);
+
+	--gradient-stop-1: #4c11c6;
+	--gradient-subtle: linear-gradient(150deg, var(--gray-900) 19%, var(--gray-999) 81%);
+	--gradient-accent-orange: linear-gradient(150deg,
+			#ca7879,
+			var(--accent-regular),
+			var(--accent-light));
+	--gradient-stroke: linear-gradient(180deg, var(--gray-600), var(--gray-800));
+
+	--shadow-sm:
+		0px 2px 4px rgba(255, 255, 255, 0.06);
+	--shadow-md:
+		0px 8px 16px rgba(255, 255, 255, 0.12), 0px 2px 4px rgba(255, 255, 255, 0.06);
+	--shadow-lg:
+		0px 24px 48px rgba(255, 255, 255, 0.18), 0px 12px 24px rgba(255, 255, 255, 0.12);
+	--shadow-xl:
+		0px 32px 64px rgba(255, 255, 255, 0.22), 0px 16px 32px rgba(255, 255, 255, 0.14);
+
+	--accent-soft: rgba(29, 174, 241, 0.08);
+	--accent-glow: rgba(29, 174, 241, 0.12);
+}
+
+html,
+body {
+	min-height: 100%;
+	overflow-x: hidden;
+}
+
+body {
+	background-color: var(--gray-999);
+	color: var(--gray-200);
+	font-family: var(--font-body);
+	-webkit-font-smoothing: antialiased;
+	line-height: 1.5;
+}
+
+*,
+*::after,
+*::before {
+	box-sizing: border-box;
+	margin: 0;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+a {
+	color: var(--link-color);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+	line-height: 1.1;
+	font-family: var(--font-brand);
+	font-weight: 600;
+	color: var(--gray-100);
+}
+
+h1 {
+	font-size: var(--text-5xl);
+}
+
+h2 {
+	font-size: var(--text-4xl);
+}
+
+h3 {
+	font-size: var(--text-3xl);
+}
+
+h4 {
+	font-size: var(--text-2xl);
+}
+
+h5 {
+	font-size: var(--text-xl);
+}
+
+/* Utilities */
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+.wrapper {
+	width: 100%;
+	max-width: 110rem;
+	margin-inline: auto;
+	padding-inline: 2rem;
+}
+
+.stack {
+	display: flex;
+	flex-direction: column;
+}
+
+.gap-2 {
+	gap: 0.5rem;
+}
+
+.gap-4 {
+	gap: 1rem;
+}
+
+.gap-8 {
+	gap: 2rem;
+}
+
+.gap-10 {
+	gap: 2.5rem;
+}
+
+.gap-15 {
+	gap: 3.75rem;
+}
+
+.gap-20 {
+	gap: 5rem;
+}
+
+.gap-30 {
+	gap: 7.5rem;
+}
+
+.gap-48 {
+	gap: 12rem;
+}
+
+@media (min-width: 50em) {
+	.lg\:gap-2 {
+		gap: 0.5rem;
+	}
+
+	.lg\:gap-4 {
+		gap: 1rem;
+	}
+
+	.lg\:gap-8 {
+		gap: 2rem;
+	}
+
+	.lg\:gap-10 {
+		gap: 2.5rem;
+	}
+
+	.lg\:gap-15 {
+		gap: 3.75rem;
+	}
+
+	.lg\:gap-20 {
+		gap: 5rem;
+	}
+
+	.lg\:gap-30 {
+		gap: 7.5rem;
+	}
+
+	.lg\:gap-48 {
+		gap: 12rem;
+	}
+}
+
+/* Friendly hover animations for shapes and UI elements */
+:root {
+	--hover-translate: -6px;
+	--hover-scale: 1.02;
+	--hover-duration: 220ms;
+}
+
+/* Apply smooth transitions to common "shape" elements */
+.card,
+.btn,
+.pill,
+.badge,
+.rounded,
+.shadow-lg,
+.portfolio-preview,
+.member-preview .card,
+.focus-area,
+.timeline-item,
+.grid-item,
+img,
+.icon svg,
+.social,
+.blog-post {
+	transition: transform var(--hover-duration) ease, box-shadow var(--hover-duration) ease, filter var(--hover-duration) ease, opacity var(--hover-duration) ease;
+	will-change: transform, box-shadow, filter;
+	backface-visibility: hidden;
+}
+
+/* Hover / focus states: subtle lift, gentle scale, brighter */
+.card:hover,
+.btn:hover,
+.pill:hover,
+.badge:hover,
+.rounded:hover,
+.member-preview .card:hover,
+.focus-area:hover,
+.timeline-item:hover,
+.grid-item:hover,
+img:hover,
+.icon svg:hover,
+.social:hover,
+.blog-post:hover {
+	transform: translateY(var(--hover-translate)) scale(var(--hover-scale));
+	box-shadow: var(--shadow-lg);
+	filter: brightness(1.04);
+	opacity: 0.995;
+}
+
+/* Slightly different behavior for inline SVG icons */
+.icon svg {
+	transition: transform var(--hover-duration) cubic-bezier(.2,.9,.2,1), fill var(--hover-duration) ease;
+	transform-origin: center;
+}
+.icon svg:hover {
+	transform: translateY(-4px) rotate(-6deg) scale(1.06);
+}
+
+/* Keyboard accessible focus states */
+.card:focus-visible,
+.btn:focus-visible,
+.pill:focus-visible,
+.badge:focus-visible,
+.rounded:focus-visible,
+.member-preview .card:focus-visible {
+	outline: 3px solid rgba(17,111,166,0.14);
+	outline-offset: 4px;
+	transform: translateY(var(--hover-translate)) scale(var(--hover-scale));
+}
+
+/* Reduce motion preference: disable transforms for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.card,
+	.btn,
+	.pill,
+	.badge,
+	.rounded,
+	img,
+	.icon svg {
+		transition: none !important;
+		transform: none !important;
+	}
+}
+
+/* Stronger overrides for components that set their own scoped transitions
+   This ensures hover transforms still apply when component CSS overwrites transitions */
+.card,
+a.card,
+.btn,
+button,
+.pill,
+.badge,
+.rounded,
+img,
+.blog-post {
+	transition: transform var(--hover-duration) ease !important;
+	will-change: transform !important;
+}
+
+.card:hover,
+a.card:hover,
+.btn:hover,
+button:hover,
+.pill:hover,
+.badge:hover,
+.rounded:hover,
+img:hover,
+.blog-post:hover {
+	transform: translateY(var(--hover-translate)) scale(var(--hover-scale)) !important;
+	box-shadow: var(--shadow-lg) !important;
+	filter: brightness(1.04) !important;
+	opacity: 0.995 !important;
+}

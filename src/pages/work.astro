@@ -1,0 +1,37 @@
+---
+import { getCollection } from "astro:content";
+import ContactCTA from "../components/ContactCTA.astro";
+import Grid from "../components/Grid.astro";
+import Hero from "../components/Hero.astro";
+import PortfolioPreview from "../components/PortfolioPreview.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const projects = (await getCollection("work")).sort((a, b) =>
+	a.data.title.toLowerCase().localeCompare(b.data.title.toLowerCase()),
+);
+---
+
+<BaseLayout
+	title="Past Work | JPL Innovation"
+	description="Learn about JPL Innovation's projects"
+>
+	<div class="stack gap-20">
+		<main class="wrapper stack gap-8">
+			<Hero
+				title="Past Work"
+				tagline="See our most recent projects below to get an idea of our experience."
+				align="start"
+			/>
+			<Grid variant="offset">
+				{
+					projects.map((project) => (
+						<li>
+							<PortfolioPreview project={project} />
+						</li>
+					))
+				}
+			</Grid>
+		</main>
+		<ContactCTA />
+	</div>
+</BaseLayout>

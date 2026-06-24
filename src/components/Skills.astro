@@ -1,0 +1,89 @@
+---
+import Icon from "./Icon.astro";
+---
+
+<section class="box skills">
+	<div class="stack gap-2 lg:gap-4">
+		<Icon
+			icon="rocket-launch"
+			color="var(--accent-regular)"
+			size="2.5rem"
+			gradient
+		/>
+		<h2>Innovation</h2>
+		<p>Build, test, and improve ideas quickly.</p>
+	</div>
+	<div class="stack gap-2 lg:gap-4">
+		<Icon
+			icon="strategy"
+			color="var(--accent-regular)"
+			size="2.5rem"
+			gradient
+		/>
+		<h2>Collaboration</h2>
+		<p>Share knowledge and ship together.</p>
+	</div>
+	<div class="stack gap-2 lg:gap-4">
+		<Icon
+			icon="heart"
+			color="var(--accent-regular)"
+			size="2.5rem"
+			gradient
+		/>
+		<h2>Impact</h2>
+		<p>Make solutions that help people.</p>
+	</div>
+</section>
+
+<style>
+	.box {
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 0.75rem;
+		padding: 1.5rem;
+		background: linear-gradient(135deg,
+			rgba(29, 174, 241, 0.03) 0%,
+			rgba(255, 255, 255, 0.02) 100%);
+		box-shadow: var(--shadow-sm);
+		transition: all 300ms ease;
+	}
+
+	.box:hover {
+		border-color: rgba(29, 174, 241, 0.2);
+		background: linear-gradient(135deg,
+			rgba(29, 174, 241, 0.08) 0%,
+			rgba(255, 255, 255, 0.04) 100%);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-2px);
+	}
+
+	.skills {
+		display: flex;
+		flex-direction: column;
+		gap: 3rem;
+	}
+
+	.skills h2 {
+		font-size: var(--text-lg);
+	}
+
+	.skills p {
+		color: var(--gray-400);
+	}
+
+	@media (min-width: 50em) {
+		.box {
+			border-radius: 1.5rem;
+			padding: 2.5rem;
+		}
+
+		.skills {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 5rem;
+		}
+
+		.skills h2 {
+			font-size: var(--text-2xl);
+		}
+	}
+</style>
