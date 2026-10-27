@@ -46,7 +46,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { type Finish, hardware } from "../finish";
 import { contactShadow, type Model, type StageContext, type StageView, textTexture } from "../stage";
 import cadJson from "./frc-robot-cad.json";
-import { buildMods, RIB_SOURCE, SKIP } from "./frc-robot-mods";
+import { buildMods, extensionPose, RIB_SOURCE, SKIP } from "./frc-robot-mods";
 
 export const view: StageView = {
 	camera: [1.3, 0.95, 1.45],
@@ -377,8 +377,9 @@ export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) =>
 	// The extension: folded for a moment, swings up, stays open, folds again (a 12 s loop), unless pinned.
 	let pinned: number | null = null;
 	const setFlaps = (open: number) => {
-		flaps.position.y = mods.pivot[1] - mods.folded.drop * (1 - open);
-		flaps.rotation.x = mods.folded.turn * (1 - open);
+		const p = extensionPose(open);
+		flaps.position.set(0, p.y, p.z);
+		flaps.rotation.x = p.turn;
 	};
 	const openAt = (t: number) => {
 		const p = t % 12;
