@@ -1,5 +1,8 @@
 /**
- * The standard KitBot platform (the base of Team 10951's 2026 robot) in 3D, from the kit's CAD. Our modified robot is not modelled.
+ * Team 10951's 2026 robot in 3D: the standard KitBot platform from the kit's CAD, with the team's changes on top
+ * (./frc-robot-mods.ts, modelled from photos of the real robot): the intake and indexer wheels, the full-width
+ * flywheel and its printed hood, Kraken X60 and NEO motors, the hopper extension that opens and closes, and the
+ * electronics (power hub, five SPARK MAXes, Pigeon 2.0, radio, beacon, wiring).
  *
  * frc-robot-cad.json is the CAD reduced to simple shapes (scripts/kitbot-cad.py turns the 142 MB export in CAD/,
  * which stays out of the repo, into these 50 KB):
@@ -43,6 +46,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { type Finish, hardware } from "../finish";
 import { contactShadow, type Model, type StageContext, type StageView, textTexture } from "../stage";
 import cadJson from "./frc-robot-cad.json";
+import { buildMods, RIB_SOURCE, SKIP } from "./frc-robot-mods";
 
 export const view: StageView = {
 	camera: [1.3, 0.95, 1.45],
@@ -103,6 +107,8 @@ export interface RobotPart {
 	/** Bounds in the robot's space, metres. */
 	lo: V3;
 	hi: V3;
+	/** For the team's own parts (./frc-robot-mods.ts): the feature they belong to, so nothing has to guess. */
+	group?: string;
 }
 
 export interface RobotRig {
@@ -120,6 +126,10 @@ export interface RobotRig {
 	animate(t: number, dt: number): void;
 	/** Puts the FUEL where it is at `t` seconds into its loop, without moving anything else. */
 	pose(t: number): void;
+	/** The see-through polycarbonate (the hopper and its extension). */
+	clear(): MeshStandardMaterial[];
+	/** The hopper extension: 0 folded down, 1 swung up (open). animate() cycles it unless this pins it. */
+	setOpen(open: number | null): void;
 	applyPalette(p: { dark: boolean }): void;
 }
 
@@ -193,22 +203,49 @@ export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) =>
 		m4.fromArray([m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, m[9], m[10], m[11], 1]);
 		return shapes[part.s].clone().applyMatrix4(m4);
 	});
-	const features = tag?.(
-		placed.map((geometry, i) => {
-			geometry.computeBoundingBox();
-			const { min, max } = geometry.boundingBox!;
+	// The team's changes (./frc-robot-mods.ts): some KitBot parts go, new ones come, and the hopper gets its extension.
+	const mods = buildMods(cad.rotors, placed[RIB_SOURCE].clone());
+	// Everything on the four roller shafts is rebuilt there, so none of the KitBot's rotor parts stay.
+	const keep = cad.parts.map((part, i) => !SKIP.has(i) && part.g === undefined);
+	const flaps = new Group();
+	flaps.position.set(...mods.pivot);
+	robot.add(flaps);
+	const box = (g: BufferGeometry) => {
+		g.computeBoundingBox();
+		return g.boundingBox!;
+	};
+	const robotSpaceBox = (piece: (typeof mods.pieces)[number]) => {
+		const b = box(piece.geometry).clone();
+		const off = piece.on === "flaps" ? new Vector3(...mods.pivot) : piece.rotor >= 0 ? new Vector3(0, cad.rotors[piece.rotor][0], cad.rotors[piece.rotor][1]) : new Vector3();
+		return b.translate(off);
+	};
+	const features = tag?.([
+		...placed.flatMap((geometry, i) => {
+			if (!keep[i]) return [];
+			const { min, max } = box(geometry);
 			const c = cad.parts[i].c;
-			return { color: cad.materials[c], clear: cad.clear.includes(c), rotor: cad.parts[i].g ?? -1, lo: min.toArray(), hi: max.toArray() };
+			return [{ color: cad.materials[c], clear: cad.clear.includes(c), rotor: cad.parts[i].g ?? -1, lo: min.toArray() as V3, hi: max.toArray() as V3 }];
 		}),
-	);
+		...mods.pieces.map((piece) => {
+			const { min, max } = robotSpaceBox(piece);
+			return { color: "", clear: false, rotor: piece.rotor, lo: min.toArray() as V3, hi: max.toArray() as V3, group: piece.group };
+		}),
+	]);
+	const featureOf = (g: BufferGeometry, n: number) => {
+		if (!features) return;
+		const count = g.getAttribute("position").count;
+		g.setAttribute("feature", new BufferAttribute(new Float32Array(count).fill(features[n] ?? 0), 1));
+	};
+	let n = 0;
 	cad.parts.forEach((part, i) => {
 		const geometry = placed[i];
+		if (!keep[i]) {
+			geometry.dispose();
+			return;
+		}
 		const rotor = part.g ?? -1;
 		if (rotor >= 0) geometry.translate(0, -cad.rotors[rotor][0], -cad.rotors[rotor][1]);
-		if (features) {
-			const count = geometry.getAttribute("position").count;
-			geometry.setAttribute("feature", new BufferAttribute(new Float32Array(count).fill(features[i] ?? 0), 1));
-		}
+		featureOf(geometry, n++);
 		const key = `${rotor}:${part.c}`;
 		const bucket = buckets.get(key) ?? { geometries: [], material: part.c, rotor };
 		bucket.geometries.push(geometry);
@@ -217,6 +254,31 @@ export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) =>
 	for (const { geometries, material, rotor } of buckets.values()) {
 		(rotor >= 0 ? rotors[rotor] : robot).add(new Mesh(mergeGeometries(geometries, false), materials[material]));
 		geometries.forEach((g) => g.dispose());
+	}
+	// The new parts, merged per material and per place (robot, a rotor, the extension).
+	const modBuckets = new Map<string, { geometries: BufferGeometry[]; material: (typeof mods.pieces)[number]["material"]; parent: Object3D }>();
+	const ids = new Map<object, number>();
+	mods.pieces.forEach((piece) => {
+		const g = piece.geometry.index ? piece.geometry.toNonIndexed() : piece.geometry;
+		if (!g.getAttribute("uv")) g.setAttribute("uv", new BufferAttribute(new Float32Array(g.getAttribute("position").count * 2), 2));
+		featureOf(g, n++);
+		const parent = piece.on === "flaps" ? flaps : piece.rotor >= 0 ? rotors[piece.rotor] : robot;
+		if (!ids.has(piece.material)) ids.set(piece.material, ids.size);
+		const key = `${piece.on ?? piece.rotor}:${ids.get(piece.material)}`;
+		const bucket = modBuckets.get(key) ?? { geometries: [], material: piece.material, parent };
+		bucket.geometries.push(g);
+		modBuckets.set(key, bucket);
+	});
+	for (const { geometries, material, parent } of modBuckets.values()) {
+		const merged = mergeGeometries(geometries.map((g) => (g.getAttribute("normal") ? g : (g.computeVertexNormals(), g))), false);
+		if (merged) parent.add(new Mesh(merged, material));
+		geometries.forEach((g) => g.dispose());
+	}
+	// The plates are bare aluminium on the real robot.
+	for (const m of materials.filter((_, i) => cad.materials[i] === "#a5a5a5")) {
+		m.color.set(0xc6cbd2);
+		m.metalness = 0.85;
+		m.roughness = 0.32;
 	}
 	shapes.forEach((g) => g.dispose());
 
@@ -312,6 +374,22 @@ export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) =>
 	balls[0].ball.position.copy(intakePath.getPointAt(1));
 	flight(balls[1].ball, 0.25);
 
+	// The extension: folded for a moment, swings up, stays open, folds again (a 12 s loop), unless pinned.
+	let pinned: number | null = null;
+	const setFlaps = (open: number) => {
+		flaps.position.y = mods.pivot[1] - mods.folded.drop * (1 - open);
+		flaps.rotation.x = mods.folded.turn * (1 - open);
+	};
+	const openAt = (t: number) => {
+		const p = t % 12;
+		const ease = (u: number) => u * u * (3 - 2 * u);
+		if (p < 2.5) return 0;
+		if (p < 4) return ease((p - 2.5) / 1.5);
+		if (p < 10.5) return 1;
+		return 1 - ease((p - 10.5) / 1.5);
+	};
+	setFlaps(1);
+
 	return {
 		model: robot,
 		anchors: robotAnchors,
@@ -326,6 +404,12 @@ export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) =>
 			rotors[2].rotation.x -= dt * 18; // launcher wheel: front face up, along the hood
 			rotors[3].rotation.x -= dt * 8; // feeder pushes the ball forward into the launcher
 			for (const { ball, offset } of balls) placeBall(ball, t + offset * PERIOD);
+			setFlaps(pinned ?? openAt(t));
+		},
+		clear: () => [...materials.filter((_, i) => cad.clear.includes(i)), mods.clear],
+		setOpen(open) {
+			pinned = open;
+			if (open !== null) setFlaps(open);
 		},
 		pose(t) {
 			for (const { ball, offset } of balls) placeBall(ball, t + offset * PERIOD);
@@ -342,11 +426,12 @@ export default async function createRobot(ctx: StageContext): Promise<Model> {
 	// One part is called out at a time, so labels never pile up.
 	const tourClass = "opacity-0 transition-opacity duration-500 data-[on]:opacity-100";
 	const tour = [
-		ctx.label("Intake rollers", rig.anchor([-0.12, a.intake[1] + 0.04, a.intake[2] + 0.06]), tourClass),
+		ctx.label("Intake", rig.anchor([-0.12, a.intake[1] + 0.04, a.intake[2] + 0.06]), tourClass),
 		ctx.label("Hopper", rig.anchor([0, a.hopper[1] + 0.02, a.hopper[2]]), tourClass),
-		ctx.label("Launcher wheel", rig.anchor([0, a.launcher[1] + 0.07, a.launcher[2]]), tourClass),
+		ctx.label("Flywheel", rig.anchor([0, a.launcher[1] + 0.07, a.launcher[2]]), tourClass),
 		ctx.label("Hood", rig.anchor([0, a.hood[1] + 0.12, a.hood[2]]), tourClass),
-		ctx.label("CIM motors", rig.anchor([a.cim[0] + 0.1, a.cim[1], a.cim[2]]), tourClass),
+		ctx.label("Kraken X60s", rig.anchor([0.33, 0.36, 0.268]), tourClass),
+		ctx.label("Electronics", rig.anchor([0.07, 0.25, -0.08]), tourClass),
 		ctx.label("Battery", rig.anchor([a.battery[0], a.battery[1] + 0.06, a.battery[2]]), tourClass),
 	];
 	let shown = -1;
