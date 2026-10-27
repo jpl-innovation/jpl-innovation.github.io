@@ -1,0 +1,31 @@
+---
+// The FRC robot alone, for checking the model by eye: copy into src/pages/robot-preview.astro, run `npx astro dev`,
+// open /robot-preview and call window.shot(camera, target, open) for a PNG. Not published (it lives in scripts/).
+---
+<html><body style="margin:0;background:#0b1120"><canvas id="c"></canvas>
+<script>
+import { ACESFilmicToneMapping, Color, DirectionalLight, EquirectangularReflectionMapping, Group, HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, PMREMGenerator, Scene, SRGBColorSpace, TextureLoader, WebGLRenderer } from "three";
+import { buildRobot } from "@/lib/three/models/frc-robot";
+const q = new URLSearchParams(location.search);
+const W = 1600, H = 1000;
+const canvas = document.getElementById("c") as HTMLCanvasElement;
+canvas.width = W; canvas.height = H;
+const renderer = new WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.outputColorSpace = SRGBColorSpace; renderer.toneMapping = ACESFilmicToneMapping;
+const scene = new Scene(); scene.background = new Color(0x111827);
+const env = await new Promise<any>((r) => new TextureLoader().load("/chapter/drone/env.webp", (t) => { t.colorSpace = SRGBColorSpace; t.mapping = EquirectangularReflectionMapping; r(t); }));
+scene.environment = new PMREMGenerator(renderer).fromEquirectangular(env).texture; scene.environmentIntensity = 0.9;
+scene.add(new HemisphereLight(0xdfe8ff, 0x303040, 1.0));
+const key = new DirectionalLight(0xffffff, 2.2); key.position.set(2, 3, 2); scene.add(key);
+const rim = new DirectionalLight(0x9fd3ff, 1.2); rim.position.set(-2, 1.5, -2); scene.add(rim);
+const floor = new Mesh(new PlaneGeometry(6, 6), new MeshStandardMaterial({ color: 0x2a2f3a, roughness: 1 })); floor.rotation.x = -Math.PI / 2; scene.add(floor);
+const holder = new Group(); scene.add(holder);
+const rig = await buildRobot(holder);
+const camera = new PerspectiveCamera(32, W / H, 0.02, 50);
+(window as any).shot = (cam: number[], target: number[], open = 1) => {
+	camera.position.set(cam[0], cam[1], cam[2]); camera.lookAt(target[0], target[1], target[2]);
+	rig.pose(2); rig.setOpen(open); renderer.render(scene, camera);
+	return canvas.toDataURL("image/png");
+};
+(window as any).ready = true;
+</script></body></html>
