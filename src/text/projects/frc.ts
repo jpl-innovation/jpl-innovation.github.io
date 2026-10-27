@@ -32,12 +32,12 @@ export const frcPage = {
 	/** Heading, sentence, note and screen reader description of the 3D robot that turns to each part as you scroll
 	 *  (its part by part text: src/text/showcase/robot.ts). `fallbackAlt` describes the photo shown without 3D. */
 	model3d: {
-		heading: 'The KitBot platform in 3D',
-		text: 'The standard KitBot platform our 2026 robot is built on. Follow a ball of FUEL: the intake rollers pull it off the floor into the hopper, the feeder pushes it into the launcher wheel, and the curved hood sends it up and out of the top. On a computer you can drag to look around.',
-		note: 'The kit’s standard design, simplified: every part in place, without the fasteners and small holes. Our modified robot is not modelled yet.',
+		heading: 'Our 2026 robot in 3D',
+		text: 'The KitBot platform with our changes. Follow a ball of FUEL: the intake wheels pull it off the floor into the hopper, the indexer feeds it to the flywheel, and the printed hood sends it up and out of the top. On a computer you can drag to look around.',
+		note: 'The frame is the kit’s own CAD; our changes are modelled from photos of the real robot, so their sizes are close, not measured. Fasteners and small holes are left out.',
 		/** Read aloud by screen readers instead of the 3D model. */
 		description:
-			"3D model of the standard KitBot platform our 2026 robot is built on: an aluminium frame on six wheels with blue 10951 bumpers, intake rollers with yellow spacers, a see-through sloped hopper, a feeder roller, a salmon launcher wheel under a curved hood, CIM motors driving it all through belts and gears, the battery, power hub and an orange signal light.",
+			"3D model of Team 10951's 2026 robot, a modified KitBot: an aluminium frame on six wheels with blue 10951 bumpers; an intake of grey compliant wheels and orange star wheels; an indexer of blue star wheels and green wheels; a full-width flywheel of black, blue, orange and green wheels under a hood of blue, black and white printed ribs; two Kraken X60 motors and a NEO on belts; a see-through hopper with an extension that slides up to hold more FUEL; and the electronics in plain view: the power hub, five SPARK MAX controllers, a Pigeon 2.0, the radio, the wiring and an orange beacon on top.",
 		fallbackAlt: "Team 10951's 2026 robot",
 	},
 	/** "About Team 10951" near the bottom. The sentence under it is built from `team` below. */

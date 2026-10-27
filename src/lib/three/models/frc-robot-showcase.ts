@@ -71,6 +71,7 @@ function classify(parts: RobotPart[], battery: V3): string[] {
 	const light = new Set(parts.filter((p) => p.color === ORANGE));
 	for (const p of parts) if (Math.max(size(p, 0), size(p, 1), size(p, 2)) < 0.1 && [...light].some((l) => touches(p, l, 0.003))) light.add(p);
 	return parts.map((p) => {
+		if (p.group !== undefined) return p.group; // the team's own parts say where they belong (./frc-robot-mods.ts)
 		if (p.rotor === 0 || p.rotor === 1) return "intake";
 		if (p.rotor >= 2) return "shooter";
 		if (p.clear) return "hopper";
@@ -125,6 +126,8 @@ export default async function createRobotShowcase(ctx: StageContext, ids: string
 		{ stop: ids.indexOf("shooter"), materials: rig.materials(SIDE_PLATE) },
 	].filter((g) => g.stop >= 0);
 	for (const g of ghosts) for (const m of g.materials) m.transparent = true;
+	// On the electronics stop the clear hopper (already see-through) fades almost away, so the wiring under it shows.
+	const glass = { stop: ids.indexOf("electronics"), materials: rig.clear().map((m) => ({ m, base: m.opacity })) };
 	// FUEL belongs to the intake, the hopper and the shooter: it leaves the picture for the drivetrain and electronics.
 	const fuelStops = ["stakes", "reveal", "overview", "intake", "hopper", "shooter"].map((id) => ids.indexOf(id)).filter((n) => n >= 0);
 	let fuel = true;
@@ -154,6 +157,7 @@ export default async function createRobotShowcase(ctx: StageContext, ids: string
 					m.depthWrite = !m.map && clear < 0.05;
 				}
 			}
+			if (glass.stop >= 0) for (const { m, base } of glass.materials) m.opacity = base * (1 - 0.8 * weights[glass.stop]);
 			let shown = 0;
 			for (const n of fuelStops) shown += weights[n];
 			fuel = shown > 0.5;
