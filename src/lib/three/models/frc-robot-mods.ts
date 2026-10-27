@@ -11,7 +11,8 @@
  *   Motors      two Kraken X60s (Talon FX built in) on the right plate, on belts to the flywheel and the indexer; one
  *               NEO on the left plate, on a belt to the intake shafts. The KitBot's two upper CIMs are gone; the four
  *               CIMs that drive the wheels stay.
- *   Hopper      an extension on orange printed pivots that slides down its curved slots to fold and rises to hold more FUEL, with the team's
+ *   Hopper      an extension on orange printed pivots that swings out past the back to hold more FUEL and folds
+ *               inside, its back wall becoming the lid, level with the shooter (extensionPose); the team's
  *               decal on its back wall.
  *   Electronics the REV power distribution hub, five SPARK MAXes (one for the NEO, four for the drive motors; the
  *               Krakens need none), a CTRE Pigeon 2.0 next to them for odometry, the radio on the left plate, the
@@ -21,6 +22,8 @@
  */
 import {
 	type BufferGeometry,
+	CanvasTexture,
+	SRGBColorSpace,
 	BoxGeometry,
 	CatmullRomCurve3,
 	CylinderGeometry,
@@ -69,6 +72,8 @@ export const SKIP = new Set<number>([
 	116, 117,
 	// power hub and SPARK MAXes
 	45, 19, 43, 67, 124, 128, 130,
+	// the hopper's fixed back wall: the extension is the back now
+	61,
 ]);
 
 /** The hood rib (a curved printed plate) the KitBot has two of: cloned across the width. */
@@ -186,7 +191,8 @@ function kraken(sign: 1 | -1) {
 	const body: BufferGeometry[] = [];
 	const L = 0.072;
 	body.push(at(new CylinderGeometry(0.0305, 0.0305, L, 32).rotateZ(Math.PI / 2), (sign * L) / 2));
-	for (let i = 0; i < 6; i++) body.push(at(new CylinderGeometry(0.0322, 0.0322, 0.0035, 32).rotateZ(Math.PI / 2), sign * (0.012 + i * 0.008))); // cooling fins
+	// the body is smooth (it carries the logo); only the Talon FX end, the last 2 cm, is finned
+	for (let i = 0; i < 4; i++) body.push(at(new CylinderGeometry(0.0322, 0.0322, 0.003, 32).rotateZ(Math.PI / 2), sign * (0.055 + i * 0.005)));
 	return body;
 }
 
@@ -202,41 +208,44 @@ function label(text: string, w: number, h: number, color: string, font: string, 
 	return new MeshStandardMaterial({ map: tex, transparent: true, depthWrite: false, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2 });
 }
 
-/** The extension's side flap, in pivot space (pivot at the origin, the flap reaching back toward -z and up). */
+/** The extension's side panel, in pivot space: the pivot is its top front corner; it reaches back (-z) and down. */
+const EXT = { L: 0.4, H: 0.38 };
 function flapShape() {
 	const s = new Shape();
-	const z0 = 0.045, z1 = -0.345, y0 = -0.13, y1 = 0.2, r = 0.035;
+	const { L, H } = EXT;
+	const r = 0.06; // the big rounded corner at the bottom back, as on the robot
 	// (Shape x = robot z, Shape y = robot y)
-	s.moveTo(z0, y0 + r);
-	s.lineTo(z0, y1 - r);
-	s.quadraticCurveTo(z0, y1, z0 - r, y1);
-	s.lineTo(z1 + r, y1);
-	s.quadraticCurveTo(z1, y1, z1, y1 - r);
-	s.lineTo(z1, y0);
-	s.lineTo(z0 - r, y0);
-	s.quadraticCurveTo(z0, y0, z0, y0 + r);
-	// The curved slot the flap slides along as it swings (a guide pin on the fixed panel runs in it).
-	const slot = new Path();
-	const R = 0.24, w = 0.006, a0 = Math.PI * 1.08, a1 = Math.PI * 1.32;
-	for (let i = 0; i <= 12; i++) {
-		const a = a0 + ((a1 - a0) * i) / 12;
-		const p = [Math.cos(a) * (R + w), Math.sin(a) * (R + w)];
-		if (i === 0) slot.moveTo(p[0], p[1]);
-		else slot.lineTo(p[0], p[1]);
-	}
-	for (let i = 12; i >= 0; i--) {
-		const a = a0 + ((a1 - a0) * i) / 12;
-		slot.lineTo(Math.cos(a) * (R - w), Math.sin(a) * (R - w));
-	}
-	s.holes.push(slot);
+	s.moveTo(0, 0);
+	s.lineTo(-L, 0);
+	s.lineTo(-L, -H + r);
+	s.quadraticCurveTo(-L, -H, -L + r, -H);
+	s.lineTo(-0.05, -H);
+	s.quadraticCurveTo(0, -H, 0, -H + 0.05);
+	s.lineTo(0, 0);
 	return s;
+}
+
+/**
+ * Where the extension is for `open` (1 extended, 0 folded), as the video shows it: extended, its pivot is at the top
+ * of the curved slot in the fixed side panel (level with the shooter) and the box sticks out past the back of the
+ * robot; folding, the back is lifted, the pivot slides down the slot and the box turns a quarter turn, so it tucks
+ * inside the robot with its back wall (the decal) on top as a lid, level with the shooter.
+ */
+export function extensionPose(open: number) {
+	const t = 1 - open; // 0 extended .. 1 folded
+	const top = 0.5225; // the shooter's height (the side plates' top)
+	const a = { y: top, z: -0.1 }; // pivot, extended
+	const c = { y: top - EXT.L, z: 0.06 }; // pivot, folded: the lid (the back wall) ends up at `top`
+	const m = { y: 0.26, z: -0.14 }; // the slot's curve
+	const y = (1 - t) * (1 - t) * a.y + 2 * (1 - t) * t * m.y + t * t * c.y;
+	const z = (1 - t) * (1 - t) * a.z + 2 * (1 - t) * t * m.z + t * t * c.z;
+	return { y, z, turn: (Math.PI / 2) * t };
 }
 
 export interface Mods {
 	pieces: ModPiece[];
-	/** Where the hopper extension pivots (robot space), and how it sits folded: slid down its slot and tipped a little (open is neither). */
+	/** Where the hopper extension's pivot starts (robot space, extended); extensionPose() moves it. */
 	pivot: [number, number, number];
-	folded: { drop: number; turn: number };
 	/** The beacon's dome, which glows. */
 	beacon: MeshStandardMaterial;
 	/** The extension's polycarbonate (the showcase fades it with the hopper on the electronics stop). */
@@ -268,6 +277,29 @@ export function buildMods(rotors: Rotors, rib: BufferGeometry): Mods {
 	const silver = mat(0xc9ced4, "metal", { metalness: 0.85, roughness: 0.3 });
 	const printedOrange = mat(0xf57a1f, "printed", { roughness: 0.7 });
 	const clear = hardware({ color: 0xcccccc, transparent: true, opacity: 0.26, roughness: 0.1, metalness: 0, depthWrite: false, side: DoubleSide }, "clear");
+	const krakenLogo = (() => {
+		const c = document.createElement("canvas");
+		c.width = 512;
+		c.height = 256;
+		const g = c.getContext("2d")!;
+		g.strokeStyle = "#2f8cff";
+		g.lineWidth = 14;
+		g.lineCap = "round";
+		for (let i = 0; i < 3; i++) {
+			g.beginPath();
+			g.moveTo(40 + i * 40, 230);
+			g.bezierCurveTo(60 + i * 60, 120, 160 + i * 30, 160, 140 + i * 50, 40);
+			g.stroke();
+		}
+		g.fillStyle = "#ffffff";
+		g.font = '800 92px "Archivo Variable", Arial, sans-serif';
+		g.fillText("KRAKEN", 210, 150);
+		g.font = '800 60px "Archivo Variable", Arial, sans-serif';
+		g.fillText("X60", 330, 215);
+		const t = new CanvasTexture(c);
+		t.colorSpace = SRGBColorSpace;
+		return new MeshStandardMaterial({ map: t, transparent: true, depthWrite: false, roughness: 0.45, polygonOffset: true, polygonOffsetFactor: -2, side: DoubleSide });
+	})();
 	const flywheel: Record<string, MeshStandardMaterial> = {
 		k: black,
 		b: mat(0x2f5fc8, "rubber", { roughness: 0.8 }),
@@ -298,29 +330,57 @@ export function buildMods(rotors: Rotors, rib: BufferGeometry): Mods {
 	/* ---------- Pulleys outside the plates, and the belts ---------- */
 	const P = (r: number, w = 0.016) => lathe([[0.008, -w / 2], [r + 0.003, -w / 2], [r + 0.003, -w / 2 + 0.002], [r, -w / 2 + 0.002], [r, w / 2 - 0.002], [r + 0.003, w / 2 - 0.002], [r + 0.003, w / 2], [0.008, w / 2]], 32);
 	const XR = 0.247, XL = -0.247; // pulley planes, right and left
-	add(put(P(0.03), XR), pulley, "shooter", 2); // flywheel
-	add(put(P(0.022), XR), pulley, "shooter", 3); // indexer
 	add(put(P(0.02), XL), pulley, "intake", 1);
 	add(put(P(0.02, 0.026), XL), pulley, "intake", 0);
 
-	/* ---------- Motors ---------- */
-	// Krakens on the right plate (outside face x = 0.2285): one on a belt to the flywheel, one to the indexer.
+	/* ---------- Right plate (photos: the Kraken side) ---------- */
+	// Two Kraken X60s low on the plate, side by side, their Talon FX ends facing out: the back one belts up to the
+	// flywheel, the front one belts down to a big black pulley on the bottom intake shaft, round a white idler.
 	const plateR = 0.2285, plateL = -0.2285;
-	const krakens: [number, number, [number, number, number]][] = [
-		[0.36, 0.268, [rotors[2][0], rotors[2][1], 0.03]],
-		[0.235, 0.205, [rotors[3][0], rotors[3][1], 0.022]],
+	const whitePulley = mat(0xe9e9e4, "plastic", { roughness: 0.5 });
+	const retainer = mat(0x2f6fe0, "printed", { roughness: 0.6 }); // the blue printed bearing retainers
+	const flyPulley: [number, number, number] = [rotors[2][0], rotors[2][1], 0.032];
+	const intakePulley: [number, number, number] = [rotors[0][0], rotors[0][1], 0.045];
+	const idler: [number, number, number] = [0.262, 0.238, 0.013];
+	add(put(P(0.032, 0.018), XR), blackPrint, "shooter", 2); // flywheel pulley, black
+	add(put(P(0.045, 0.02), XR), blackPrint, "intake", 0); // the big black intake pulley
+	// blue retainers round every shaft where it passes the plate
+	for (const [y, z] of [rotors[0], rotors[1], rotors[2], rotors[3]])
+		add(at(lathe([[0.008, -0.003], [0.021, -0.003], [0.021, 0.003], [0.008, 0.003]], 32), plateR + 0.003, y, z), retainer, "shooter");
+	const krakens: { y: number; z: number; to: [number, number, number]; group: Group3; via?: [number, number, number] }[] = [
+		{ y: 0.268, z: 0.105, to: flyPulley, group: "shooter" },
+		{ y: 0.268, z: 0.182, to: intakePulley, group: "intake", via: idler },
 	];
-	for (const [y, z, target] of krakens) {
-		for (const g of kraken(1)) add(at(g, plateR, y, z), motorBlack, "shooter");
-		// the Talon FX end: a face plate with its name
+	for (const k of krakens) {
+		for (const g of kraken(1)) add(at(g, plateR + 0.022, k.y, k.z), motorBlack, k.group);
+		// the blue Kraken logo round the can, both sides
+		for (const turn of [0.6, Math.PI + 0.6]) {
+			const wrap = new CylinderGeometry(0.0312, 0.0312, 0.042, 24, 1, true, turn, 1.6).rotateZ(Math.PI / 2);
+			add(at(wrap, plateR + 0.022 + 0.027, k.y, k.z), krakenLogo, k.group);
+		}
+		// the Talon FX end: finned, with its name
 		const face = new PlaneGeometry(0.044, 0.016).rotateY(Math.PI / 2);
-		add(at(face, plateR + 0.0735, y - 0.006, z), label("TALON FX", 0.044, 0.016, "#7ee03a", '800 110px "Archivo Variable", Arial, sans-serif'), "shooter");
-		const ctr = new PlaneGeometry(0.03, 0.009).rotateY(Math.PI / 2);
-		add(at(ctr, plateR + 0.0735, y + 0.012, z), label("KRAKEN X60", 0.03, 0.009, "#9cc8ff", '800 78px "Archivo Variable", Arial, sans-serif'), "shooter");
-		// its pulley (inside the belt plane) and the belt up to the shaft
-		add(at(P(0.014, 0.014), XR, y, z), pulley, "shooter");
-		add(belt(XR, [y, z, 0.0155], target), beltMat, "shooter");
+		add(at(face, plateR + 0.022 + 0.0735, k.y - 0.006, k.z), label("TALON FX", 0.044, 0.016, "#7ee03a", '800 110px "Archivo Variable", Arial, sans-serif'), k.group);
+		// the motor stands off the plate on its mount; a white pulley on its shaft, behind it
+		add(at(new CylinderGeometry(0.004, 0.004, 0.03, 12).rotateZ(Math.PI / 2), plateR + 0.012, k.y, k.z), silver, k.group);
+		add(at(P(0.014, 0.012), XR, k.y, k.z), whitePulley, k.group);
+		if (k.via) {
+			// long belt: motor -> idler -> big pulley, drawn as two straight runs round the idler
+			add(belt(XR, [k.y, k.z, 0.0155], k.via), beltMat, k.group);
+			add(belt(XR + 0.0005, k.via, k.to), beltMat, k.group);
+		} else add(belt(XR, [k.y, k.z, 0.0155], k.to), beltMat, k.group);
 	}
+	add(at(P(0.013, 0.012), XR, idler[0], idler[1]), whitePulley, "intake");
+	add(at(new CylinderGeometry(0.004, 0.004, 0.026, 12).rotateZ(Math.PI / 2), plateR + 0.012, idler[0], idler[1]), silver, "intake");
+	// The Limelight camera on the plate's top front corner.
+	const ll = { y: 0.47, z: 0.3 };
+	const llBody = mat(0x111215, "anodised", { metalness: 0.5, roughness: 0.45 });
+	add(at(new BoxGeometry(0.03, 0.075, 0.09), plateR + 0.017, ll.y, ll.z), llBody, "electronics");
+	for (let i = 0; i < 6; i++) add(at(new BoxGeometry(0.004, 0.06, 0.004), plateR + 0.034, ll.y, ll.z - 0.03 + i * 0.012), llBody, "electronics"); // fins
+	add(at(new CylinderGeometry(0.009, 0.009, 0.006, 20), plateR + 0.017, ll.y + 0.02, ll.z + 0.048).rotateX(0), mat(0x0b0d12, "glass", { roughness: 0.1 }), "electronics");
+	const llTag = new PlaneGeometry(0.06, 0.012).rotateY(Math.PI / 2).rotateX(Math.PI / 2);
+	add(at(new PlaneGeometry(0.065, 0.012).rotateY(Math.PI / 2), plateR + 0.0325, ll.y - 0.026, ll.z), label("LIMELIGHT", 0.065, 0.012, "#ffffff", '700 96px "Archivo Variable", Arial, sans-serif'), "electronics");
+	llTag.dispose();
 	// The NEO on the left plate, on a belt to the second intake shaft; that shaft drives the bottom one.
 	const neoAt: [number, number] = [0.37, 0.205];
 	add(at(neo(-1), plateL, neoAt[0], neoAt[1]), motorBlack, "intake");
@@ -391,27 +451,22 @@ export function buildMods(rotors: Rotors, rib: BufferGeometry): Mods {
 	];
 	for (const [color, off] of [[0xf5d000, 0.0018], [0x2fae4a, -0.0018]] as const) wire(canPath.map(([x, y, z]) => [x + off, y, z + off] as [number, number, number]), color, 0.0012);
 
-	/* ---------- Hopper extension, on its pivots ---------- */
-	// Open, the extension's top is 12 cm above the shooter; folded, it slides down level with it (the side plates' top,
-	// y = 0.5225), so the folded robot is no taller than the shooter.
-	const pivot: [number, number, number] = [0, 0.44, 0.03];
+	/* ---------- Hopper extension, on its pivots (it swings out the back; see extensionPose) ---------- */
+	const start = extensionPose(1);
+	const pivot: [number, number, number] = [0, start.y, start.z];
 	const sideX = 0.2335;
 	for (const s of [-1, 1]) {
 		const flap = new ExtrudeGeometry(flapShape(), { depth: 0.003, bevelEnabled: false, curveSegments: 6 });
 		flap.rotateY(-Math.PI / 2); // shape x -> robot z
 		add(flap.translate(s * sideX + (s > 0 ? 0.003 : 0), 0, 0), clear, "hopper", -1, "flaps");
-		// the orange printed pivot block and its bolt
-		add(at(new BoxGeometry(0.008, 0.04, 0.04), s * (sideX + 0.008), 0, 0), printedOrange, "hopper", -1, "flaps");
-		add(at(new CylinderGeometry(0.004, 0.004, 0.02, 12).rotateZ(Math.PI / 2), s * (sideX + 0.012), 0, 0), silver, "hopper", -1, "flaps");
+		// the orange printed pivot block and its bolt, at the top front corner
+		add(at(new BoxGeometry(0.008, 0.04, 0.04), s * (sideX + 0.008), -0.022, -0.022), printedOrange, "hopper", -1, "flaps");
+		add(at(new CylinderGeometry(0.004, 0.004, 0.02, 12).rotateZ(Math.PI / 2), s * (sideX + 0.012), -0.022, -0.022), silver, "hopper", -1, "flaps");
 	}
-	// The back wall with the decal.
-	const back = new BoxGeometry(2 * sideX + 0.006, 0.33, 0.003);
-	add(at(back, 0, 0.035, -0.345), clear, "hopper", -1, "flaps");
-	const decal = new PlaneGeometry(0.36, 0.15).rotateY(Math.PI);
-	const decalMat = label("10951", 0.36, 0.15, "rgba(230,236,244,0.8)", '800 150px "Archivo Variable", Arial, sans-serif');
-	add(at(decal, 0, 0.09, -0.3485), decalMat, "hopper", -1, "flaps");
-	const decal2 = new PlaneGeometry(0.36, 0.06).rotateY(Math.PI);
-	add(at(decal2, 0, -0.005, -0.3485), label("SAIGON SOUTH DRAGONS", 0.36, 0.06, "rgba(230,236,244,0.8)", '800 92px "Archivo Variable", Arial, sans-serif', 1536), "hopper", -1, "flaps");
+	// The back wall with the decal: the back of the hopper when extended, its lid when folded.
+	add(at(new BoxGeometry(2 * sideX + 0.006, EXT.H, 0.003), 0, -EXT.H / 2, -EXT.L), clear, "hopper", -1, "flaps");
+	add(at(new PlaneGeometry(0.36, 0.15).rotateY(Math.PI), 0, -0.13, -EXT.L - 0.0035), label("10951", 0.36, 0.15, "rgba(230,236,244,0.8)", '800 150px "Archivo Variable", Arial, sans-serif'), "hopper", -1, "flaps");
+	add(at(new PlaneGeometry(0.36, 0.06).rotateY(Math.PI), 0, -0.235, -EXT.L - 0.0035), label("SAIGON SOUTH DRAGONS", 0.36, 0.06, "rgba(230,236,244,0.8)", '800 92px "Archivo Variable", Arial, sans-serif', 1536), "hopper", -1, "flaps");
 
-	return { pieces, pivot, folded: { drop: 0.12, turn: 0 }, beacon, clear };
+	return { pieces, pivot, beacon, clear };
 }
