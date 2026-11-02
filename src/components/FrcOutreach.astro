@@ -87,6 +87,15 @@ const backdrop = frcPhotos[outreach.backdrop] as FrcPhoto;
 		color: var(--foreground);
 		background: var(--hero-field);
 	}
+	/* In the light theme, the band is its navy and yellow. */
+	html:not(.dark) .out {
+		--hero-field: #0a174e;
+		--background: #0a174e;
+		--foreground: #fffdf5;
+		--accent: #f5d042;
+		--accent-foreground: #0a174e;
+		--ring: #f5d042;
+	}
 	/* The workshop, fading into the band behind the heading. */
 	.out-backdrop {
 		position: absolute;

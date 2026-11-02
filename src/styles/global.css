@@ -18,7 +18,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * JPL Innovation theme — blue primary, cyan accent, violet highlight, cool neutral surfaces.
+ * JPL Innovation theme. Dark: blue primary, cyan accent, violet highlight. Light: navy #0A174E on a pale tint of #F5D042.
  * Every colour is a variable here, so the theme can be changed in one place.
  *   --primary    blue: buttons, links, indicators (white text on it passes WCAG AA in both modes)
  *   --accent     cyan: highlights and "live" markers; always paired with --accent-foreground
@@ -31,43 +31,44 @@
 :root {
 	--radius: 0.75rem;
 
-	--background: #eef3fd;
-	--foreground: #0a1a33;
-	--card: #ffffff;
-	--card-foreground: #0a1a33;
-	--popover: #ffffff;
-	--popover-foreground: #0a1a33;
-	--primary: #1d4ed8;
-	--primary-foreground: #ffffff;
-	--secondary: #e2eafb;
-	--secondary-foreground: #0a1a33;
-	--muted: #e5ecfa;
-	--muted-foreground: #475569;
-	--accent: #22d3ee;
-	--accent-foreground: #04202b;
-	--highlight: #7c3aed;
+	/* Light theme: navy #0A174E, and #F5D042 taken most of the way to white so the page stays light. */
+	--background: #fef8e3;
+	--foreground: #0a174e;
+	--card: #fffdf5;
+	--card-foreground: #0a174e;
+	--popover: #fffdf5;
+	--popover-foreground: #0a174e;
+	--primary: #0a174e;
+	--primary-foreground: #fffdf5;
+	--secondary: #fbf1c9;
+	--secondary-foreground: #0a174e;
+	--muted: #fbf2ce;
+	--muted-foreground: #3d4876;
+	--accent: #f5d042;
+	--accent-foreground: #0a174e;
+	--highlight: #1e2f7a;
 	--destructive: #c8283a;
-	--border: #cfdaef;
-	--input: #cfdaef;
-	--ring: #1d4ed8;
+	--border: #ede0a8;
+	--input: #ede0a8;
+	--ring: #0a174e;
 
-	--hero-field: #071433;
-	--shadow-soft: 0 1px 2px rgb(16 42 90 / 0.06), 0 12px 32px -16px rgb(16 42 90 / 0.28);
-	--shadow-lift: 0 2px 6px rgb(16 42 90 / 0.08), 0 24px 48px -20px rgb(16 42 90 / 0.4);
+	--hero-field: #0a174e;
+	--shadow-soft: 0 1px 2px rgb(10 23 78 / 0.06), 0 12px 32px -16px rgb(10 23 78 / 0.26);
+	--shadow-lift: 0 2px 6px rgb(10 23 78 / 0.08), 0 24px 48px -20px rgb(10 23 78 / 0.38);
 
-	--glow-1: rgb(37 99 235 / 0.16);
-	--glow-2: rgb(124 58 237 / 0.13);
-	--glow-3: rgb(56 140 255 / 0.1);
-	--bg-star: rgb(29 78 216 / 0.42);
-	--bg-star-alt: rgb(124 58 237 / 0.4);
-	--bg-shoot: rgb(124 58 237 / 0.55);
-	--cursor-glow: rgb(124 58 237 / 0.15);
+	--glow-1: rgb(245 208 66 / 0.3);
+	--glow-2: rgb(10 23 78 / 0.05);
+	--glow-3: rgb(245 208 66 / 0.18);
+	--bg-star: rgb(10 23 78 / 0.34);
+	--bg-star-alt: rgb(169 133 0 / 0.45);
+	--bg-shoot: rgb(10 23 78 / 0.45);
+	--cursor-glow: rgb(245 208 66 / 0.32);
 
 	--alliance-red: #c8283a;
 	--alliance-blue: #1f5fd1;
 
-	/* Categorical chart hues, fixed order. Validated (dataviz validate_palette.js) on #ffffff. */
-	--chart-1: #1f5fd1;
+	/* Categorical chart hues, fixed order. */
+	--chart-1: #0a174e;
 	--chart-2: #b87a00;
 	--chart-3: #7a4bd0;
 	--chart-4: #c8283a;
@@ -376,8 +377,8 @@
  *   [data-tilt]   cards that tilt toward the pointer (the script sets `rotate`), with a soft highlight under it.
  */
 :root {
-	--glint-a: #1d4ed8;
-	--glint-b: #7c3aed;
+	--glint-a: #0a174e;
+	--glint-b: #f5d042;
 }
 .dark {
 	--glint-a: #22d3ee;

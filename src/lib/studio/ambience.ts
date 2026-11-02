@@ -105,7 +105,7 @@ export function buildAmbience(parent: Group): Ambience {
 		mesh.rotation.x = -Math.PI / 2;
 		mesh.position.set(p.at[0], 0.02, p.at[1]);
 		parent.add(mesh);
-		return { id, material };
+		return { id, material, color: p.color };
 	});
 
 	/* ---------- LED strips ---------- */
@@ -137,7 +137,10 @@ export function buildAmbience(parent: Group): Ambience {
 		},
 		applyPalette(p) {
 			dark = p.dark;
-			for (const pool of pools) pool.material.blending = dark ? AdditiveBlending : NormalBlending;
+			for (const pool of pools) {
+				pool.material.blending = dark ? AdditiveBlending : NormalBlending;
+				pool.material.color.set(dark ? pool.color : 0xf5d042); // the light theme's own yellow
+			}
 		},
 	};
 }
