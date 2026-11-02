@@ -451,13 +451,13 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		applyPalette(p) {
 			palette = p;
 			const dark = p.dark;
-			wallMat.color.set(dark ? 0x0c1631 : 0xdfe7f5);
-			ceilingMat.color.set(dark ? 0x0a1228 : 0xeef3fb);
-			(floorMat as MeshStandardMaterial).color.set(dark ? 0x0a1022 : 0xbfc9dc);
-			trimMat.color.set(dark ? 0x1b2a52 : 0xb8c5dd);
-			glassMat.color.set(dark ? 0x0b1424 : 0xdfe9f7);
+			wallMat.color.set(dark ? 0x0c1631 : 0xfbe9a8);
+			ceilingMat.color.set(dark ? 0x0a1228 : 0xfdf3c8);
+			(floorMat as MeshStandardMaterial).color.set(dark ? 0x0a1022 : 0xe9d68c);
+			trimMat.color.set(dark ? 0x1b2a52 : 0x0a174e);
+			glassMat.color.set(dark ? 0x0b1424 : 0xfbf4da);
 			glassMat.opacity = dark ? 0.14 : 0.1;
-			mullionMat.color.set(dark ? 0x1b2440 : 0xf2f5fa);
+			mullionMat.color.set(dark ? 0x1b2440 : 0xfffdf5);
 			backdrop.applyPalette(dark);
 			bookMaterial.color.setScalar(dark ? 0.46 : 0.45);
 			deskSheetSet.applyPalette(dark);
@@ -466,12 +466,12 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 			ambience.applyPalette(p);
 			(logo.material as MeshBasicMaterial).map = dark ? logoLight : logoDark;
 			(logo.material as MeshBasicMaterial).needsUpdate = true;
-			(slogan.material as MeshBasicMaterial).color.set(dark ? 0xe6f6ff : 0x0a1124);
-			(ctx.scene.fog as Fog).color.set(dark ? 0x050a1f : 0xe6edf8);
+			(slogan.material as MeshBasicMaterial).color.set(dark ? 0xe6f6ff : 0x0a174e);
+			(ctx.scene.fog as Fog).color.set(dark ? 0x050a1f : 0xfef8e3);
 			(ctx.scene.fog as Fog).near = dark ? 7 : 12;
 			(ctx.scene.fog as Fog).far = dark ? 19 : 32;
-			sky.color.set(dark ? 0x8fb4ff : 0xffffff);
-			sky.groundColor.set(dark ? 0x0a1022 : 0xb9c4d8);
+			sky.color.set(dark ? 0x8fb4ff : 0xfff8e0);
+			sky.groundColor.set(dark ? 0x0a1022 : 0xe9dfb4);
 			// The stage's product lights ride on the camera; in a room they'd flatten it, so they stay low.
 			ctx.lights.key.intensity = dark ? 0.55 : 1.1;
 			ctx.lights.fill.intensity = dark ? 0.2 : 0.45;
