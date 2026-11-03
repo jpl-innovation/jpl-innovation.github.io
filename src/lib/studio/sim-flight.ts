@@ -388,6 +388,8 @@ export function createSim(ctx: StageContext, room: Room, ids: readonly string[])
 	let dirty = false;
 	let lastSig = "";
 	let lastClock = 0;
+	let applyTheme: ((dark: boolean) => void) | undefined;
+	let themed: boolean | undefined;
 
 	const speedAt = (f: number) => {
 		const keys = LOOK.speed;
@@ -426,11 +428,36 @@ export function createSim(ctx: StageContext, room: Room, ids: readonly string[])
 		g.fillRect(0, 0, 4, 512);
 		const skyTexture = new CanvasTexture(sky);
 		skyTexture.colorSpace = SRGBColorSpace;
-		world.add(new Mesh(new SphereGeometry(3400, 32, 24), new MeshBasicMaterial({ map: skyTexture, side: BackSide, fog: false, depthWrite: false })));
+		// The same place by day, for the light theme.
+		const daySky = document.createElement("canvas");
+		daySky.width = 4;
+		daySky.height = 512;
+		const dg = daySky.getContext("2d")!;
+		const dayGradient = dg.createLinearGradient(0, 0, 0, 512);
+		for (const [at, colour] of [[0, "#2f7ce6"], [0.3, "#7fb4f0"], [0.46, "#dbeaf8"], [0.5, "#fcfad8"], [0.53, "#f5ee96"], [0.6, "#7f8d4e"], [1, "#55663a"]] as const) dayGradient.addColorStop(at, colour);
+		dg.fillStyle = dayGradient;
+		dg.fillRect(0, 0, 4, 512);
+		const dayTexture = new CanvasTexture(daySky);
+		dayTexture.colorSpace = SRGBColorSpace;
+		const domeMaterial = new MeshBasicMaterial({ map: skyTexture, side: BackSide, fog: false, depthWrite: false });
+		world.add(new Mesh(new SphereGeometry(3400, 32, 24), domeMaterial));
+		const ridgeMaterials: MeshBasicMaterial[] = [];
+		applyTheme = (dark) => {
+			domeMaterial.map = dark ? skyTexture : dayTexture;
+			domeMaterial.needsUpdate = true;
+			(world.fog as Fog).color.set(dark ? 0x4a3a50 : 0xdbeaf8);
+			sun.intensity = dark ? 2.2 : 3.6;
+			sun.color.set(dark ? 0xffd2a6 : 0xfff6dc);
+			rim.intensity = dark ? 1.4 : 0.8;
+			world.environmentIntensity = dark ? 0.9 : 1.5;
+			for (const ridge of ridgeMaterials) ridge.opacity = dark ? 1 : 0.32;
+		};
 		ridges.forEach((texture, i) => {
 			const z = -[2600, 2100, 1700, 1400][i];
 			const w = -z * 3.2;
-			const ridge = new Mesh(new PlaneGeometry(w, w * 0.5625), new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, fog: false }));
+			const ridgeMaterial = new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, fog: false });
+			ridgeMaterials.push(ridgeMaterial);
+			const ridge = new Mesh(new PlaneGeometry(w, w * 0.5625), ridgeMaterial);
 			ridge.position.set(0, w * 0.5625 * 0.3, z);
 			world.add(ridge);
 		});
@@ -580,6 +607,12 @@ export function createSim(ctx: StageContext, room: Room, ids: readonly string[])
 				const w = Math.round(h * camera.aspect);
 				if (target.width !== w || target.height !== h) {
 					target.setSize(w, h);
+					lastSig = "";
+				}
+				const dark = document.documentElement.classList.contains("dark");
+				if (dark !== themed) {
+					themed = dark;
+					applyTheme?.(dark);
 					lastSig = "";
 				}
 				const f = clamp01((s - start) / (end - start));

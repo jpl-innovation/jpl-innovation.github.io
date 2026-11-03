@@ -55,7 +55,7 @@ const hardwareSources: Record<string, { label: string; href: string }> = {
 <div id="kitbot" class="kch showcase" data-kch data-read data-stops={JSON.stringify(stops)} data-titles={JSON.stringify(titles)} style={`--stops: ${stops.length}`}>
 	<script is:inline data-astro-rerun>
 		// Before the first paint: the 3D chapter unless Classic was chosen, the window is under 768 px, motion is reduced
-		// or there is no WebGL. In 3D the whole chapter has the dark theme's colours, in both themes.
+		// or there is no WebGL. It follows the theme, like the rest of the page.
 		(() => {
 			const el = document.currentScript.parentElement;
 			const root = document.documentElement;
@@ -70,12 +70,10 @@ const hardwareSources: Record<string, { label: string; href: string }> = {
 			if (!gl) return;
 			gl.getExtension("WEBGL_lose_context")?.loseContext();
 			el.removeAttribute("data-read");
-			el.classList.add("dark");
 			if (capture) el.setAttribute("data-capture", "");
 			setTimeout(() => {
 				if (el.isConnected && !el.hasAttribute("data-live") && !el.hasAttribute("data-read")) {
 					el.setAttribute("data-read", "");
-					el.classList.remove("dark");
 					console.warn("KitBot chapter: the 3D did not start in time, showing the plain page.");
 				}
 			}, 120000);
@@ -146,7 +144,7 @@ const hardwareSources: Record<string, { label: string; href: string }> = {
 			</div>
 
 			<div class="kch-panels">
-				<div class="kch-band dark">
+				<div class="kch-band">
 					<!-- 01 Prologue -->
 					<section id="prologue" class="kch-panel" data-stop="0" aria-labelledby="kitbot-prologue-label">
 						<BeatLabel id="kitbot-prologue-label" beat={beats.prologue} />
@@ -1009,6 +1007,40 @@ const hardwareSources: Record<string, { label: string; href: string }> = {
 		background: linear-gradient(to bottom, #030a10, color-mix(in oklab, #030a10 40%, transparent) 45%, transparent);
 		pointer-events: none;
 	}
+	/* The light theme: the whole chapter on the page's own colours, the model lit for it (models/frc-chapter.ts). */
+	html:not(.dark) .kch-bg {
+		background:
+			radial-gradient(42% 52% at var(--focus-x) 50%, rgb(239 209 61 / 0.5), transparent 72%),
+			radial-gradient(120% 90% at 50% 8%, #fffef2, transparent 70%),
+			linear-gradient(to bottom, #fcfad8, #f5ee96);
+	}
+	html:not(.dark) .kch-veil {
+		background: linear-gradient(to right, rgb(252 250 216 / var(--bd-scrim, 0.7)), rgb(252 250 216 / calc(var(--bd-scrim, 0.7) * 0.75)) 36%, transparent 62%);
+	}
+	html:not(.dark) .kch-veil::after {
+		display: none;
+	}
+	html:not(.dark) .kch-gate {
+		background: linear-gradient(to bottom, #fcfad8, #f5ee96);
+	}
+	html:not(.dark) .kch:not([data-read]) + .kch-after {
+		background: linear-gradient(to bottom, #f5ee96, color-mix(in oklab, #f5ee96 40%, transparent) 45%, transparent);
+	}
+	html:not(.dark) .kch[data-read] .kch-band {
+		background: linear-gradient(to bottom, #fcfad8, #f5ee96 calc(100% - 10rem), transparent);
+	}
+	html:not(.dark) .kch-bd-arena {
+		opacity: calc(var(--bd-arena, 0) * 0.3);
+	}
+	html:not(.dark) .kch-bd-field {
+		opacity: calc(var(--bd-field, 0) * 0.28);
+	}
+	html:not(.dark) .kch-bd-pits {
+		opacity: calc(var(--bd-pits, 0) * 0.26);
+	}
+	html:not(.dark) .kch-poster {
+		filter: none;
+	}
 	.kch-after:focus {
 		outline: none;
 	}
@@ -1224,7 +1256,6 @@ const hardwareSources: Record<string, { label: string; href: string }> = {
 			closeGate();
 			root.setAttribute("data-read", "");
 			root.removeAttribute("data-live");
-			root.classList.remove("dark");
 			dispose?.();
 			dispose = undefined;
 		};

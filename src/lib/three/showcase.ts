@@ -123,15 +123,17 @@ function slerpDirection(a: Vector3, b: Vector3, u: number, out: Vector3, q: Quat
 }
 
 /**
- * Dims by blending toward grey and letting the page show through: the colour fades back the same way on the light and
- * the dark theme, and in the transparent stills. The canvas is premultiplied, so all four channels scale together.
+ * Dims by blending toward grey and letting the page show through, and on the light theme also toward the page's own
+ * colour (grey alone reads as a dark shadow there). The canvas is premultiplied, so all four channels scale together.
  */
+const showcaseLight = { value: 0 };
 function patchDim(material: Material, dim: { value: number[] }, explode?: { value: number }) {
 	const previous = material.onBeforeCompile.bind(material);
 	const previousKey = material.customProgramCacheKey.bind(material);
 	material.onBeforeCompile = (shader, renderer) => {
 		previous(shader, renderer);
 		shader.uniforms.showcaseDim = dim;
+		shader.uniforms.showcaseLight = showcaseLight;
 		shader.vertexShader = shader.vertexShader.replace(
 			"void main() {",
 			`attribute float feature;\nuniform float showcaseDim[${DIM_SLOTS}];\nvarying float vShowcaseDim;\nvoid main() {\n\tvShowcaseDim = showcaseDim[int(feature + 0.5)];`,
@@ -143,10 +145,10 @@ function patchDim(material: Material, dim: { value: number[] }, explode?: { valu
 				.replace("#include <begin_vertex>", "#include <begin_vertex>\n\ttransformed += explode * showcaseExplode;");
 		}
 		shader.fragmentShader = shader.fragmentShader
-			.replace("void main() {", "varying float vShowcaseDim;\nvoid main() {")
+			.replace("void main() {", "varying float vShowcaseDim;\nuniform float showcaseLight;\nvoid main() {")
 			.replace(
 				"#include <dithering_fragment>",
-				"#include <dithering_fragment>\n\tgl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722))), 0.75 * vShowcaseDim);\n\tgl_FragColor *= 1.0 - 0.5 * vShowcaseDim;",
+				"#include <dithering_fragment>\n\tgl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(dot(gl_FragColor.rgb, vec3(0.2126, 0.7152, 0.0722))), 0.75 * vShowcaseDim);\n\tgl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.97, 0.95, 0.72), 0.72 * vShowcaseDim * showcaseLight);\n\tgl_FragColor *= 1.0 - 0.5 * vShowcaseDim;",
 			);
 	};
 	material.customProgramCacheKey = () => `${previousKey()}|showcase-dim${explode ? "-explode" : ""}`;
@@ -396,6 +398,7 @@ export function drive(ctx: StageContext, model: ShowcaseModel, { titles, positio
 		weights[j] += u;
 		let all = 0;
 		for (const k of whole) all += weights[k];
+		showcaseLight.value = document.documentElement.classList.contains("dark") ? 0 : 1;
 		for (let n = 0; n < DIM_SLOTS; n++) dim.value[n] = 1 - Math.min(1, all + (n > 0 && n <= last && !whole.includes(n) ? weights[n] : 0));
 
 		// Exploded view: how far apart this stop is, plus whatever the opening beat asks for.

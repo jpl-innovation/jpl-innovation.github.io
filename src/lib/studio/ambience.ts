@@ -139,7 +139,7 @@ export function buildAmbience(parent: Group): Ambience {
 			dark = p.dark;
 			for (const pool of pools) {
 				pool.material.blending = dark ? AdditiveBlending : NormalBlending;
-				pool.material.color.set(dark ? pool.color : 0xf5d042); // the light theme's own yellow
+				pool.material.color.set(dark ? pool.color : 0xefd13d); // the light theme's own yellow
 			}
 		},
 	};

@@ -1,6 +1,6 @@
 ---
 /**
- * Outreach on the FRC page: a dark band in both themes (the `dark` class switches the colour tokens inside it). A huge
+ * Outreach on the FRC page: a band of its own, deep blue on the dark theme and pale yellow on the light one. A huge
  * heading over a faint photo of the workshop, the programs as a large index (native <details>: opening when pointed at with a mouse and staying open; keyboard
  * and screen readers included, works without JavaScript), then the RoboKids photos as a mosaic (Filmstrip, with its
  * photo viewer). Words: src/text/projects/frc.ts (`outreach`).
@@ -11,7 +11,7 @@ import { frcPhotos, outreach, type FrcPhoto } from "@/text/projects/frc";
 const backdrop = frcPhotos[outreach.backdrop] as FrcPhoto;
 ---
 
-<section id="outreach" class="out dark scroll-mt-24" aria-labelledby="outreach-heading">
+<section id="outreach" class="out scroll-mt-24" aria-labelledby="outreach-heading">
 	<div class="out-backdrop" data-parallax aria-hidden="true">
 		<img src={`/assets/frc/${backdrop.id}.webp`} alt="" width={backdrop.w} height={backdrop.h} loading="lazy" decoding="async" />
 	</div>
@@ -87,14 +87,14 @@ const backdrop = frcPhotos[outreach.backdrop] as FrcPhoto;
 		color: var(--foreground);
 		background: var(--hero-field);
 	}
-	/* In the light theme, the band is its navy and yellow. */
+	/* The light theme: the band is its pale yellow; the accent (headings, the open row) is the blue, as yellow can't be read on it. */
 	html:not(.dark) .out {
-		--hero-field: #0a174e;
-		--background: #0a174e;
-		--foreground: #fffdf5;
-		--accent: #f5d042;
-		--accent-foreground: #0a174e;
-		--ring: #f5d042;
+		--hero-field: #f5ee96;
+		--accent: #1f66d1;
+		--ring: #1f66d1;
+	}
+	html:not(.dark) .out-backdrop img {
+		opacity: 0.16;
 	}
 	/* The workshop, fading into the band behind the heading. */
 	.out-backdrop {

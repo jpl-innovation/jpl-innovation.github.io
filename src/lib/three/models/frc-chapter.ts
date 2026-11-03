@@ -13,6 +13,7 @@
  */
 import {
 	AdditiveBlending,
+	NormalBlending,
 	BufferAttribute,
 	BufferGeometry,
 	Color,
@@ -99,6 +100,7 @@ export default async function createFrcChapter(ctx: StageContext, options: Chapt
 	});
 	const lights = STOPS.map((id) => (options.capture ? LOOK.light.anatomy : lightOf(id)));
 	let rimLevel = 1;
+	let lightTheme = !ctx.palette.dark;
 	const weights = new Float32Array(STOPS.length);
 	weights[0] = 1;
 	const applyLights = () => {
@@ -106,11 +108,12 @@ export default async function createFrcChapter(ctx: StageContext, options: Chapt
 		STOPS.forEach((_, i) => {
 			for (const k of Object.keys(l) as (keyof Light)[]) l[k] += lights[i][k] * weights[i];
 		});
-		key.intensity = l.key;
-		fill.intensity = l.fill;
-		rim.intensity = l.rim;
-		if (sky) sky.intensity = l.sky;
-		scene.environmentIntensity = l.environment;
+		// On the light theme the model stands in daylight on every beat: a lit silhouette only works against the dark.
+		key.intensity = lightTheme ? Math.max(l.key, 1.7) : l.key;
+		fill.intensity = lightTheme ? Math.max(l.fill, 0.5) : l.fill;
+		rim.intensity = lightTheme ? Math.min(l.rim, 1) : l.rim;
+		if (sky) sky.intensity = lightTheme ? Math.max(l.sky, 0.9) : l.sky;
+		scene.environmentIntensity = lightTheme ? Math.max(l.environment, 0.8) : l.environment;
 		rimLevel = l.rim / LOOK.light.prologue.rim;
 	};
 
@@ -243,9 +246,15 @@ export default async function createFrcChapter(ctx: StageContext, options: Chapt
 			dustMaterial.uniforms.uTime.value = clock;
 			return base.update?.(t, dt);
 		},
-		// The chapter is dark in both themes, as the drone's.
+		// It follows the theme. The blend for the grid and dust: added light vanishes on a light page.
 		applyPalette(p: StageContext["palette"]) {
-			base.applyPalette?.({ ...p, dark: true });
+			base.applyPalette?.(p);
+			lightTheme = !p.dark;
+			const line = p.dark ? LOOK.rimColor : "#1f66d1";
+			(grid.material as ShaderMaterial).uniforms.uColor.value.set(line);
+			dustMaterial.uniforms.uColor.value.set(line);
+			dustMaterial.blending = p.dark ? AdditiveBlending : NormalBlending;
+			dustMaterial.needsUpdate = true;
 			applyLights();
 		},
 	};
