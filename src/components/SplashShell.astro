@@ -61,7 +61,7 @@ const boot = `(() => {
 			if (e.navigationType === "traverse" || to === kindOf(e.from.pathname) || !COVER[to] || arrivalMode(to) === "none" || cover) return;
 			cover = document.createElement("div");
 			cover.setAttribute("aria-hidden", "true");
-			cover.style.cssText = "position:fixed;inset:0;z-index:9990;pointer-events:none;background:" + COVER[to];
+			cover.style.cssText = "position:fixed;inset:0;z-index:9990;pointer-events:none;background:" + (root.classList.contains("dark") ? COVER[to] : "#fcfad8");
 			root.appendChild(cover);
 			if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !root.classList.contains("reduce-motion")) cover.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 90, easing: "ease-out" });
 		});
@@ -230,6 +230,86 @@ const boot = `(() => {
 		display: grid;
 		place-items: center;
 		perspective: 900px;
+	}
+
+	/* ---------- The light theme: every intro on the page's own colours, the logos in theirs ---------- */
+	html:not(.dark) .splash-overlay {
+		color: #0f2a5f;
+	}
+	html:not(.dark) .splash-overlay .splash-bg {
+		background: radial-gradient(120% 90% at 50% 45%, #fffef2 0%, #fcfad8 48%, #f5ee96 100%);
+	}
+	html:not(.dark) .splash-grid {
+		background-image:
+			linear-gradient(rgb(47 124 230 / 0.13) 1px, transparent 1px),
+			linear-gradient(90deg, rgb(47 124 230 / 0.13) 1px, transparent 1px);
+	}
+	html:not(.dark) .splash-trace {
+		filter: saturate(1.4) brightness(0.8);
+	}
+	html:not(.dark) .splash-skip {
+		color: #0f2a5f;
+		background: rgb(47 124 230 / 0.1);
+		border-color: rgb(15 42 95 / 0.25);
+	}
+	html:not(.dark) .splash-overlay :is([fill="#D6D6D6"], [fill="#0E1B2C"]) {
+		fill: #0f2a5f;
+	}
+	html:not(.dark) .splash-overlay [fill="#0CBDDC"] {
+		fill: #2f7ce6;
+	}
+	html:not(.dark) .splash-overlay :is([fill="#071F23"], [fill="#0D3F4D"]) {
+		fill: #1f66d1;
+	}
+	html:not(.dark) .splash-overlay :is([fill="#109DC0"], [fill="#22d3ee"]) {
+		fill: #efd13d;
+	}
+	html:not(.dark) .splash-overlay [fill="#ECF5F8"] {
+		fill: #fffef2;
+	}
+	html:not(.dark) .splash-overlay :is([stroke="#109DC0"], [stroke="#ECF5F8"]) {
+		stroke: #efd13d;
+	}
+	html:not(.dark) .splash-overlay [stroke="#000"] {
+		stroke: #1f66d1;
+	}
+	html:not(.dark) .splash-overlay .ds-letters [fill="#18A2C3"] {
+		fill: #2f7ce6;
+	}
+	html:not(.dark) .splash-overlay .ds-letters [fill="#F0F9FC"] {
+		fill: #0f2a5f;
+	}
+	/* The FIRST logo's white parts, and its burnt-out copy, would vanish on a light page. */
+	html:not(.dark) .splash-overlay [fill="#F0F8FC"] {
+		fill: #fffef2;
+	}
+	html:not(.dark) .splash-overlay [fill="#1AA0C5"] {
+		fill: #efd13d;
+	}
+	html:not(.dark) .splash-overlay [stroke="#1AA0C5"] {
+		stroke: #efd13d;
+	}
+	html:not(.dark) .splash-overlay [stroke="#F0F8FC"] {
+		stroke: #fffef2;
+	}
+	/* The team's dragon is drawn in white, and the intro's copy of the FIRST logo is the white file. */
+	html:not(.dark) [data-splash="frc"] [fill="#F9F7F8"] {
+		fill: #0f2a5f;
+	}
+	html:not(.dark) [data-splash="frc"] img[src*="FRC_logo-white"] {
+		filter: invert(1);
+	}
+	html:not(.dark) [data-splash="frc"] .frc-caption {
+		color: #38507e;
+	}
+	html:not(.dark) [data-splash="frc"] .frc-divider {
+		background: #e6dc86;
+	}
+	html:not(.dark) [data-splash="frc"] [fill="#FFFFFF"] {
+		fill: #0f2a5f;
+	}
+	html:not(.dark) [data-splash="frc"] [stroke="#FFFFFF"] {
+		stroke: #0f2a5f;
 	}
 
 	/* ---------- Skip (showing from the very first frame) ---------- */

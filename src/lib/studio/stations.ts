@@ -130,9 +130,9 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	group.add(pegboard);
 	const drawPeg = (darkTheme: boolean) => {
 		const { g, canvas } = peg;
-		g.fillStyle = darkTheme ? "#1a2442" : "#f1e6b6";
+		g.fillStyle = darkTheme ? "#1a2442" : "#f5ee96";
 		g.fillRect(0, 0, canvas.width, canvas.height);
-		g.fillStyle = darkTheme ? "#0b1124" : "#b9a95e";
+		g.fillStyle = darkTheme ? "#0b1124" : "#b7ab3e";
 		for (let y = 12; y < canvas.height; y += 20) for (let x = 12; x < canvas.width; x += 20) g.fillRect(x - 2, y - 2, 4, 4);
 		peg.redraw();
 	};
@@ -403,7 +403,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	);
 	wallBack.position.set(arc.x, 1.3, arc.z);
 	group.add(wallBack);
-	themed.push({ mat: wallBack.material as MeshStandardMaterial, dark: 0x0e1834, light: 0xefe6be });
+	themed.push({ mat: wallBack.material as MeshStandardMaterial, dark: 0x0e1834, light: 0xf5ee96 });
 	// The panel under the pointer (-1: none) lifts toward the camera, glows at its edge and brightens; the others dim a little.
 	let hovered = -1;
 	let wallHover = 0;
@@ -592,7 +592,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	windowGlass.rotation.y = Math.PI;
 	group.add(windowGlass);
 	const frameMat = hardware({ color: 0x1b2440, roughness: 0.5, metalness: 0.3 }, "anodised");
-	themed.push({ mat: frameMat as MeshStandardMaterial, dark: 0x1b2440, light: 0xfffdf5 });
+	themed.push({ mat: frameMat as MeshStandardMaterial, dark: 0x1b2440, light: 0xfffef2 });
 	boxAt(group, winW + 0.12, 0.06, 0.1, frameMat, winX, winY + winH / 2 + 0.03, z1 - 0.05);
 	boxAt(group, winW + 0.2, 0.05, 0.22, frameMat, winX, winY - winH / 2 - 0.025, z1 - 0.1);
 	const panes = content.milestones.length || 6;
@@ -713,7 +713,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	doorPivot.position.set(doorX + 0.5, 0, z1 - 0.05);
 	group.add(doorPivot);
 	const doorMat = hardware({ color: 0x24345e, roughness: 0.5 }, "plastic");
-	themed.push({ mat: doorMat as MeshStandardMaterial, dark: 0x24345e, light: 0x0a174e });
+	themed.push({ mat: doorMat as MeshStandardMaterial, dark: 0x24345e, light: 0x2f7ce6 });
 	boxAt(doorPivot, 0.98, 2.08, 0.045, doorMat, -0.49, 1.04, 0);
 	const handle = new Mesh(new CylinderGeometry(0.012, 0.012, 0.14, 10), toolMetal);
 	handle.rotation.z = Math.PI / 2;
@@ -820,7 +820,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 			palette = p;
 			for (const panel of panels) {
 				const edge = panel.edge.material as MeshBasicMaterial;
-				edge.color.set(p.dark ? 0x67e8f9 : 0x0a174e);
+				edge.color.set(p.dark ? 0x67e8f9 : 0x2f7ce6);
 				edge.blending = p.dark ? AdditiveBlending : NormalBlending;
 				edge.needsUpdate = true;
 			}

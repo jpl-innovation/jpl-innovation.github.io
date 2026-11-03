@@ -120,10 +120,12 @@ function prepareFlight(canvas: HTMLCanvasElement, sky: HTMLElement | null) {
 	renderer.setSize(innerWidth, innerHeight, false);
 	renderer.setClearColor(0x000000, 0);
 	const scene = new Scene();
-	scene.add(new HemisphereLight(0x9adfea, 0x020608, 1.2));
-	const key = new DirectionalLight(0xeaf8ff, 1.9); // from the camera's side
+	// By day on the light theme, so the drone isn't a dark shape on a bright sky.
+	const day = !document.documentElement.classList.contains("dark");
+	scene.add(day ? new HemisphereLight(0xffffff, 0xe6dc86, 2.6) : new HemisphereLight(0x9adfea, 0x020608, 1.2));
+	const key = new DirectionalLight(0xeaf8ff, day ? 2.6 : 1.9); // from the camera's side
 	key.position.set(-2, 3, 5);
-	const rim = new DirectionalLight(0x40d2e8, 3.4); // the bright horizon behind the drone
+	const rim = new DirectionalLight(day ? 0xffffff : 0x40d2e8, day ? 1.2 : 3.4); // the bright horizon behind the drone
 	rim.position.set(0.6, 1.4, -6);
 	scene.add(key, rim);
 	const aspect = innerWidth / innerHeight;

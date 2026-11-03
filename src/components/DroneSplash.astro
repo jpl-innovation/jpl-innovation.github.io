@@ -109,6 +109,54 @@ const lettersSvg = `<svg class="ds-letters" viewBox="${vx} ${vy} ${vw} ${vh}" ar
 	[data-splash="drone"] .splash-bg {
 		background: #000;
 	}
+	/* The light theme: the same flight by day, and the camera's picture bright. */
+	html:not(.dark) [data-splash="drone"] .splash-bg {
+		background: #fcfad8;
+	}
+	html:not(.dark) .ds-sky {
+		background-image: linear-gradient(to bottom, #a9cdf7 0%, #dcebfb 42%, #fcfad8 62%, #f5ee96 100%) !important;
+	}
+	html:not(.dark) .ds-sky::after,
+	html:not(.dark) .ds-vignette,
+	html:not(.dark) .ds-scan {
+		display: none;
+	}
+	html:not(.dark) .ds-feed {
+		background: #fcfad8;
+	}
+	html:not(.dark) .ds-feed-img {
+		/* The footage is a dark dusk: inverted, with its hues turned back, it is the same scene as a bright pale one. */
+		filter: invert(0.94) hue-rotate(180deg) saturate(1.2);
+	}
+	html:not(.dark) .ds-hud {
+		color: #0f2a5f;
+		text-shadow: 0 0 6px rgb(255 255 255 / 0.9), 0 0 2px rgb(255 255 255 / 0.9);
+	}
+	html:not(.dark) .ds-small {
+		color: #38507e;
+	}
+	html:not(.dark) .ds-black {
+		background: #fcfad8;
+	}
+	html:not(.dark) .ds-crt-line {
+		background: linear-gradient(90deg, transparent, #2f7ce6 18%, #1f66d1 50%, #2f7ce6 82%, transparent);
+		box-shadow: 0 0 12px 2px rgb(47 124 230 / 0.5);
+	}
+	html:not(.dark) .ds-crt-dot {
+		background: radial-gradient(circle, #1f66d1 0 30%, #2f7ce6 55%, transparent 72%);
+		box-shadow: 0 0 22px 8px rgb(47 124 230 / 0.4);
+	}
+	html:not(.dark) .ds-ripple {
+		border-color: #2f7ce6;
+		box-shadow: 0 0 18px rgb(47 124 230 / 0.45), inset 0 0 18px rgb(47 124 230 / 0.3);
+	}
+	html:not(.dark) .ds-glow {
+		background: radial-gradient(closest-side, rgb(239 209 61 / 0.5), rgb(239 209 61 / 0.14) 62%, transparent);
+	}
+	html:not(.dark) .ds-letters,
+	html:not(.dark) .ds-badge-svg {
+		filter: none;
+	}
 	[data-splash="drone"] :is(.splash-grid, .splash-trace) {
 		display: none;
 	}

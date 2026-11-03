@@ -18,7 +18,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * JPL Innovation theme. Dark: blue primary, cyan accent, violet highlight. Light: navy #0A174E on a pale tint of #F5D042.
+ * JPL Innovation theme. Dark: blue primary, cyan accent, violet highlight. Light: blue #2F7CE6, yellow #EFD13D, pale yellow #F5EE96.
  * Every colour is a variable here, so the theme can be changed in one place.
  *   --primary    blue: buttons, links, indicators (white text on it passes WCAG AA in both modes)
  *   --accent     cyan: highlights and "live" markers; always paired with --accent-foreground
@@ -31,44 +31,46 @@
 :root {
 	--radius: 0.75rem;
 
-	/* Light theme: navy #0A174E, and #F5D042 taken most of the way to white so the page stays light. */
-	--background: #fef8e3;
-	--foreground: #0a174e;
-	--card: #fffdf5;
-	--card-foreground: #0a174e;
-	--popover: #fffdf5;
-	--popover-foreground: #0a174e;
-	--primary: #0a174e;
-	--primary-foreground: #fffdf5;
-	--secondary: #fbf1c9;
-	--secondary-foreground: #0a174e;
-	--muted: #fbf2ce;
-	--muted-foreground: #3d4876;
-	--accent: #f5d042;
-	--accent-foreground: #0a174e;
-	--highlight: #1e2f7a;
+	/* Light theme: blue #2F7CE6, yellow #EFD13D and pale yellow #F5EE96. The page is a lighter tint of the pale yellow; small
+	   text is a deep ink of the blue, because neither the blue nor the yellow reads at small sizes on a page this light;
+	   buttons are a step deeper than the blue so their white text passes AA. */
+	--background: #fcfad8;
+	--foreground: #0f2a5f;
+	--card: #fffef2;
+	--card-foreground: #0f2a5f;
+	--popover: #fffef2;
+	--popover-foreground: #0f2a5f;
+	--primary: #1f66d1;
+	--primary-foreground: #ffffff;
+	--secondary: #f9f4b8;
+	--secondary-foreground: #0f2a5f;
+	--muted: #faf6c4;
+	--muted-foreground: #38507e;
+	--accent: #efd13d;
+	--accent-foreground: #0f2a5f;
+	--highlight: #2f7ce6;
 	--destructive: #c8283a;
-	--border: #ede0a8;
-	--input: #ede0a8;
-	--ring: #0a174e;
+	--border: #e6dc86;
+	--input: #e6dc86;
+	--ring: #1f66d1;
 
-	--hero-field: #0a174e;
-	--shadow-soft: 0 1px 2px rgb(10 23 78 / 0.06), 0 12px 32px -16px rgb(10 23 78 / 0.26);
-	--shadow-lift: 0 2px 6px rgb(10 23 78 / 0.08), 0 24px 48px -20px rgb(10 23 78 / 0.38);
+	--hero-field: #1b5abc;
+	--shadow-soft: 0 1px 2px rgb(15 42 95 / 0.06), 0 12px 32px -16px rgb(15 42 95 / 0.24);
+	--shadow-lift: 0 2px 6px rgb(15 42 95 / 0.08), 0 24px 48px -20px rgb(15 42 95 / 0.34);
 
-	--glow-1: rgb(245 208 66 / 0.3);
-	--glow-2: rgb(10 23 78 / 0.05);
-	--glow-3: rgb(245 208 66 / 0.18);
-	--bg-star: rgb(10 23 78 / 0.34);
-	--bg-star-alt: rgb(169 133 0 / 0.45);
-	--bg-shoot: rgb(10 23 78 / 0.45);
-	--cursor-glow: rgb(245 208 66 / 0.32);
+	--glow-1: rgb(239 209 61 / 0.32);
+	--glow-2: rgb(47 124 230 / 0.1);
+	--glow-3: rgb(245 238 150 / 0.5);
+	--bg-star: rgb(47 124 230 / 0.42);
+	--bg-star-alt: rgb(190 160 20 / 0.5);
+	--bg-shoot: rgb(47 124 230 / 0.5);
+	--cursor-glow: rgb(239 209 61 / 0.36);
 
 	--alliance-red: #c8283a;
 	--alliance-blue: #1f5fd1;
 
 	/* Categorical chart hues, fixed order. */
-	--chart-1: #0a174e;
+	--chart-1: #1f66d1;
 	--chart-2: #b87a00;
 	--chart-3: #7a4bd0;
 	--chart-4: #c8283a;
@@ -377,8 +379,8 @@
  *   [data-tilt]   cards that tilt toward the pointer (the script sets `rotate`), with a soft highlight under it.
  */
 :root {
-	--glint-a: #0a174e;
-	--glint-b: #f5d042;
+	--glint-a: #1f66d1;
+	--glint-b: #efd13d;
 }
 .dark {
 	--glint-a: #22d3ee;

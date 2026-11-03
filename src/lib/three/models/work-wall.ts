@@ -168,7 +168,7 @@ export default function createWall(ctx: StageContext, projects: PanelProject[], 
 		},
 		applyPalette(p: Palette) {
 			dark = p.dark;
-			glowMaterial.color.set(dark ? 0x22d3ee : 0x0a174e);
+			glowMaterial.color.set(dark ? 0x22d3ee : 0x2f7ce6);
 			glowMaterial.blending = dark ? AdditiveBlending : NormalBlending;
 			glowMaterial.needsUpdate = true;
 			layout();

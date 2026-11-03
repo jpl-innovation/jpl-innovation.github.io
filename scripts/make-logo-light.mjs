@@ -1,15 +1,16 @@
-// The light theme's logo, in its navy and yellow, from the original artwork (public/assets/JPL_INNOVATION.jpg, a
+// The light theme's logo, in its blue and yellow, from the original artwork (public/assets/JPL_INNOVATION.jpg, a
 // transparent PNG despite the name). Run with: node scripts/make-logo-light.mjs (after make-logo-assets.mjs, which it replaces
 // the light logo of). Writes public/assets/jpl-logo-light.png and its 480-wide copy.
-//   Wordmark: "JPL" navy; "INNOVATION" a deep gold, because bright yellow can't be read on the light page.
-//   Badge: every pixel is a mix of the artwork's dark, white and cyan, so it is remixed from navy, cream and yellow,
+//   Wordmark: "JPL" in the deep ink, "INNOVATION" in the blue.
+//   Badge: every pixel is a mix of the artwork's dark, white and cyan, so it is remixed from blue, near-white and yellow,
 //   which keeps the soft edges.
 import sharp from "sharp";
 
-const NAVY = [10, 23, 78];
-const CREAM = [255, 250, 230];
-const YELLOW = [245, 208, 66];
-const GOLD = [169, 133, 0];
+const INK = [15, 42, 95]; // "JPL"
+const BADGE = [31, 102, 209]; // the badge's fill and lines: a step deeper than the blue, so its white icon stays crisp
+const CREAM = [255, 254, 242];
+const YELLOW = [239, 209, 61];
+const BLUE = [47, 124, 230]; // "INNOVATION"
 const BADGE_FROM = 0.635; // the share of the width where the badge starts (src/components/Logo.astro)
 
 const clamp = (x) => Math.min(1, Math.max(0, x));
@@ -25,11 +26,11 @@ for (let y = 0; y < height; y++) {
 		if (x < width * BADGE_FROM) {
 			const saturation = Math.max(r, g, b) - Math.min(r, g, b);
 			const k = clamp((saturation - 30) / 60);
-			out = NAVY.map((c, n) => c + (GOLD[n] - c) * k);
+			out = INK.map((c, n) => c + (BLUE[n] - c) * k);
 		} else {
 			const white = clamp((r - 20) / 210) * (1 - cyan);
 			const dark = clamp(1 - white - cyan);
-			out = NAVY.map((c, n) => c * dark + CREAM[n] * white + YELLOW[n] * cyan);
+			out = BADGE.map((c, n) => c * dark + CREAM[n] * white + YELLOW[n] * cyan);
 		}
 		data[i] = out[0];
 		data[i + 1] = out[1];

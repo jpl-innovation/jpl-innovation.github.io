@@ -58,7 +58,7 @@ const overviewStill = still("overview");
 <div class="dch showcase" data-dch data-read data-cad-bytes={cadBytes} data-stops={JSON.stringify(stops)} data-titles={JSON.stringify(titles)} data-measure={chapter.anatomy.measure} style={`--stops: ${stops.length}`}>
 	<script is:inline data-astro-rerun>
 		// Before the first paint: the 3D chapter unless Classic was chosen, the window is under 768 px, motion is reduced
-		// or there is no WebGL. In 3D the whole chapter has the dark theme's colours, in both themes.
+		// or there is no WebGL. It follows the theme, like the rest of the page.
 		(() => {
 			const el = document.currentScript.parentElement;
 			const root = document.documentElement;
@@ -73,13 +73,11 @@ const overviewStill = still("overview");
 			if (!gl) return;
 			gl.getExtension("WEBGL_lose_context")?.loseContext();
 			el.removeAttribute("data-read");
-			el.classList.add("dark");
 			if (capture) el.setAttribute("data-capture", "");
 			// Failsafe: if the 3D is not up within 30 s (scripts blocked, a very slow device), the plain page instead.
 			setTimeout(() => {
 				if (el.isConnected && !el.hasAttribute("data-live") && !el.hasAttribute("data-read")) {
 					el.setAttribute("data-read", "");
-					el.classList.remove("dark");
 					console.warn("Drone chapter: the 3D did not start in time, showing the plain page.");
 				}
 			}, 30000);
@@ -157,7 +155,7 @@ const overviewStill = still("overview");
 
 			<div class="dch-panels">
 				<!-- Beats 1 to 3: dark in both modes (Classic: a still gradient). -->
-				<div class="dch-band dark">
+				<div class="dch-band">
 					<div class="dch-back wrapper"><BackLink href="/work/">{backToWork}</BackLink></div>
 
 					<!-- 01 Prologue -->
@@ -999,6 +997,45 @@ const overviewStill = still("overview");
 		background: linear-gradient(to bottom, #030a10, color-mix(in oklab, #030a10 40%, transparent) 45%, transparent);
 		pointer-events: none;
 	}
+	/* The light theme: the whole chapter on the page's own colours, the model lit for it (models/drone-chapter.ts). */
+	html:not(.dark) .dch-bg {
+		background:
+			radial-gradient(42% 52% at var(--focus-x) 50%, rgb(239 209 61 / 0.5), transparent 72%),
+			radial-gradient(120% 90% at 50% 8%, #fffef2, transparent 70%),
+			linear-gradient(to bottom, #fcfad8, #f5ee96);
+	}
+	html:not(.dark) .dch-veil {
+		background: linear-gradient(to right, rgb(252 250 216 / var(--bd-scrim, 0.7)), rgb(252 250 216 / calc(var(--bd-scrim, 0.7) * 0.75)) 36%, transparent 62%);
+	}
+	html:not(.dark) .dch-veil::after {
+		display: none;
+	}
+	html:not(.dark) .dch-gate {
+		background: linear-gradient(to bottom, #fcfad8, #f5ee96);
+	}
+	html:not(.dark) .dch:not([data-read]) + .dch-after {
+		background: linear-gradient(to bottom, #f5ee96, color-mix(in oklab, #f5ee96 40%, transparent) 45%, transparent);
+	}
+	html:not(.dark) .dch[data-read] .dch-band {
+		background: linear-gradient(to bottom, #fcfad8, #f5ee96 calc(100% - 10rem), transparent);
+	}
+	html:not(.dark) .dch-bd-city {
+		opacity: calc(var(--bd-city, 0) * 0.2);
+	}
+	html:not(.dark) .dch-bd-dusk {
+		opacity: calc(var(--bd-dusk, 0) * 0.28);
+	}
+	html:not(.dark) .dch-bd-dusk > :nth-child(1) {
+		display: none;
+	}
+	html:not(.dark) .dch-bd-skyline {
+		opacity: calc(var(--bd-video, 0) * 0.22);
+	}
+	/* The streaks are light on black: inverted and multiplied, they are the blue on the light page. */
+	html:not(.dark) .dch-bd-streaks {
+		filter: invert(1) hue-rotate(180deg);
+		mix-blend-mode: multiply;
+	}
 	.dch-after:focus {
 		outline: none;
 	}
@@ -1219,7 +1256,6 @@ const overviewStill = still("overview");
 			closeGate();
 			root.setAttribute("data-read", "");
 			root.removeAttribute("data-live");
-			root.classList.remove("dark");
 			dispose?.();
 			dispose = undefined;
 			scrollTo({ top: 0, behavior: "instant" }); // the tall track is gone; start the ordinary page at its top
