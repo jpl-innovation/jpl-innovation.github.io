@@ -144,6 +144,9 @@ const panels = projects.map((p) => ({ title: p.data.title, img: copyUpTo(p.data.
 		pointer-events: none;
 	}
 	.wall-head h1 {
+		/* Its own width, not the lede's 19rem column: the glint is painted inside the box, so a box narrower than the
+		   word cut the k off on wide screens. */
+		width: max-content;
 		font-size: clamp(3rem, 7vw, 7rem);
 		letter-spacing: -0.04em;
 	}
