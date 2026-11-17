@@ -263,3 +263,8 @@ export const notFound = {
 		status: "NO LINK",
 	},
 };
+
+/** The photo viewer on every page (a photo opened full size): the X button's name, read by screen readers. */
+export const photoViewer = {
+	close: "Close the photo",
+};

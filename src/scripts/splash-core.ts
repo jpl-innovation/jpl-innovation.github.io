@@ -112,7 +112,7 @@ function cleanup(el: HTMLElement) {
 	unwire();
 	for (const t of timers) clearTimeout(t.id);
 	for (const fn of cleanups) fn();
-	root.classList.remove("splash", "splash-live", "splash-reduced", "splash-leaving", "splash-jpl", "splash-frc", "splash-drone", "splash-fast", "splash-hold");
+	root.classList.remove("splash", "splash-live", "splash-reduced", "splash-leaving", "splash-jpl", "splash-frc", "splash-drone", "splash-lifetime", "splash-fast", "splash-hold");
 	for (const a of anims) a.cancel(); // page elements the splash hid get their own styles back
 	el.remove();
 }

@@ -1,0 +1,169 @@
+---
+/**
+ * The photo viewer, on every page (BaseLayout): a photo opened full size over the page, with an X to leave it (Escape
+ * and a click beside the photo leave it too). It opens:
+ *   - anything marked data-zoom="<full-size picture>" (data-zoom-alt, data-zoom-caption optional): FRC's photos
+ *   - a link straight to a picture file, like the Lifetime screenshots (without JavaScript the link still opens it)
+ *   - a picture in a project's write-up (the Markdown in src/text/projects/)
+ * The FRC galleries keep their own viewer, with next and previous (frc-photos.tsx, frc-views.tsx).
+ * Words: src/text/site.ts (photoViewer).
+ */
+import { photoViewer } from "@/text/site";
+---
+
+<dialog class="photo-viewer" data-zoom-view aria-label={photoViewer.close}>
+	<figure>
+		<img alt="" />
+		<figcaption></figcaption>
+	</figure>
+	<button type="button" class="photo-viewer__close" data-zoom-close aria-label={photoViewer.close}>
+		<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+			<path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+		</svg>
+	</button>
+</dialog>
+
+<script>
+	const PICTURE = /\.(webp|png|jpe?g|avif|gif)$/i;
+
+	/** Marks this page's openable pictures: links straight to a picture file, and the pictures in a write-up. */
+	function mark() {
+		for (const a of document.querySelectorAll<HTMLAnchorElement>("a[href]:not([data-zoom])")) {
+			const img = a.querySelector("img");
+			if (!img || !PICTURE.test(new URL(a.href, location.href).pathname)) continue;
+			a.dataset.zoom = a.href;
+			a.dataset.zoomAlt = img.alt;
+			a.dataset.zoomCaption = a.closest("figure")?.querySelector("figcaption")?.textContent?.trim() || img.alt;
+		}
+		for (const img of document.querySelectorAll<HTMLImageElement>(".prose img:not([data-zoom])")) {
+			if (img.closest("a, button")) continue;
+			img.dataset.zoom = img.currentSrc || img.src;
+			img.dataset.zoomAlt = img.alt;
+			img.dataset.zoomCaption = img.alt;
+			img.tabIndex = 0;
+			img.setAttribute("role", "button");
+		}
+	}
+
+	if (!document.documentElement.dataset.photoViewer) {
+		document.documentElement.dataset.photoViewer = "1";
+		// A picture that is not a button or a link of its own still answers Enter and Space.
+		document.addEventListener("keydown", (e) => {
+			const photo = (e.target as HTMLElement).closest<HTMLElement>("[data-zoom][tabindex]");
+			if (!photo || (e.key !== "Enter" && e.key !== " ")) return;
+			e.preventDefault();
+			photo.click();
+		});
+		document.addEventListener("click", (e) => {
+			const view = document.querySelector<HTMLDialogElement>("[data-zoom-view]");
+			if (!view) return;
+			const target = e.target as HTMLElement;
+			const open = view.open ? null : target.closest<HTMLElement>("[data-zoom]");
+			if (open) {
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return; // a new tab, as the visitor asked
+				e.preventDefault();
+				const img = view.querySelector("img")!;
+				img.src = open.dataset.zoom!;
+				img.alt = open.dataset.zoomAlt ?? "";
+				view.querySelector("figcaption")!.textContent = open.dataset.zoomCaption ?? "";
+				view.showModal();
+			} else if (view.open && (target.closest("[data-zoom-close]") || target === view || target.tagName === "FIGURE")) {
+				view.close();
+			}
+		}, true); // capture: ahead of Astro's router, which would otherwise follow a picture link off the page
+		document.addEventListener("astro:page-load", mark);
+	}
+	mark();
+</script>
+
+<style is:global>
+	.photo-viewer {
+		position: fixed;
+		inset: 0;
+		width: 100vw;
+		height: 100dvh;
+		max-width: none;
+		max-height: none;
+		margin: 0;
+		padding: 4.5rem 4.5rem 2rem;
+		border: 0;
+		background: transparent;
+		display: none;
+		align-items: center;
+		justify-content: center;
+	}
+	.photo-viewer[open] {
+		display: flex;
+	}
+	.photo-viewer::backdrop {
+		background: rgb(4 9 32 / 0.94);
+	}
+	.photo-viewer figure {
+		margin: 0;
+		display: flex;
+		max-height: 100%;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.photo-viewer img {
+		max-width: 100%;
+		max-height: 78vh;
+		width: auto;
+		border-radius: 0.6rem;
+		object-fit: contain;
+	}
+	.photo-viewer figcaption {
+		max-width: 60ch;
+		color: #f2eedf;
+		text-align: center;
+		font-size: var(--step-small);
+	}
+	.photo-viewer__close {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		display: grid;
+		place-items: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 999px;
+		background: #f5d042;
+		color: #0a174e;
+		transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	.photo-viewer__close:hover {
+		transform: rotate(90deg);
+	}
+	.photo-viewer__close:focus-visible {
+		outline: 3px solid #f2eedf;
+		outline-offset: 3px;
+	}
+	[data-zoom] {
+		cursor: zoom-in;
+	}
+	@media (max-width: 640px) {
+		.photo-viewer {
+			padding: 4.5rem 0.75rem 1.5rem;
+		}
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.photo-viewer[open] figure {
+			animation: photo-viewer-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+		}
+		.photo-viewer[open]::backdrop {
+			animation: photo-viewer-fade 0.25s ease-out;
+		}
+	}
+	@keyframes photo-viewer-in {
+		from {
+			opacity: 0;
+			transform: scale(0.94);
+		}
+	}
+	@keyframes photo-viewer-fade {
+		from {
+			opacity: 0;
+		}
+	}
+</style>

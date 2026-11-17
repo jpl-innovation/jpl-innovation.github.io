@@ -1,12 +1,14 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "@/components/SiteFooter.astro";
+import PhotoViewer from "@/components/PhotoViewer.astro";
 import SiteHeader from "@/components/SiteHeader.astro";
 import DroneSplash from "@/components/DroneSplash.astro";
 import EmailDialog from "@/components/EmailDialog.astro";
 import ExperienceChoice from "@/components/ExperienceChoice.astro";
 import FrcSplash from "@/components/FrcSplash.astro";
 import IntroSplash from "@/components/IntroSplash.astro";
+import LifetimeSplash from "@/components/LifetimeSplash.astro";
 import { splashFor } from "@/lib/splash";
 import { fieldFor } from "@/lib/look/drawing";
 import "@/styles/global.css";
@@ -32,8 +34,8 @@ const {
 } = Astro.props;
 // The page's one official address, for search engines and link previews.
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
-// Which logo intro this page plays on a full load or refresh (FRC pages: FrcSplash; the drone page: DroneSplash;
-// everything else: IntroSplash).
+// Which logo intro this page plays on a full load or refresh (FRC pages: FrcSplash; the drone page: DroneSplash; the
+// Lifetime page: LifetimeSplash; everything else: IntroSplash).
 const splash = splashFor(Astro.url.pathname);
 // What the blueprint space draws on its floor under this page, and which real parts float over it.
 const field = fieldFor(Astro.url.pathname);
@@ -140,10 +142,11 @@ const field = fieldFor(Astro.url.pathname);
 				window.__jplThemeHook = true;
 			}
 		</script>
-		<!-- Logo intros, on every full page load or refresh; the FRC and drone ones also when you click through to them (src/lib/splash.ts). Remove a line to turn that intro off. -->
+		<!-- Logo intros, on every full page load or refresh; the FRC, drone and Lifetime ones also when you click through to them (src/lib/splash.ts). Remove a line to turn that intro off. -->
 		{splash === "jpl" && <IntroSplash />}
 		{splash === "frc" && <FrcSplash />}
 		{splash === "drone" && <DroneSplash />}
+		{splash === "lifetime" && <LifetimeSplash />}
 		<ClientRouter />
 	</head>
 	<body>
@@ -176,6 +179,7 @@ const field = fieldFor(Astro.url.pathname);
 		</main>
 		<SiteFooter />
 		<EmailDialog />
+		<PhotoViewer />
 		<ExperienceChoice />
 		<script>
 			import "@/scripts/blueprint";

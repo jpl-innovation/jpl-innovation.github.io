@@ -1,7 +1,7 @@
 ---
 /**
  * Shared shell for the logo intros: the full-screen overlay, its background, the Skip button, and the small
- * blocking script that shows it. IntroSplash (JPL), FrcSplash (FRC page) and DroneSplash (drone page) pass their
+ * blocking script that shows it. IntroSplash (JPL), FrcSplash (FRC page), DroneSplash (drone page) and LifetimeSplash (Lifetime page) pass their
  * artwork as the slot.
  * Which one a page gets is decided in src/lib/splash.ts; the engine is src/scripts/splash-core.ts.
  *
@@ -12,11 +12,11 @@
  * intro-none either way.
  * In-site navigation (Astro's router swaps the page, no reload): Astro re-runs head scripts on a page that has
  * already loaded, and those runs do nothing. Instead, the first real load hooks the router once: when a click
- * arrives at a page whose intro plays on arrival (arrivalMode: the FRC and drone pages), the overlay goes in as
+ * arrives at a page whose intro plays on arrival (arrivalMode: the FRC, drone and Lifetime pages), the overlay goes in as
  * part of the page swap, so the new page never shows without it either.
  * Without JavaScript it never shows; if the animation script fails to load, a CSS failsafe fades it out.
  */
-import { arrivalMode, getIntroMode, isDroneRoute, isFrcRoute, splashFor, type SplashKind } from "@/lib/splash";
+import { arrivalMode, getIntroMode, isDroneRoute, isFrcRoute, isLifetimeRoute, splashFor, type SplashKind } from "@/lib/splash";
 
 interface Props {
 	kind: SplashKind;
@@ -30,6 +30,7 @@ const boot = `(() => {
 	const kind = ${JSON.stringify(kind)};
 	const isFrcRoute = ${isFrcRoute.toString()};
 	const isDroneRoute = ${isDroneRoute.toString()};
+	const isLifetimeRoute = ${isLifetimeRoute.toString()};
 	const kindOf = ${splashFor.toString()};
 	const arrivalMode = ${arrivalMode.toString()};
 	const getIntroMode = ${getIntroMode.toString()};
@@ -50,7 +51,7 @@ const boot = `(() => {
 		window.__splashNav = true;
 		// The moment of the click: until the next page has arrived there is nothing of its intro to show, so a plain
 		// cover in the intro's own background goes up at once, and the intro takes over from it without a seam.
-		const COVER = { frc: "#070b12", drone: "#000" }; // the FRC edition's near-black, so arriving shows no navy flash
+		const COVER = { frc: "#070b12", drone: "#000", lifetime: "#03060f" }; // the FRC edition's near-black, so arriving shows no navy flash
 		let cover;
 		const uncover = () => {
 			cover?.remove();

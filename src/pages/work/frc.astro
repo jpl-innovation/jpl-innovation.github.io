@@ -449,46 +449,10 @@ const nextOf = (id: string) => board.chapters[(board.chapters.findIndex((c) => c
 					});
 				}
 			}
-			// A photo outside the galleries opens full size in the viewer above: one listener for the whole page.
-			if (!document.documentElement.dataset.zoomReady) {
-				document.documentElement.dataset.zoomReady = "1";
-				// A picture that is not a button of its own (Classic's stills) still answers Enter and Space.
-				document.addEventListener("keydown", (e) => {
-					const photo = (e.target as HTMLElement).closest<HTMLElement>("[data-zoom][tabindex]");
-					if (!photo || (e.key !== "Enter" && e.key !== " ")) return;
-					e.preventDefault();
-					photo.click();
-				});
-				document.addEventListener("click", (e) => {
-					const view = document.querySelector<HTMLDialogElement>("[data-zoom-view]");
-					if (!view) return;
-					const open = (e.target as HTMLElement).closest<HTMLElement>("[data-zoom]");
-					if (open) {
-						const img = view.querySelector("img")!;
-						img.src = open.dataset.zoom!;
-						img.alt = open.dataset.zoomAlt ?? "";
-						view.querySelector("figcaption")!.textContent = open.dataset.zoomCaption ?? "";
-						view.showModal();
-					} else if (view.open && ((e.target as HTMLElement).closest("[data-zoom-close]") || e.target === view)) {
-						view.close();
-					}
-				});
-			}
+			// (A photo outside the galleries opens full size in the site's photo viewer: PhotoViewer.astro, every page.)
 			initBoard();
 			document.addEventListener("astro:page-load", initBoard);
 		</script>
-
-		<!-- One viewer for the photos that stand on their own (the robot's, the team's, the workshop's): every
-		     [data-zoom] button shows its full-size photo here. The galleries bring their own (frc-photos.tsx). -->
-		<dialog class="frc-lightbox" data-zoom-view>
-			<figure class="m-0 flex max-h-full flex-col items-center gap-3">
-				<img alt="" class="max-h-[78vh] w-auto max-w-full rounded-lg object-contain" />
-				<figcaption class="text-center text-white"></figcaption>
-			</figure>
-			<button type="button" class="frc-lightbox-btn right-4 top-4" data-zoom-close aria-label={lightboxText.close}>
-				<span aria-hidden="true" class="text-xl leading-none">&#215;</span>
-			</button>
-		</dialog>
 
 		<div class="frc-night dark">
 			<NextChapter current={"frc"} />

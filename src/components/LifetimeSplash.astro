@@ -1,0 +1,169 @@
+---
+/**
+ * Lifetime page intro (5.6 s; about 1.9 s on a refresh): a sleeping computer wakes, and its awake time is counted round
+ * the Lifetime ring.
+ *   - the dark: one yellow light breathes slowly, like a sleeping computer's power light
+ *   - it wakes: the screen comes on, and the light becomes a loading spinner, five dots chasing round
+ *   - the dots meet in one, and it runs on round the 24-hour dial, drawing the ring behind it while the counter under
+ *     it counts the awake time up; it stops in the ring's gap, where the logo's dot sits
+ *   - the tile comes up behind, and the satellite in the middle (the server, collecting every computer's count)
+ *     unfolds its two wings; "Lifetime" rises under it
+ *   - the word flies onto the page's own title, and the overlay fades
+ * Plays like the FRC and drone intros: on a first entry, faster on a refresh, and when you click through to the page
+ * (full the first time in a tab, fast after that); not on back/forward (src/lib/splash.ts).
+ *
+ *   Turn it off: remove the LifetimeSplash line in src/layouts/BaseLayout.astro.
+ *   Artwork:     the Lifetime icon, as public/assets/lifetime.svg draws it (in its own 1280-unit square)
+ *   Words:       src/text/projects/lifetime.ts (lifetimeIntro); the name: src/text/projects/lifetime.md (title)
+ *   Animation:   src/scripts/lifetime-splash.ts; shared overlay/engine: SplashShell.astro, src/scripts/splash-core.ts
+ */
+import { getProjects } from "@/lib/content";
+import { lifetimeIntro } from "@/text/projects/lifetime";
+import SplashShell from "./SplashShell.astro";
+
+const name = (await getProjects()).find((p) => p.id === "lifetime")?.data.title ?? "Lifetime";
+
+/** The 24 hour marks round the dial, just outside the ring (centre 640, 640). */
+const ticks = Array.from({ length: 24 }, (_, i) => {
+	const a = (i / 24) * 2 * Math.PI;
+	const [r1, r2] = i % 6 === 0 ? [486, 536] : [496, 520];
+	const p = (r: number) => `${(640 + r * Math.sin(a)).toFixed(1)} ${(640 - r * Math.cos(a)).toFixed(1)}`;
+	return `M${p(r1)}L${p(r2)}`;
+}).join("");
+---
+
+<SplashShell kind="lifetime">
+	<div class="lts-night" data-lts-night></div>
+	<div class="lts">
+		<svg class="lts-icon" viewBox="0 0 1280 1280" aria-hidden="true" focusable="false">
+			<rect class="lts-tile" data-lts-tile x="22" y="22" width="1236" height="1236" rx="245" fill="#071038" stroke="#3a5592" stroke-width="8"></rect>
+			<path class="lts-ticks" data-lts-ticks d={ticks} fill="none" stroke="#f2eedf" stroke-width="10" stroke-linecap="round"></path>
+			<!-- The ring, open at the top right where the dot stops; pathLength 1 so it draws by its own length. -->
+			<path class="lts-ring" data-lts-ring d="M1052.1 506.2A429.5 429.5 0 1 1 740.4 227" pathLength="1" fill="none" stroke="#f2eedf" stroke-width="67"></path>
+			<!-- The satellite: two wings joined to a centre block (each wing unfolds from its joint). -->
+			<g class="lts-sat">
+				<g class="lts-wing lts-wing--l" data-lts-wing>
+					<rect x="324" y="589" width="192" height="101" fill="#f2eedf"></rect>
+					<rect x="516" y="627" width="39" height="26" fill="#f2eedf"></rect>
+				</g>
+				<rect class="lts-core" data-lts-core x="555" y="551" width="166" height="176" fill="#f2eedf"></rect>
+				<g class="lts-wing lts-wing--r" data-lts-wing>
+					<rect x="721" y="627" width="41" height="26" fill="#f2eedf"></rect>
+					<rect x="762" y="589" width="189" height="101" fill="#f2eedf"></rect>
+				</g>
+			</g>
+			<!-- The spinner's dots, each turning round the centre; the first is the logo's yellow dot. Drawn at the top
+			     of the 411-unit orbit, where a turn of 23.3° puts the yellow one on the logo's dot (802.5, 262.5). -->
+			{
+				[0, 1, 2, 3, 4].map((i) => (
+					<g class="lts-orbit" data-lts-orbit={i}>
+						<circle class:list={["lts-dot", { "lts-dot--lead": i === 0 }]} cx="640" cy="229" r={i === 0 ? 47 : 30} fill={i === 0 ? "#f5d042" : "#f2eedf"} />
+					</g>
+				))
+			}
+		</svg>
+		<p class="lts-count" data-lts-count aria-hidden="true">
+			<span>{lifetimeIntro.label}</span>
+			<b data-lts-hours>0</b>{lifetimeIntro.hours}
+			<b data-lts-minutes>00</b>{lifetimeIntro.minutes}
+		</p>
+		<p class="lts-word" data-lts-word>{name}</p>
+	</div>
+</SplashShell>
+
+<script>
+	import "@/scripts/lifetime-splash";
+</script>
+
+<style is:global>
+	[data-splash="lifetime"] .splash-bg {
+		background: radial-gradient(110% 85% at 50% 45%, #13235f 0%, #0a174e 45%, #050b2a 85%);
+	}
+	[data-splash="lifetime"] .splash-grid {
+		background-image:
+			linear-gradient(rgb(242 238 223 / 0.06) 1px, transparent 1px),
+			linear-gradient(90deg, rgb(242 238 223 / 0.06) 1px, transparent 1px);
+	}
+	/* The dark of a sleeping screen, over the field until the computer wakes. */
+	.lts-night {
+		position: absolute;
+		inset: 0;
+		background: #03060f;
+		opacity: 0;
+	}
+	.lts {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		gap: clamp(0.5rem, 2vmin, 1.25rem);
+	}
+	.lts-icon {
+		width: min(46vmin, 22rem);
+		height: auto;
+		overflow: visible;
+	}
+	.lts-orbit,
+	.lts-wing,
+	.lts-core,
+	.lts-tile {
+		transform-box: view-box;
+		transform-origin: 640px 640px;
+	}
+	.lts-wing--l {
+		transform-origin: 555px 640px;
+	}
+	.lts-wing--r {
+		transform-origin: 721px 640px;
+	}
+	[data-lts-orbit="0"] {
+		transform: rotate(383.3deg); /* the finished logo: the yellow dot in the ring's gap */
+	}
+	/* the spinner's other four dots, and the dial's hour marks, show only while it runs */
+	.lts-orbit:not([data-lts-orbit="0"]) .lts-dot,
+	.lts-ticks {
+		opacity: 0;
+	}
+	.lts-ring {
+		stroke-dasharray: 1 1;
+		stroke-dashoffset: 0;
+	}
+	.lts-count {
+		display: flex;
+		align-items: baseline;
+		gap: 0.3em;
+		margin: 0;
+		color: rgb(242 238 223 / 0.72);
+		font: 600 clamp(0.85rem, 2.2vmin, 1.05rem) / 1 "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+		letter-spacing: 0.01em;
+		font-variant-numeric: tabular-nums;
+		opacity: 0;
+	}
+	.lts-count b {
+		color: #f5d042;
+		font-weight: 760;
+	}
+	.lts-count span {
+		margin-right: 0.25em;
+	}
+	/* Set like the page's own title (PageIntro), so it can land on it. */
+	.lts-word {
+		margin: 0;
+		color: #f2eedf;
+		font-family: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+		font-size: clamp(3rem, 11vmin, 6.5rem);
+		font-stretch: 125%;
+		font-weight: 850;
+		line-height: 0.86;
+		letter-spacing: -0.045em;
+		white-space: nowrap;
+		transform-origin: 0 0;
+	}
+
+	/* Before the timeline starts, everything that comes in later is hidden (reduced motion shows the finished logo). */
+	html.splash:not(.splash-reduced) [data-splash="lifetime"] :is(.lts-tile, .lts-ring, .lts-wing, .lts-core, .lts-dot, .lts-word) {
+		opacity: 0;
+	}
+	html.splash:not(.splash-reduced) .lts-night {
+		opacity: 1;
+	}
+</style>

@@ -5,6 +5,7 @@
  * two can never both play or overlap:
  *   - FRC pages (the FIRST Robotics page and anything under it) → FrcSplash
  *   - the F450 drone page → DroneSplash
+ *   - the Lifetime page → LifetimeSplash
  *   - every other page → the JPL IntroSplash
  *
  * Which version: decided once per real page load, before the first paint (SplashShell inlines these functions
@@ -16,11 +17,11 @@
  *   - "none"  back/forward
  * Arriving from another page of this site (arrivalMode): an ordinary click doesn't reload, Astro's router swaps
  * the page, and SplashShell's script shows the intro then too, but only the FRC and drone ones:
- *   - FRC or drone page → full the first time in this tab, fast after that (so it doesn't hold you up every visit)
+ *   - FRC, drone or Lifetime page → full the first time in this tab, fast after that (so it doesn't hold you up every visit)
  *   - every other page → none (the JPL intro only greets you on the way in)
  * Back/forward inside the site plays nothing either.
  */
-export type SplashKind = "jpl" | "frc" | "drone";
+export type SplashKind = "jpl" | "frc" | "drone" | "lifetime";
 export type IntroMode = "full" | "fast" | "none";
 
 // Match the route after any GitHub Pages project-site prefix (for example,
@@ -28,9 +29,11 @@ export type IntroMode = "full" | "fast" | "none";
 // assets, but `location.pathname` still includes that prefix at runtime.
 export const isFrcRoute = (path: string) => /(?:^|\/)work\/frc(?:\/|$)/.test(path);
 export const isDroneRoute = (path: string) => /(?:^|\/)work\/drone\/?$/.test(path);
+export const isLifetimeRoute = (path: string) => /(?:^|\/)work\/lifetime\/?$/.test(path);
 
-/** Runs inlined in the browser too (SplashShell), next to the two route tests above. */
-export const splashFor = (path: string): SplashKind => (isFrcRoute(path) ? "frc" : isDroneRoute(path) ? "drone" : "jpl");
+/** Runs inlined in the browser too (SplashShell), next to the three route tests above. */
+export const splashFor = (path: string): SplashKind =>
+	isFrcRoute(path) ? "frc" : isDroneRoute(path) ? "drone" : isLifetimeRoute(path) ? "lifetime" : "jpl";
 
 /** Arriving at a page of this `kind` from another page of this site. Runs inlined in the browser: keep it self-contained. */
 export function arrivalMode(kind: SplashKind): IntroMode {

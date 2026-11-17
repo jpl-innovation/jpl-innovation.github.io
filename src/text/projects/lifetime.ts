@@ -198,3 +198,13 @@ export const lifetimeUi = {
 		eventKinds: { synchronized: "Đã đồng bộ", offline: "Đã ngoại tuyến", awaiting: "Đang chờ phê duyệt" },
 	},
 };
+
+/**
+ * The page's logo intro (src/components/LifetimeSplash.astro): a sleeping computer wakes, and its awake time is counted
+ * round the Lifetime ring like a 24-hour dial. The counter under the logo reads "{label} {hours} h {minutes} m".
+ */
+export const lifetimeIntro = {
+	label: "Awake",
+	hours: "h",
+	minutes: "m",
+};
