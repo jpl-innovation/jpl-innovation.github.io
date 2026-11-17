@@ -590,9 +590,10 @@ const external = (href: string) => (href.startsWith("http") ? { target: "_blank"
 		--ink-soft: #bcc1d6;
 		--accent-brand: #f5d042;
 		--ring: #f5d042;
+		--field: #071038; /* navy in both themes (its ground turns from this colour: the scroll scene below) */
 		align-items: end;
 		padding-top: 0;
-		background: #071038;
+		background: var(--field);
 	}
 	.plate-photo {
 		position: absolute;
@@ -726,6 +727,15 @@ const external = (href: string) => (href.startsWith("http") ? { target: "_blank"
 		--c-mid: #0a174e;
 		--c-blue: #2f7ce6;
 	}
+	/* The plate's ground turns with its word: the same band, the yellow and blue mixed into the field (light enough that
+	   the ink and the services stay readable), sliding in from the same side. */
+	.plate[data-scrolly] > .plate-stage {
+		--f-yellow: color-mix(in oklab, var(--field) 76%, var(--c-yellow));
+		--f-blue: color-mix(in oklab, var(--field) 74%, var(--c-blue));
+		background-image: linear-gradient(var(--sweep, 270deg), var(--f-yellow) 0%, var(--f-yellow) 22%, var(--field) 50%, var(--f-blue) 78%, var(--f-blue) 100%);
+		background-size: 320% 100%;
+		background-position: calc((1 - var(--p, 0)) * 100%) 0;
+	}
 	.plate[data-scrolly] .verb {
 		animation: none;
 		transition: none;
@@ -735,12 +745,12 @@ const external = (href: string) => (href.startsWith("http") ? { target: "_blank"
 		background-position: calc((1 - var(--p, 0)) * 100%) 0;
 		transform: translateX(calc((0.4 - var(--p, 0)) * 4vw));
 	}
-	.plate--build[data-scrolly] .verb {
+	.plate--build[data-scrolly] :is(.verb, .plate-stage) {
 		--sweep: 180deg;
 		background-size: 100% 320%;
 		background-position: 0 calc(var(--p, 0) * 100%);
 	}
-	.plate--secure[data-scrolly] .verb {
+	.plate--secure[data-scrolly] :is(.verb, .plate-stage) {
 		--sweep: 90deg;
 		background-position: calc(var(--p, 0) * 100%) 0;
 	}
