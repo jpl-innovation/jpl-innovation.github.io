@@ -112,7 +112,7 @@ export const hooks: Record<string, ProjectCase> = {
 	lifetime: {
 		problem: {
 			title: "You can’t look after computers you can’t see.",
-			text: "Schools and offices run rooms full of Windows computers. Which ones are on, which are wearing out, and which were left on all night is hard to know without walking the rooms.",
+			text: "Schools and offices run rooms full of computers. Which ones are on, which are wearing out, and which were left on all night is hard to know without walking the rooms.",
 		},
 		alternatives: [
 			{ option: "A monitor that pings the network", catch: "It guesses from the network whether a computer answered. When the network or the monitor is down, the record is wrong." },
@@ -130,6 +130,8 @@ export const hooks: Record<string, ProjectCase> = {
 			{ title: "Your server, your network", text: "All the data stays on site. There is no cloud service." },
 			{ title: "Free and open source", text: "GPL-3.0, with the code public on GitHub." },
 			{ title: "Light", text: "In testing, about 1.8% CPU and 61 MB of memory with 50 simulated computers." },
+			{ title: "Windows and Linux", text: "The same app and server on both, and the server also runs as a container." },
+			{ title: "Shows what waste costs", text: "Energy and money from real awake hours, and which computers were left on after hours." },
 		],
 		partner: {
 			name: "COBACOM",

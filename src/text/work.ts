@@ -56,7 +56,7 @@ export const register = {
 		},
 		lifetime: {
 			discipline: "Software",
-			revision: "Version 1.1.0",
+			revision: "Version 1.2.0",
 			picture: { src: "/assets/lifetime.svg", alt: "The Lifetime icon: a ring with a gap where a yellow dot orbits, around a small satellite", fit: "cover" },
 		},
 		frc: {

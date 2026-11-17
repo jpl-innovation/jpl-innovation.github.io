@@ -136,9 +136,10 @@ export function eventsHtml(v: View, lang: Lang) {
 	const ui = lifetimeUi[lang];
 	return v.recent
 		.map(
-			(e) => `<li><span class="lt-ev-name">${esc(e.name)}</span><span class="lt-ev-kind"><i class="lt-dot is-${
-				e.kind === "synchronized" ? "online" : e.kind === "offline" ? "offline" : "pending"
-			}"></i>${esc(ui.eventKinds[e.kind])}</span><span class="lt-ev-at">${clock(e.at)}</span></li>`,
+			(e) => {
+				const state = e.kind === "synchronized" ? "online" : e.kind === "offline" ? "offline" : "pending";
+				return `<li><span class="lt-ev-icon is-${state}">${chipGlyph(state)}</span><span class="lt-ev-kind">${esc(ui.eventKinds[e.kind])}</span><span class="lt-ev-at">${clock(e.at)} · ${esc(e.name)}</span></li>`;
+			},
 		)
 		.join("");
 }

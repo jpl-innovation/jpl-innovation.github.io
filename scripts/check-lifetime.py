@@ -139,7 +139,7 @@ def check_switches(browser):
     page.click("[data-lang]")
     page.wait_for_timeout(200)
     title = page.evaluate("document.querySelector('[data-app] [data-t=\"title\"]').textContent")
-    report(title == "Tổng quan thiết bị" and page.evaluate(f"{app}.lang") == "vi", f"EN switches the window to Vietnamese ({title!r})")
+    report(title == "Tổng quan máy tính" and page.evaluate(f"{app}.lang") == "vi", f"EN switches the window to Vietnamese ({title!r})")
     page.click("[data-lang]")
     # a count shows which computers it is (the product's own filter)
     page.click("[data-filter='offline']")
@@ -221,7 +221,7 @@ def check_facts(browser):
     report = cl.report
     page = open_page(browser, "dark")
     text = page.evaluate("document.querySelector('main').innerText")
-    report("Coming in version 1.2.0" in text and "The current public version is 1.1.0" in text, "1.2.0 is marked as coming; 1.1.0 is the public version")
+    report("New in version 1.2.0" in text and "The current public version is 1.2.0" in text, "1.2.0 is the public version and its additions are listed")
     report("COBACOM" in text and "[CHECK]" not in text, "COBACOM is the partner; no [CHECK] shows")
     report("A simulation of the Lifetime Server interface" in text, "the demo says plainly that it is a simulation")
     page.close()

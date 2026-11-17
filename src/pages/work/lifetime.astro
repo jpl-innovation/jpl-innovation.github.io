@@ -2,8 +2,8 @@
 /**
  * /work/lifetime/: the software sheet. The page opens with the product itself, running (LifetimeDay: one simulated
  * school day on Lifetime Server, run by the scroll), then the case, the real screens as whole plates, and the
- * write-up from src/text/projects/lifetime.md, section by section, with "Coming in version 1.2.0" drawn as the next
- * revision. Words: src/text/projects/lifetime.md, lifetime.ts and the lifetime entry of hooks.ts.
+ * write-up from src/text/projects/lifetime.md, section by section; a "Coming in version …" section, when there is one,
+ * is drawn as the next revision. Words: src/text/projects/lifetime.md, lifetime.ts and the lifetime entry of hooks.ts.
  */
 import { getEntry } from "astro:content";
 import sharp from "sharp";
@@ -303,7 +303,8 @@ const isRevision = (id: string) => id.startsWith("coming-in-version");
 		stroke-width: 2.5;
 		stroke-linejoin: round;
 	}
-	.lt-rev-body :global(li strong) {
+	/* A list item that opens with a bold term ("**Energy and cost**: …"): the term stands as the item's own line. */
+	.lt-text :global(li > strong:first-child) {
 		display: block;
 		font-size: var(--step-lead);
 		font-stretch: 110%;

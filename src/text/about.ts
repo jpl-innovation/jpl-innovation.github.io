@@ -88,7 +88,7 @@ export const focus = {
 		{
 			project: "lifetime",
 			title: "Lifetime, software for real use",
-			desc: "Windows software that measures how long each computer is really awake, and brings every computer in a school or office onto one dashboard. Open source, and deployed in Vietnam by COBACOM.",
+			desc: "Software for Windows and Linux that measures how long each computer is really awake, and brings every computer in a school or office onto one dashboard. Open source, and deployed in Vietnam by COBACOM.",
 			picture: { src: "/assets/lifetime/server.webp", small: "/assets/lifetime/server.webp", w: 1600, h: 1000 },
 		},
 		{

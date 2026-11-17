@@ -176,10 +176,10 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 						<div class="lt-top">
 							<span class="lt-logo" aria-hidden="true">
 								<svg viewBox="0 0 1280 1280">
-									<rect x="22" y="22" width="1236" height="1236" rx="245" fill="#071038" stroke="#3a5592" stroke-width="8"></rect>
-									<path d="M1052.1 506.2A429.5 429.5 0 1 1 740.4 227" fill="none" stroke="#f2eedf" stroke-width="67"></path>
-									<circle cx="802.5" cy="262.5" r="47" fill="#f5d042"></circle>
-									<path fill="#f2eedf" d="M324 589h192v101H324zM516 627h39v26h-39zM555 551h166v176H555zM721 627h41v26h-41zM762 589h189v101H762z"></path>
+									<rect x="22" y="22" width="1236" height="1236" rx="245" fill="#ffd541" stroke="#c7ac42" stroke-width="8"></rect>
+									<path d="M1052.1 506.2A429.5 429.5 0 1 1 740.4 227" fill="none" stroke="#0b2245" stroke-width="67"></path>
+									<circle cx="802.5" cy="262.5" r="47" fill="#f5f4eb"></circle>
+									<path fill="#0b2245" d="M324 589h192v101H324zM516 627h39v26h-39zM555 551h166v176H555zM721 627h41v26h-41zM762 589h189v101H762z"></path>
 								</svg>
 							</span>
 							<span class="lt-name">
@@ -1347,7 +1347,7 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 	.lt-top {
 		display: flex;
 		align-items: center;
-		gap: 0.9em;
+		gap: 0.7em;
 		padding: 1.1em 1.4em 0.6em;
 	}
 	.lt-logo svg {
@@ -1357,7 +1357,7 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 	}
 	.lt-name {
 		display: grid;
-		min-width: 0;
+		flex: none;
 	}
 	.lt-appname {
 		font-size: 1.35em;
@@ -1384,7 +1384,8 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 		background: rgb(20 33 61 / 0.06);
 	}
 	.lt-nav-item {
-		padding: 0.55em 1.25em;
+		padding: 0.55em 0.62em;
+		font-size: 0.92em;
 		border-radius: 999px;
 		color: var(--lt-muted);
 		white-space: nowrap;
@@ -1491,12 +1492,6 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 	.lt-dot.is-online {
 		background: var(--lt-good);
 	}
-	.lt-dot.is-offline {
-		background: var(--lt-accent);
-	}
-	.lt-dot.is-pending {
-		background: var(--lt-info);
-	}
 	.lt-dot.is-down {
 		background: var(--lt-danger);
 	}
@@ -1542,8 +1537,8 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 		gap: 0.9em;
 		grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(17.5em, 1.35fr);
 		grid-template-areas:
-			"strip strip strip strip gauge"
 			"k1 k2 k3 k4 gauge"
+			"strip strip strip strip gauge"
 			"chart chart chart chart details"
 			"devices devices devices devices events";
 		align-items: start;
@@ -1963,22 +1958,44 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 	}
 	.lt-evlist li {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
-		gap: 0.6em;
+		grid-template-columns: auto minmax(0, 1fr);
+		column-gap: 0.6em;
 		align-items: center;
-		padding: 0.62em 0.3em;
-		border-bottom: 1px solid var(--lt-border);
+		padding: 0.38em 0.2em;
 	}
-	.lt-ev-name {
+	.lt-ev-icon {
+		--tone: var(--lt-muted);
+		grid-row: span 2;
+		display: grid;
+		place-items: center;
+		width: 1.35em;
+		height: 1.35em;
+		border-radius: 50%;
+		box-shadow: inset 0 0 0 1.5px var(--tone);
+		color: var(--tone);
+	}
+	.lt-ev-icon.is-online {
+		--tone: var(--lt-good);
+	}
+	.lt-ev-icon.is-offline {
+		--tone: var(--lt-accent);
+	}
+	.lt-ev-icon.is-pending {
+		--tone: var(--lt-info);
+	}
+	.lt-ev-icon .lt-glyph {
+		width: 0.8em;
+		height: 0.8em;
+	}
+	.lt-ev-kind,
+	.lt-ev-at {
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	.lt-ev-kind {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45em;
-		white-space: nowrap;
+	.lt-ev-at {
+		font-size: 0.82em;
+		color: var(--lt-muted);
 	}
 
 	/* Medium window: one column, the gauge beside the chart; details and events are left out. */
@@ -1986,8 +2003,8 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 		.lt-grid {
 			grid-template-columns: repeat(4, minmax(0, 1fr));
 			grid-template-areas:
-				"strip strip strip strip"
 				"k1 k2 k3 k4"
+				"strip strip strip strip"
 				"gauge chart chart chart"
 				"devices devices devices devices";
 		}
@@ -2047,9 +2064,9 @@ const ending = fill(text.beats.at(-1)!.text, { hours: duration(v.awakeToday, "en
 			gap: 0.6em;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			grid-template-areas:
-				"strip strip"
 				"k1 k2"
 				"k3 k4"
+				"strip strip"
 				"gauge chart"
 				"devices devices";
 		}
