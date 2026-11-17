@@ -76,6 +76,9 @@ const field = fieldFor(Astro.url.pathname);
 				}, 2500);
 			};
 			applyMotion();
+			// Where the visitor's choices are kept: this browser's localStorage, or only this tab's sessionStorage when they
+			// turned "Remember my choices" off in Settings (the same rule as src/lib/prefs.ts). Throws if storage is blocked.
+			const kept = (key) => (localStorage.getItem("remember") === "no" ? sessionStorage : localStorage).getItem(key);
 			// Classic or 3D (src/components/ExperienceChoice.astro, and Settings in the header). Classic keeps every animation;
 			// it only keeps the 3D off: html.read-mode, unless the visitor chose 3D. A first visit on a computer that could run
 			// the 3D is asked once (html.choose-experience, after the logo intro), not on phones and other screens that get the
@@ -85,7 +88,7 @@ const field = fieldFor(Astro.url.pathname);
 				let choice = null;
 				let stored = true;
 				try {
-					choice = localStorage.getItem("experience");
+					choice = kept("experience");
 				} catch {
 					stored = false;
 				}
@@ -94,12 +97,12 @@ const field = fieldFor(Astro.url.pathname);
 				root.classList.toggle("read-mode", choice !== "3d");
 			};
 			applyExperience();
-			// The only thing this site keeps in localStorage is this theme choice (no tokens, no accounts).
+			// No tokens, no accounts, no cookies: only the visitor's own choices, in their own browser.
 			// Anything other than "dark"/"light" is ignored and the system setting is used instead.
 			const applyTheme = () => {
 				let stored = null;
 				try {
-					stored = localStorage.getItem("theme");
+					stored = kept("theme");
 				} catch {}
 				const valid = stored === "dark" || stored === "light";
 				const dark = valid ? stored === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
@@ -112,7 +115,7 @@ const field = fieldFor(Astro.url.pathname);
 				const root = document.documentElement;
 				let stored = null;
 				try {
-					stored = localStorage.getItem("surface");
+					stored = kept("surface");
 				} catch {}
 				const nav = navigator;
 				const solid =

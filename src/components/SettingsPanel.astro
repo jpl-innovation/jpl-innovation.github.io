@@ -9,6 +9,8 @@
  *   Experience Classic / 3D (localStorage "experience"; src/lib/prefs.ts); the page reloads into it
  *   Sound      Off; "On" is there but disabled until the sounds exist
  *   3D quality Auto / High / Low (localStorage "quality"; the 3D stage's starting tier); the page reloads
+ *   Remember   On / Off: whether these choices are kept in this browser (localStorage) or only until the tab is closed
+ *              (sessionStorage); src/lib/prefs.ts. Off moves them out of localStorage at once and keeps only that "no".
  *   Replay the opening: forgets the Classic/3D answer and that the studio's first words were seen, then opens the home
  *              page with the full logo intro (sessionStorage "replay-opening", read by getIntroMode in src/lib/splash.ts)
  *
@@ -23,6 +25,7 @@ const groups = [
 	{ name: "experience", label: text.experience.label, options: [["classic", text.experience.classic], ["3d", text.experience.threeD]], note: text.experience.note },
 	{ name: "sound", label: text.sound.label, options: [["off", text.sound.off], ["on", text.sound.on]], note: text.sound.note, disabled: ["on"] },
 	{ name: "quality", label: text.quality.label, options: [["auto", text.quality.auto], ["high", text.quality.high], ["low", text.quality.low]], note: text.quality.note },
+	{ name: "remember", label: text.remember.label, options: [["yes", text.remember.on], ["no", text.remember.off]], note: text.remember.note },
 ] as const;
 ---
 
@@ -148,22 +151,8 @@ const groups = [
 </style>
 
 <script>
-	import { EXPERIENCE_KEY, QUALITY_KEY, SURFACE_KEY } from "@/lib/prefs";
+	import { EXPERIENCE_KEY, QUALITY_KEY, SURFACE_KEY, read, remembering, setRemembering, write } from "@/lib/prefs";
 	import { lensSupported } from "@/lib/look/surface";
-
-	const read = (key: string) => {
-		try {
-			return localStorage.getItem(key);
-		} catch {
-			return null;
-		}
-	};
-	const write = (key: string, value: string | null) => {
-		try {
-			if (value === null) localStorage.removeItem(key);
-			else localStorage.setItem(key, value);
-		} catch {}
-	};
 
 	/** Tick the choices that are in force now. */
 	function sync(panel: HTMLElement) {
@@ -173,6 +162,7 @@ const groups = [
 			experience: read(EXPERIENCE_KEY) === "3d" ? "3d" : "classic",
 			sound: "off",
 			quality: read(QUALITY_KEY) ?? "auto",
+			remember: remembering() ? "yes" : "no",
 		};
 		for (const [name, value] of Object.entries(current)) {
 			const input = panel.querySelector<HTMLInputElement>(`input[name="setting-${name}"][value="${value}"]`);
@@ -236,6 +226,8 @@ const groups = [
 		} else if (name === "experience") {
 			write(EXPERIENCE_KEY, input.value);
 			location.reload(); // the home page swaps between the classic page and the studio on load
+		} else if (name === "remember") {
+			setRemembering(input.value === "yes");
 		} else if (name === "quality") {
 			write(QUALITY_KEY, input.value === "auto" ? null : input.value);
 			location.reload();

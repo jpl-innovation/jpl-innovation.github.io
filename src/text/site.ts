@@ -63,6 +63,13 @@ export const settings = {
 	/** Glass (frosted, see-through sheets) or Solid (filled sheets: lighter on older computers). */
 	style: { label: "Style", glass: "Glass", solid: "Solid", note: "Glass shows the blueprint through the page. Solid is lighter on older computers." },
 	quality: { label: "3D quality", auto: "Auto", high: "High", low: "Low", note: "Auto picks the best your device can draw smoothly." },
+	/** Whether the choices above are kept in this browser. The site sets no cookies and sends nothing anywhere either way. */
+	remember: {
+		label: "Remember my choices on this device",
+		on: "On",
+		off: "Off",
+		note: "On: kept in this browser only, never sent anywhere. Off: forgotten when you close this tab. No cookies, no tracking either way.",
+	},
 	/** Plays the opening page, the logo and the studio's first words again, and asks Classic or 3D again. */
 	replay: "Replay the opening",
 	close: "Close settings",
@@ -75,7 +82,7 @@ export const settings = {
  */
 export const experience = {
 	title: "Choose your experience",
-	description: "Pick the version made for your computer. It is remembered, and you can switch any time in Settings (the gear at the top).",
+	description: "Pick the version made for your computer. You can switch any time in Settings (the gear at the top), where you also choose whether this device remembers it.",
 	threeD: {
 		title: "Explore in 3D",
 		text: "Walk through our studio as you scroll: the desk, the work benches, the wall of projects.",

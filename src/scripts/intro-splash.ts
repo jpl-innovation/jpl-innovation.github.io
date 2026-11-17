@@ -26,6 +26,7 @@
  * Pre-flight the hand-off's marks move later by the time Pre-flight took.
  */
 import { startStudio, whenLive } from "@/lib/handoff";
+import { read, write } from "@/lib/prefs";
 import { markSeen } from "@/lib/splash";
 import { preflight } from "./preflight";
 import { E, flip, onScreen, runSplash, type Frames, type SplashContext } from "./splash-core";
@@ -380,11 +381,7 @@ function flightTarget(logo: HTMLElement, to: DOMRect | null | undefined) {
 
 /** The visitor's saved answer: "3d", "classic" or null. */
 function stored() {
-	try {
-		return localStorage.getItem("experience");
-	} catch {
-		return null;
-	}
+	return read("experience");
 }
 
 /**
@@ -406,11 +403,7 @@ function ask(overlay: HTMLElement, choice: HTMLElement): Promise<"3d" | "classic
 		const answer = (pick: "3d" | "classic") => {
 			choice.removeEventListener("click", onClick);
 			removeEventListener("keydown", onKey, true);
-			try {
-				localStorage.setItem("experience", pick);
-			} catch {
-				/* nothing can be remembered: asked again next time */
-			}
+			write("experience", pick); // nothing can be remembered: asked again next time
 			overlay.removeAttribute("data-asking");
 			overlay.querySelector<HTMLElement>("[data-splash-skip]")?.style.setProperty("display", "none"); // answered: no Skip needed
 			overlay.setAttribute("aria-hidden", "true");

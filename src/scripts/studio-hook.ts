@@ -11,6 +11,7 @@
  *   - The 3D under the words (hook B) follows these same timers: each run, its line times and its end are told to
  *     src/lib/studio/hook-state.ts, which the studio's engine reads.
  */
+import { read, write } from "@/lib/prefs";
 import { hookEnded, hookStarted } from "@/lib/studio/hook-state";
 
 const SEEN = "hook-seen";
@@ -31,11 +32,7 @@ function arm() {
 	const el = document.querySelector<HTMLElement>("[data-studio-hook]");
 	const studio = document.querySelector<HTMLElement>("[data-studio]");
 	if (!el || !studio || !html.classList.contains("studio-on") || studio.hasAttribute("data-read") || scrollY > 40) return;
-	try {
-		if (localStorage.getItem(SEEN)) return;
-	} catch {
-		/* storage blocked: it plays every visit */
-	}
+	if (read(SEEN)) return; // storage blocked: it plays every visit
 	const still = html.classList.contains("reduce-motion") || matchMedia("(prefers-reduced-motion: reduce)").matches;
 	const lines = [...el.querySelectorAll<HTMLElement>("[data-play]")];
 	const lampAt = Math.max(0, lines.findIndex((line) => line.hasAttribute("data-lamp")));
@@ -67,11 +64,7 @@ function arm() {
 		over = true;
 		hookEnded();
 		reset();
-		try {
-			localStorage.setItem(SEEN, "1");
-		} catch {
-			/* storage blocked */
-		}
+		write(SEEN, "1");
 		html.classList.remove("studio-dark");
 		el!.setAttribute("data-leaving", "");
 		window.setTimeout(clear, FADE);

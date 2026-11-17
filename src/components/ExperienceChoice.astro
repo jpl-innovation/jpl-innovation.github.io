@@ -161,15 +161,13 @@ import { experience as text } from "@/text/site";
 </style>
 
 <script>
-	import { EXPERIENCE_KEY } from "@/lib/prefs";
+	import { EXPERIENCE_KEY, write } from "@/lib/prefs";
 	import { afterIntro } from "@/lib/splash";
 
 	const dialog = () => document.getElementById("experience-dialog") as HTMLDialogElement | null;
 
 	function answer(choice: "3d" | "classic") {
-		try {
-			localStorage.setItem(EXPERIENCE_KEY, choice);
-		} catch {}
+		write(EXPERIENCE_KEY, choice);
 		if (choice === "3d") {
 			// The page loads again with the studio in it.
 			location.reload();

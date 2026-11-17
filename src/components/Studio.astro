@@ -50,7 +50,8 @@ const anchorAt = Object.fromEntries(Object.entries(anchors).map(([anchor, scene]
 			const el = document.currentScript.parentElement;
 			let mode = null;
 			try {
-				mode = localStorage.getItem("studio-mode");
+				// Choices live in sessionStorage when the visitor turned "Remember my choices" off (src/lib/prefs.ts).
+				mode = (localStorage.getItem("remember") === "no" ? sessionStorage : localStorage).getItem("studio-mode");
 			} catch {}
 			const read =
 				mode === "read" ||
