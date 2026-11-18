@@ -74,15 +74,20 @@ const POOLS: Record<string, { at: [number, number]; size: number }> = {
 
 /** Contact shadows: centre x, height of the surface it lies on, centre z, footprint width and depth (m). (A function:
  * room.ts and this file import each other, so ROOM is not there yet while this module loads.) */
-const shadowSpots = ({ z0, z1 } = ROOM): [number, number, number, number, number][] => [
+const shadowSpots = (real: boolean, { z0, z1 } = ROOM): [number, number, number, number, number][] => [
 	[-6, 0, -2.45, 2.2, 0.85], // the desk
 	[-6.2, 0, -1.48, 0.55, 0.55], // its chair
 	[-8.0, 0, z0 + 0.2, 0.92, 0.42], // the shelving
 	[-8.15, 0, -1.65, 0.36, 0.36], // the floor plant
-	[-6.78, 0.761, -2.67, 0.2, 0.2], // the lamp's base
-	[-5.12, 0.761, -2.69, 0.3, 0.2], // the monitor's foot
-	[-5.12, 0.761, -2.33, 0.46, 0.17], // the keyboard
-	[-6.95, 0.761, -2.6, 0.1, 0.1], // the mug
+	// (On the desk the room draws the real footprints where it can: room.ts.)
+	...(real
+		? []
+		: ([
+				[-6.78, 0.761, -2.67, 0.2, 0.2], // the lamp's base
+				[-5.12, 0.761, -2.69, 0.3, 0.2], // the monitor's foot
+				[-5.12, 0.761, -2.33, 0.46, 0.17], // the keyboard
+				[-6.95, 0.761, -2.6, 0.1, 0.1], // the mug
+			] as [number, number, number, number, number][])),
 	[-4.15, 0, -2.4, 1.0, 0.62], // the build bench
 	[-2.6, 0, -2.6, 1.6, 0.8], // the test bench
 	[-2.6, 0.851, -2.48, 0.46, 0.32], // its laptop
@@ -101,9 +106,10 @@ export interface Ambience {
 	applyPalette(p: Palette): void;
 }
 
-export function buildAmbience(parent: Group): Ambience {
+/** `realDeskShadows`: the desk's own things get their real contact shadows (room.ts), so no blobs under them here. */
+export function buildAmbience(parent: Group, realDeskShadows: boolean): Ambience {
 	const { x0, x1, z0, h } = ROOM;
-	const SHADOWS = shadowSpots();
+	const SHADOWS = shadowSpots(realDeskShadows);
 
 	/* ---------- Contact shadows ---------- */
 	const shadowMat = new MeshBasicMaterial({ color: 0x000000, map: softRect(), transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });

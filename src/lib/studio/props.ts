@@ -73,11 +73,21 @@ export function buildProps(parent: Group): Props {
 	boxAt(parent, 0.36, 0.28, 0.28, accents[0], sx - 0.2, 0.28, sz, 0.02);
 	boxAt(parent, 0.36, 0.28, 0.28, accents[2], sx + 0.2, 0.28, sz, 0.02);
 	// Second: a row of binders.
-	[0x1f5fc4, 0x0a174e, 0xa98500, 0x2f7ce6, 0xf5d042, 0x3d4770].forEach((c, i) => boxAt(parent, 0.07, 0.3, 0.24, mat(c, 0.55), sx - 0.33 + i * 0.1, 0.72, sz, 0.005));
+	const label = mat(0xf4efe2, 0.9, "printed");
+	[0x1f5fc4, 0x0a174e, 0xa98500, 0x2f7ce6, 0xf5d042, 0x3d4770].forEach((c, i) => {
+		boxAt(parent, 0.07, 0.3, 0.24, mat(c, 0.55), sx - 0.33 + i * 0.1, 0.72, sz, 0.005);
+		boxAt(parent, 0.042, 0.085, 0.002, label, sx - 0.33 + i * 0.1, 0.76, sz + 0.1205); // a blank spine label
+	});
 	// Third: cardboard boxes.
 	boxAt(parent, 0.3, 0.22, 0.26, kraft, sx - 0.22, 1.12, sz, 0.01);
 	boxAt(parent, 0.26, 0.16, 0.26, kraft, sx + 0.18, 1.09, sz, 0.01);
 	boxAt(parent, 0.2, 0.12, 0.2, kraft, sx + 0.18, 1.23, sz, 0.01);
+	// Packing tape along each box's lid and a little way down its front.
+	const tape = mat(0xc9a877, 0.35, "wrap");
+	for (const [bx, by, bh, bd] of [[sx - 0.22, 1.12, 0.22, 0.26], [sx + 0.18, 1.09, 0.16, 0.26], [sx + 0.18, 1.23, 0.12, 0.2]]) {
+		boxAt(parent, 0.048, 0.0015, bd - 0.016, tape, bx, by + bh / 2 + 0.0008, sz);
+		boxAt(parent, 0.048, 0.05, 0.0015, tape, bx, by + bh / 2 - 0.03, sz + bd / 2 + 0.0008);
+	}
 	// Fourth: small bins in the team's colours.
 	for (let i = 0; i < 4; i++) boxAt(parent, 0.17, 0.12, 0.24, accents[(i + 1) % accents.length], sx - 0.3 + i * 0.2, 1.5, sz, 0.015);
 	// Top: a small plant.

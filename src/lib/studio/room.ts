@@ -18,7 +18,14 @@
  */
 import {
 	BoxGeometry,
+	type BufferGeometry,
 	CanvasTexture,
+	CatmullRomCurve3,
+	EquirectangularReflectionMapping,
+	InstancedMesh,
+	Object3D,
+	TorusGeometry,
+	TubeGeometry,
 	LinearFilter,
 	CylinderGeometry,
 	DoubleSide,
@@ -40,6 +47,7 @@ import {
 	Vector2,
 } from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { hardware } from "../three/finish";
 import { tick } from "../three/yield";
 import { deskSheets, type SketchText } from "../../text/studio";
@@ -105,8 +113,30 @@ const SCENE_LAMPS: Record<string, { at: P3; aim: P3; power: number; angle: numbe
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
+const WOOD_TILE = 1.83; // metres one repeat of a veneer covers (the scans' own size, Poly Haven)
+/**
+ * A box's texture coordinates in metres, so a tiled surface (the woods) keeps its real size on any box instead of being
+ * stretched once over each face; the grain runs along each face's longer side, and `shift` starts every box somewhere
+ * else on the sheet.
+ */
+function metreUv(geometry: BufferGeometry, size: [number, number, number], shift: number) {
+	const position = geometry.getAttribute("position");
+	const normal = geometry.getAttribute("normal");
+	const uv = geometry.getAttribute("uv");
+	for (let i = 0; i < uv.count; i++) {
+		const nx = Math.abs(normal.getX(i));
+		const ny = Math.abs(normal.getY(i));
+		const nz = Math.abs(normal.getZ(i));
+		let [a, b] = ny >= nx && ny >= nz ? [0, 2] : nx >= nz ? [2, 1] : [0, 1];
+		if (size[b] > size[a]) [a, b] = [b, a];
+		const at = [position.getX(i), position.getY(i), position.getZ(i)];
+		uv.setXY(i, at[a] / WOOD_TILE + shift, at[b] / WOOD_TILE + shift * 0.618);
+	}
+}
+
 export function boxAt(parent: Group, w: number, h: number, d: number, material: Material, x: number, y: number, z: number, radius = 0) {
 	const geometry = radius > 0 ? new RoundedBoxGeometry(w, h, d, 2, Math.min(radius, w / 2, h / 2, d / 2)) : new BoxGeometry(w, h, d);
+	if ((material as MeshStandardMaterial).map?.wrapS === RepeatWrapping) metreUv(geometry, [w, h, d], x * 0.37 + y * 0.71 + z * 0.53);
 	const mesh = new Mesh(geometry, material);
 	mesh.position.set(x, y, z);
 	parent.add(mesh);
@@ -230,6 +260,46 @@ function buildFixtures(parent: Group, metal: Material) {
 	return bulbMat;
 }
 
+/** A cable lying where it fell: a thin rubber tube through `points`. */
+export function cable(parent: Group, points: [number, number, number][], material: Material, radius = 0.0035) {
+	const mesh = new Mesh(new TubeGeometry(new CatmullRomCurve3(points.map((p) => new Vector3(...p))), points.length * 8, radius, 6), material);
+	parent.add(mesh);
+	return mesh;
+}
+
+/** An office chair at (x, z) on the floor, its back toward +z before `turn`: a seat and a leaning back on a gas lift and a five-star base on castors. */
+export function chair(parent: Group, x: number, z: number, turn: number, fabric: Material, metal: Material) {
+	const g = new Group();
+	g.position.set(x, 0, z);
+	g.rotation.y = turn;
+	parent.add(g);
+	const plastic = hardware({ color: 0x14171f, roughness: 0.6 }, "plastic");
+	boxAt(g, 0.5, 0.08, 0.48, fabric, 0, 0.47, 0, 0.035);
+	boxAt(g, 0.46, 0.02, 0.44, plastic, 0, 0.425, 0, 0.01); // the seat's pan
+	const back = boxAt(g, 0.46, 0.52, 0.055, fabric, 0, 0.83, 0.25, 0.027);
+	back.rotation.x = 0.12;
+	const spine = boxAt(g, 0.07, 0.34, 0.02, plastic, 0, 0.6, 0.262, 0.008);
+	spine.rotation.x = 0.12;
+	boxAt(g, 0.07, 0.02, 0.2, plastic, 0, 0.43, 0.17, 0.008);
+	const lift = new Mesh(new CylinderGeometry(0.024, 0.024, 0.2, 16), metal);
+	lift.position.y = 0.32;
+	const sleeve = new Mesh(new CylinderGeometry(0.032, 0.036, 0.14, 16), plastic);
+	sleeve.position.y = 0.16;
+	g.add(lift, sleeve);
+	for (let i = 0; i < 5; i++) {
+		const arm = new Group();
+		arm.rotation.y = (i / 5) * Math.PI * 2 + 0.3;
+		g.add(arm);
+		const spoke = boxAt(arm, 0.045, 0.028, 0.3, plastic, 0, 0.095, 0.16, 0.012);
+		spoke.rotation.x = 0.08;
+		const castor = new Mesh(new CylinderGeometry(0.028, 0.028, 0.05, 14), plastic);
+		castor.rotation.z = Math.PI / 2;
+		castor.position.set(0, 0.03, 0.3);
+		arm.add(castor);
+	}
+	return g;
+}
+
 /** A screen that shows a texture without being lit (it glows a little in the dark). */
 export const screenMaterial = (map: Texture) => new MeshBasicMaterial({ map, toneMapped: false });
 
@@ -294,6 +364,7 @@ export interface Room {
 	finishSketch(): void;
 	update(state: RoomState): void;
 	applyPalette(p: Palette): void;
+	dispose(): void;
 }
 
 /** Built in slices (`tick`), so the page stays responsive while the room comes up. */
@@ -303,6 +374,20 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const { x0, x1, z0, z1, h } = ROOM;
 	const width = x1 - x0;
 	const depth = z1 - z0;
+	// The light from all around: a real interior (Poly Haven's Blender Institute, CC0; scripts/studio-env.py), in place of
+	// the stage's generated studio. It only lights and reflects, it is never seen. Without it the stage's own stays.
+	const environment = new HDRLoader()
+		.loadAsync(asset("/studio/tex/studio-env.hdr"))
+		.then((hdr) => {
+			hdr.mapping = EquirectangularReflectionMapping;
+			const texture = ctx.pmrem.fromEquirectangular(hdr).texture;
+			hdr.dispose();
+			ctx.scene.environment = texture;
+			return texture;
+		})
+		.catch(() => undefined);
+	// Real shadows (the desk lamp's) and real contact shadows, on the medium and high tiers.
+	const detail = ctx.tier !== "low";
 
 	/* ---------- Shell ---------- */
 	// Real plaster and concrete (surface()), tinted by the theme (applyPalette).
@@ -318,6 +403,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const floor = new Mesh(tiled(new PlaneGeometry(width, depth), 2), floorMat);
 	floor.rotation.x = -Math.PI / 2;
 	floor.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+	floor.receiveShadow = true;
 	group.add(floor);
 	const ceiling = new Mesh(tiled(new PlaneGeometry(width, depth), WALL_TILE), ceilingMat);
 	ceiling.rotation.x = Math.PI / 2;
@@ -327,6 +413,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		const mesh = new Mesh(tiled(new PlaneGeometry(w, h), WALL_TILE), wallMat);
 		mesh.position.set(x, h / 2, z);
 		mesh.rotation.y = turn;
+		mesh.receiveShadow = true;
 		group.add(mesh);
 		return mesh;
 	};
@@ -384,9 +471,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	for (const [dx, dz] of [[-1.08, -0.38], [1.08, -0.38], [-1.08, 0.38], [1.08, 0.38]]) boxAt(group, 0.05, deskTop - 0.05, 0.05, steel, deskX + dx, (deskTop - 0.05) / 2, deskZ + dz);
 	// Chair, pushed in.
 	const fabric = hardware({ color: 0x1d2b4f, roughness: 0.9 }, "fabric");
-	boxAt(group, 0.5, 0.07, 0.48, fabric, deskX - 0.2, 0.47, deskZ + 0.95, 0.03);
-	boxAt(group, 0.5, 0.55, 0.06, fabric, deskX - 0.2, 0.82, deskZ + 1.18, 0.03);
-	boxAt(group, 0.04, 0.44, 0.04, steel, deskX - 0.2, 0.22, deskZ + 0.95);
+	chair(group, deskX - 0.2, deskZ + 0.95, 0.12, fabric, steel);
 
 	// The sketchbook, open flat; the pencil beside it.
 	const sketch = canvasSurface(SKETCH_WIDTH, SKETCH_HEIGHT);
@@ -482,10 +567,37 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	group.add(monitor.mesh);
 	boxAt(group, 0.06, 0.1, 0.06, steel, monitorX, deskTop + 0.05, deskZ - 0.26);
 	boxAt(group, 0.26, 0.012, 0.18, steel, monitorX, deskTop + 0.006, deskZ - 0.24, 0.004);
-	boxAt(group, 0.44, 0.02, 0.15, new MeshStandardMaterial({ color: 0x1b1f2a, roughness: 0.6 }), monitorX, deskTop + 0.01, deskZ + 0.12, 0.005);
-	const mug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), hardware({ color: 0xf2f4f8, roughness: 0.35 }, "wrap"));
+	// The keyboard: a low case and its keys (one draw), the mouse beside it, and their cables over the back of the desk.
+	const keyPlastic = hardware({ color: 0x1b1f2a, roughness: 0.6 }, "plastic");
+	boxAt(group, 0.44, 0.014, 0.15, keyPlastic, monitorX, deskTop + 0.007, deskZ + 0.12, 0.005);
+	const keys = new InstancedMesh(new RoundedBoxGeometry(0.0235, 0.007, 0.0215, 1, 0.003), hardware({ color: 0x2a2f3d, roughness: 0.55 }, "plastic"), 5 * 15);
+	const key = new Object3D();
+	for (let row = 0; row < 5; row++)
+		for (let col = 0; col < 15; col++) {
+			key.position.set(monitorX - 0.2 + col * 0.0286 + (row % 2) * 0.004, deskTop + 0.0165, deskZ + 0.063 + row * 0.0285);
+			key.updateMatrix();
+			keys.setMatrixAt(row * 15 + col, key.matrix);
+		}
+	group.add(keys);
+	const mouse = new Mesh(new SphereGeometry(0.03, 20, 12), keyPlastic);
+	mouse.scale.set(1, 0.55, 1.75);
+	mouse.position.set(monitorX + 0.33, deskTop + 0.012, deskZ + 0.14);
+	group.add(mouse);
+	const rubber = hardware({ color: 0x101319, roughness: 0.85 }, "rubber");
+	const back = deskZ - 0.45;
+	cable(group, [[monitorX, deskTop + 0.3, deskZ - 0.262], [monitorX + 0.03, deskTop + 0.12, deskZ - 0.3], [monitorX + 0.06, deskTop + 0.004, deskZ - 0.36], [monitorX + 0.05, deskTop + 0.002, back - 0.01], [monitorX + 0.05, deskTop - 0.2, back - 0.02]], rubber, 0.0045);
+	cable(group, [[monitorX - 0.12, deskTop + 0.008, deskZ + 0.045], [monitorX - 0.18, deskTop + 0.003, deskZ - 0.1], [monitorX - 0.1, deskTop + 0.003, deskZ - 0.33], [monitorX - 0.09, deskTop + 0.002, back - 0.01], [monitorX - 0.09, deskTop - 0.2, back - 0.02]], rubber, 0.0025);
+	const ceramic = hardware({ color: 0xf2f4f8, roughness: 0.35 }, "wrap");
+	const mug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 24), ceramic);
 	mug.position.set(deskX - 0.95, deskTop + 0.05, deskZ - 0.15);
 	group.add(mug);
+	const handle = new Mesh(new TorusGeometry(0.026, 0.007, 8, 18, Math.PI), ceramic);
+	handle.rotation.set(0, 0.6, -Math.PI / 2);
+	handle.position.set(mug.position.x + 0.036 * Math.cos(0.6), mug.position.y, mug.position.z - 0.036 * Math.sin(0.6));
+	group.add(handle);
+	const coffee = new Mesh(new CylinderGeometry(0.036, 0.036, 0.002, 24), hardware({ color: 0x2a1a10, roughness: 0.15 }, "wrap"));
+	coffee.position.set(mug.position.x, deskTop + 0.088, mug.position.z);
+	group.add(coffee);
 
 	// The lamp: a base, an arm, a shade; it switches on as the first scene opens.
 	const lampBase = new Mesh(new CylinderGeometry(0.09, 0.1, 0.025, 24), steel);
@@ -506,6 +618,42 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	lamp.position.copy(bulb.position);
 	lamp.target.position.set(deskX - 0.25, deskTop, deskZ + 0.12);
 	group.add(lamp, lamp.target);
+	// Its joints, and its cord over the back of the desk.
+	for (const [jx, jy, jz, r] of [[deskX - 0.78, deskTop + 0.035, deskZ - 0.22, 0.016], [deskX - 0.54, deskTop + 0.585, deskZ - 0.06, 0.018]]) {
+		const joint = new Mesh(new SphereGeometry(r, 14, 10), steel);
+		joint.position.set(jx, jy, jz);
+		group.add(joint);
+	}
+	cable(group, [[deskX - 0.78, deskTop + 0.012, deskZ - 0.31], [deskX - 0.82, deskTop + 0.003, deskZ - 0.38], [deskX - 0.8, deskTop + 0.002, back - 0.01], [deskX - 0.8, deskTop - 0.25, back - 0.02]], rubber, 0.003);
+	if (detail) {
+		// The lamp's own shadows: soft, drawn again only while the desk is in view (`update`). Its shade stands inside the
+		// light's nearest distance, so the light's own cone, not the shade, makes the edge of the pool.
+		ctx.renderer.shadowMap.enabled = true;
+		ctx.renderer.shadowMap.autoUpdate = false;
+		lamp.castShadow = true;
+		lamp.shadow.mapSize.set(2048, 2048);
+		lamp.shadow.camera.near = 0.2;
+		lamp.shadow.camera.far = 5;
+		lamp.shadow.bias = -0.0004;
+		lamp.shadow.normalBias = 0.012;
+		lamp.shadow.radius = 5;
+		// Under everything that stands on the desk, its real footprint, blurred (the stage draws it once: quality.ts). The
+		// paper lies flat and casts none. On the low tier there is none of this and the round blobs do the job (ambience.ts).
+		// ponytail: a device that drops to the low tier mid-visit loses these and gets no blobs back; rebuild the blobs then if that is ever seen.
+		const none = document.createElement("canvas");
+		none.width = none.height = 1;
+		const top = new PlaneGeometry(2.3, 0.9);
+		const uv = top.getAttribute("uv");
+		for (let i = 0; i < uv.count; i++) uv.setY(i, 0.5 + (uv.getY(i) - 0.5) * (0.9 / 2.3)); // the desk's strip of the square the stage draws
+		const contact = new Mesh(top, new MeshBasicMaterial({ map: new CanvasTexture(none), transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false }));
+		contact.rotation.x = -Math.PI / 2;
+		contact.position.set(deskX, deskTop + 0.0006, deskZ);
+		contact.renderOrder = -1;
+		contact.userData.contactShadow = { radius: 1.15, height: 0.1 };
+		group.add(contact);
+		deskSheetSet.group.traverse((o) => (o.userData.shadow = false));
+		book.userData.shadow = false;
+	}
 
 	// The logo on the wall above the desk, lit from below.
 	const logoLight = imageTexture("/assets/jpl-logo-dark-480.webp");
@@ -547,8 +695,21 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	for (const [id, l] of Object.entries(SCENE_LAMPS)) lamps[id] = { at: l.at, aim: l.aim, angle: l.angle, color: 0xffcf96, dark: l.power, light: l.power * 0.5, distance: 6, decay: 2 };
 	const bulbs = buildFixtures(group, steel);
 	const pool = createLightPool(group, accents, lamps);
-	const ambience = buildAmbience(group);
+	const ambience = buildAmbience(group, detail);
 	const props = buildProps(group);
+	if (detail) {
+		// What the desk lamp reaches casts and takes its shadows: the desk, the chair, the shelving, the plants, the rug.
+		group.updateMatrixWorld(true);
+		const at = new Vector3();
+		group.traverse((o) => {
+			const mesh = o as Mesh;
+			if (!mesh.isMesh || !(mesh.material as MeshStandardMaterial).isMeshStandardMaterial || (mesh.material as Material).transparent) return;
+			mesh.getWorldPosition(at);
+			if (at.x < -4.55 && at.z < -0.6 && mesh !== floor) mesh.castShadow = mesh.receiveShadow = true;
+		});
+		deskSheetSet.group.traverse((o) => (o.receiveShadow = true));
+	}
+	const environmentMap = await environment;
 
 	/* ---------- Fog: depth, and the far end of the room falls into navy ---------- */
 	ctx.scene.fog = new Fog(0x050c2e, 7, 19);
@@ -571,8 +732,12 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		finishSketch() {
 			sketchDone = true;
 		},
+		dispose() {
+			environmentMap?.dispose();
+		},
 		update(state) {
 			const { lamp: on, time, near } = state;
+			if (detail && ((near.title ?? 0) > 0 || (near.sketch ?? 0) > 0 || (near.research ?? 0) > 0 || (near.build ?? 0) > 0)) ctx.renderer.shadowMap.needsUpdate = true;
 			const dt = Math.max(0, time - lastTime);
 			stations.update(state, dt);
 			bench.update(state, state.ids, stations.drone());
@@ -626,7 +791,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 			ctx.lights.key.intensity = dark ? 0.1 : 0.9;
 			ctx.lights.fill.intensity = dark ? 0.04 : 0.35;
 			ctx.lights.rim.intensity = dark ? 0.08 : 0.4;
-			ctx.scene.environmentIntensity = dark ? 0.07 : 0.5;
+			ctx.scene.environmentIntensity = dark ? 0.16 : 0.36;
 		},
 	};
 }

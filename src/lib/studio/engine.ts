@@ -398,6 +398,7 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			place();
 		},
 		dispose() {
+			room.dispose();
 			hook?.dispose();
 			removeEventListener("wheel", onWheel);
 			removeEventListener("pointermove", onPointer);
