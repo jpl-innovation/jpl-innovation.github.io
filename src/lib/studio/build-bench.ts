@@ -48,6 +48,8 @@ export interface BuildBench {
 	update(state: RoomState, ids: readonly string[], source: DroneRig | undefined): void;
 	applyPalette(dark: boolean): void;
 	busy(): boolean;
+	/** Shows the bench's drone for one draw under the loading screen, so its geometry is on the graphics card before the camera gets to it (`update` hides it again). */
+	warm(): void;
 }
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -190,5 +192,8 @@ export function buildBench(ctx: StageContext, group: Group): BuildBench {
 			benchMat.color.set(darkTheme ? 0x5d6479 : 0xd9d2bc);
 		},
 		busy: () => moving,
+		warm() {
+			holder.visible = !!drone;
+		},
 	};
 }

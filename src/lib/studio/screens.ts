@@ -39,6 +39,8 @@ export interface PageScreen {
 	feedBox?: { x: number; y: number; width: number; height: number };
 	/** While true the page goes back to its top and stays there. */
 	hold(on: boolean): void;
+	/** Settles once the page's first two tiles are in (or have failed), so they can be sent to the graphics card under the loading screen. */
+	loaded: Promise<void>;
 }
 
 /**
@@ -224,6 +226,10 @@ export function pageScreen({ page: name, size, scene, address, background, reduc
 	/* ---------- Tiles: loaded as they come near, let go of when far away ---------- */
 	const tiles = new Map<number, Texture | null>(); // null: on its way
 	let shownA = -1; // the tile index the shader is showing as A (-1: look again)
+	let firstLeft = Math.min(2, count);
+	let firstIn!: () => void;
+	const loaded = new Promise<void>((resolve) => (firstIn = resolve));
+	const settled = (i: number) => i < 2 && --firstLeft === 0 && firstIn();
 	const load = (i: number) => {
 		if (i < 0 || i >= count || tiles.has(i)) return;
 		tiles.set(i, null);
@@ -232,9 +238,12 @@ export function pageScreen({ page: name, size, scene, address, background, reduc
 		// the frame it first showed.) The bitmap comes flipped already, so the texture must not flip it again.
 		fetch(asset(page.files[i]))
 			.then((response) => (response.ok ? response.blob() : Promise.reject(new Error(`${response.status}`))))
-			.then((blob) => createImageBitmap(blob, { imageOrientation: "flipY" }))
+			// (Neither premultiplied nor colour-converted: the texture asks for neither, and a bitmap that comes with them has
+			// them undone on the main thread while it is uploaded, 50 ms for a 4K tile on integrated graphics.)
+			.then((blob) => createImageBitmap(blob, { imageOrientation: "flipY", premultiplyAlpha: "none", colorSpaceConversion: "none" }))
 			.then(
 			(img) => {
+				settled(i);
 				if (!tiles.has(i)) return img.close(); // let go of while it was loading
 				const texture = new Texture(img);
 				texture.flipY = false;
@@ -245,7 +254,10 @@ export function pageScreen({ page: name, size, scene, address, background, reduc
 				shownA = -1; // put it on the screen if it belongs there
 				wake();
 			},
-			() => tiles.delete(i),
+			() => {
+				tiles.delete(i);
+				settled(i);
+			},
 		);
 	};
 	const place = () => {
@@ -279,6 +291,7 @@ export function pageScreen({ page: name, size, scene, address, background, reduc
 	return {
 		mesh,
 		scene,
+		loaded,
 		feed(texture, aspect) {
 			u.uFeedOn.value = texture ? 1 : 0;
 			if (texture) u.uFeed.value = texture;
