@@ -116,6 +116,10 @@ export interface StageView {
 	pixelRatio?: number;
 	/** Offline still export only: override the interactive pixel budget. */
 	maxPixels?: number;
+	/** The most canvas pixels this stage draws on any tier (the tiers' own budgets still apply below it). */
+	pixelBudget?: number;
+	/** ms: an average frame slower than this lowers the resolution (default 19). */
+	slowMs?: number;
 	/**
 	 * false: never the higher tiers' extras (the ambient-occlusion pass and the real contact shadows), only the plain
 	 * renderer and the blob shadows, whatever the tier. For a full-window stage that must stay light (the drone chapter).
@@ -495,7 +499,7 @@ export async function mountStage(
 	const pixelRatio = () => {
 		const ratio = Math.min(window.devicePixelRatio, PIXEL_RATIO[tier], view.pixelRatio ?? Infinity);
 		const area = Math.max(1, container.clientWidth * container.clientHeight);
-		return Math.max(MIN_RATIO, Math.min(ratio, Math.sqrt((view.maxPixels ?? MAX_PIXELS[tier]) / area)) * scale);
+		return Math.max(MIN_RATIO, Math.min(ratio, Math.sqrt(Math.min(view.maxPixels ?? MAX_PIXELS[tier], view.pixelBudget ?? Infinity) / area)) * scale);
 	};
 	const dropTier = (frameMs: number) => {
 		const next = TIERS[TIERS.indexOf(tier) + 1];
@@ -681,7 +685,7 @@ export async function mountStage(
 			resize();
 			restart();
 		};
-		if (average > SLOW) {
+		if (average > (view.slowMs ?? SLOW)) {
 			goodStreak = 0;
 			if (probing) locked = true; // it ran slow again after stepping back up: stay where it is
 			probing = false;

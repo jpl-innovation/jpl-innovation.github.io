@@ -833,7 +833,10 @@ const anchorAt = Object.fromEntries(Object.entries(anchors).map(([anchor, scene]
 						handle = model;
 						return model;
 					},
-					{ camera: shots[0].camera, target: shots[0].target, fov: 42, near: 0.05, orbit: false, onFallback: (reason) => toRead(reason) },
+					// The room is never drawn above 1.5 device pixels or about 2560 x 1440 of them (the text over it stays at the
+					// screen's own sharpness), and gives up resolution as soon as a frame is missed (17.6 ms: the average of a
+					// steady 60 a second sits at 16.7, and its own jitter would trip a limit set right on it).
+					{ camera: shots[0].camera, target: shots[0].target, fov: 42, near: 0.05, orbit: false, pixelRatio: 1.5, pixelBudget: 3.7e6, slowMs: 17.6, onFallback: (reason) => toRead(reason) },
 				);
 				const go = () => root.setAttribute("data-loader-go", "");
 				requestAnimationFrame(go);

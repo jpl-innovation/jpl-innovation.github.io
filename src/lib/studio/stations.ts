@@ -20,11 +20,13 @@
  * textures are made ready with the room's (engine.ts, ready), which waits for both (`loaded`).
  */
 import {
+	Box3,
 	CatmullRomCurve3,
 	Color,
 	CylinderGeometry,
 	DoubleSide,
 	ExtrudeGeometry,
+	Frustum,
 	Group,
 	InstancedMesh,
 	Matrix4,
@@ -200,6 +202,46 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	robotHolder.position.set(robotX + 0.04, cartTop, -2.55);
 	robotHolder.rotation.y = -0.55;
 	group.add(robotHolder);
+	// The robot's moving parts are never skipped by their own bounds (robot-exact.ts: those are the resting pose's), so all
+	// of them were drawn at every stop, even with the robot behind the camera. Its CAD parts are hidden instead whenever
+	// the robot's own box, 15 cm bigger all round, is outside the view being drawn (asked for each view: the window's
+	// camera, and the one that draws its contact shadow): it is back before any of it can be seen. Nothing of it changes.
+	const robotParts: InstancedMesh[] = [];
+	const robotBox = new Box3();
+	const partBox = new Box3();
+	const toHolder = new Matrix4();
+	const robotView = new Matrix4();
+	const robotFrustum = new Frustum();
+	let robotSeen = true;
+	/** The CAD parts and their box in the holder's space (again when more parts have arrived: they load in batches). */
+	const findRobotParts = () => {
+		const found: InstancedMesh[] = [];
+		robotHolder.traverse((o) => (o as InstancedMesh).isInstancedMesh && found.push(o as InstancedMesh));
+		if (found.length === robotParts.length) return;
+		robotHolder.updateWorldMatrix(true, true);
+		toHolder.copy(robotHolder.matrixWorld).invert();
+		robotBox.makeEmpty();
+		robotParts.length = 0;
+		for (const mesh of found) {
+			if (!mesh.boundingBox) mesh.computeBoundingBox();
+			robotBox.union(partBox.copy(mesh.boundingBox!).applyMatrix4(mesh.matrixWorld).applyMatrix4(toHolder));
+			mesh.visible = robotSeen;
+			robotParts.push(mesh);
+		}
+		robotBox.expandByScalar(0.15);
+	};
+	const sceneBefore = ctx.scene.onBeforeRender;
+	ctx.scene.onBeforeRender = (...args) => {
+		sceneBefore.apply(ctx.scene, args);
+		const camera = args[2];
+		if (!robotParts.length) return;
+		// (Apart, the parts are far outside the box, and the camera is on the robot anyway.)
+		robotView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).multiply(robotHolder.matrixWorld);
+		const seen = explodedBy > 0 || robotFrustum.setFromProjectionMatrix(robotView).intersectsBox(robotBox);
+		if (seen === robotSeen) return;
+		robotSeen = seen;
+		for (const mesh of robotParts) mesh.visible = seen;
+	};
 	const robotLoaded = import("../three/models/frc-robot")
 		.then(({ buildRobot }) => buildRobot(robotHolder))
 		.then((rig) => {
@@ -925,6 +967,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 
 			// Robot: rollers turn while its scene is in view (not while it is apart: they would snap back together).
 			if (robot && explodedBy === 0 && (near.robotics ?? 0) > 0.05) robot.animate(clock, dt * (near.robotics ?? 0));
+			if (robot) findRobotParts();
 
 			// Drone: stays on its mat. The build is not finished and it has not flown, so the room does not show it flying:
 			// powered up on the bench, the flight controller's LED blinking; armed, its props spin up, then wind down.
