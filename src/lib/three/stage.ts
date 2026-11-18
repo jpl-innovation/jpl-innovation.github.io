@@ -604,8 +604,9 @@ export async function mountStage(
 		const h = Math.max(1, container.clientHeight);
 		const ratio = pixelRatio();
 		stats.pixelRatio = ratio;
-		renderer.setPixelRatio(ratio);
-		renderer.setSize(w, h, false);
+		// (One call: setPixelRatio and then setSize each resize the canvas, and every resize allocates its buffers again,
+		// some 30 ms apiece on integrated graphics, in the middle of a move.)
+		renderer.setDrawingBufferSize(w, h, ratio);
 		pipeline?.setSize(w, h, ratio);
 		camera.aspect = w / h;
 		model.resize?.(w, h);
