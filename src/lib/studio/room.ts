@@ -63,7 +63,7 @@ import { createSketch, paper, SKETCH_HEIGHT, SKETCH_WIDTH } from "./sketch";
 import { type PageScreen, pageScreen } from "./screens";
 import { buildStations, type Stations } from "./stations";
 import { buildBench, type BuildBench } from "./build-bench";
-import { tableFrame } from "./furniture";
+import { Batch, lampBody, lampShade, tableFrame } from "./furniture";
 
 export const ROOM = { x0: -8.5, x1: 8.5, z0: -3.4, z1: 6.4, h: 3.4 };
 /** The desk (scenes 0 to 2): its middle and the height of its top; the sketchbook lies open on it at `book`. */
@@ -234,14 +234,30 @@ function rod(parent: Group, a: Vector3, b: Vector3, radius: number, material: Ma
 }
 
 /** The bench lamps you can see (FIXTURES). Returns their bulbs' one material, for the room to bring up with the lamp. */
-function buildFixtures(parent: Group, metal: Material) {
+function buildFixtures(parent: Group, metal: Material, detail: boolean) {
 	const shadeMat = hardware({ color: 0xe9e4d6, roughness: 0.4, side: DoubleSide }, "plastic");
 	const bulbMat = new MeshBasicMaterial({ color: 0xfff0d0, toneMapped: false });
+	// Where the tier allows, real lamps (furniture.ts): their painted bodies as one mesh, spun shades with a rim.
+	const bodies = detail ? new Batch([0, 0, 0]) : undefined;
 	for (const { base, lamp, hang } of FIXTURES) {
 		const { at, aim } = LAMP[lamp];
 		const b = new Vector3(...base);
 		const head = new Vector3(...at);
 		const toward = new Vector3(...aim).sub(head).normalize();
+		if (bodies) {
+			if (hang) {
+				rod(parent, b, head, 0.004, metal);
+				bodies.add(new CylinderGeometry(0.045, 0.05, 0.02, 20), 0x262c3a, b.x, b.y - 0.01, b.z); // the ceiling rose
+			} else lampBody(bodies, b, new Vector3(b.x + (head.x - b.x) * 0.15, head.y + 0.14, b.z + (head.z - b.z) * 0.15), head);
+			const shade = new Mesh(lampShade(hang ? 0.13 : 0.075, hang ? 0.13 : 0.09), shadeMat);
+			shade.quaternion.setFromUnitVectors(new Vector3(0, -1, 0), toward);
+			shade.position.copy(head).addScaledVector(toward, hang ? -0.02 : -0.025);
+			parent.add(shade);
+			const bulb = new Mesh(new SphereGeometry(hang ? 0.035 : 0.022, 12, 8), bulbMat);
+			bulb.position.copy(head).addScaledVector(toward, hang ? 0.05 : 0.035);
+			parent.add(bulb);
+			continue;
+		}
 		if (hang) rod(parent, b, head, 0.004, metal);
 		else {
 			const foot = new Mesh(new CylinderGeometry(0.06, 0.07, 0.022, 24), metal);
@@ -259,6 +275,7 @@ function buildFixtures(parent: Group, metal: Material) {
 		bulb.position.copy(head).addScaledVector(toward, hang ? 0.05 : 0.035);
 		parent.add(bulb);
 	}
+	bodies?.mesh(parent);
 	return bulbMat;
 }
 
@@ -642,11 +659,19 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const lampBase = new Mesh(new CylinderGeometry(0.09, 0.1, 0.025, 24), steel);
 	lampBase.position.set(deskX - 0.78, deskTop + 0.012, deskZ - 0.22);
 	group.add(lampBase);
+	if (detail) {
+		// A stepped top on the base, and its switch.
+		const cap = new Mesh(new CylinderGeometry(0.05, 0.085, 0.012, 24), steel);
+		cap.position.set(deskX - 0.78, deskTop + 0.031, deskZ - 0.22);
+		group.add(cap);
+		boxAt(group, 0.02, 0.007, 0.012, hardware({ color: 0xe9e4d6, roughness: 0.5 }, "plastic"), deskX - 0.73, deskTop + 0.036, deskZ - 0.19, 0.002);
+	}
 	const arm = new Mesh(new CylinderGeometry(0.01, 0.01, 0.62, 8), steel);
 	arm.position.set(deskX - 0.66, deskTop + 0.3, deskZ - 0.14);
 	arm.rotation.z = -0.4;
 	group.add(arm);
-	const shade = new Mesh(new CylinderGeometry(0.05, 0.11, 0.13, 24, 1, true), hardware({ color: 0xe9eef7, roughness: 0.35, side: DoubleSide }, "plastic"));
+	// (A spun shade with a neck and a rim where the tier allows: furniture.ts.)
+	const shade = new Mesh(detail ? lampShade(0.11, 0.12).translate(0, 0.065, 0) : new CylinderGeometry(0.05, 0.11, 0.13, 24, 1, true), hardware({ color: 0xe9eef7, roughness: 0.35, side: DoubleSide }, "plastic"));
 	shade.position.set(deskX - 0.5, deskTop + 0.58, deskZ - 0.06);
 	shade.rotation.z = 0.35;
 	group.add(shade);
@@ -732,7 +757,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	// The bench lamps: a warm spot over each scene's subject (lights.ts), hung toward the room so the pool spills forward.
 	const lamps: Record<string, LightSpec> = {};
 	for (const [id, l] of Object.entries(SCENE_LAMPS)) lamps[id] = { at: l.at, aim: l.aim, angle: l.angle, color: 0xffcf96, dark: l.power, light: l.power * 0.5, distance: 6, decay: 2 };
-	const bulbs = buildFixtures(group, steel);
+	const bulbs = buildFixtures(group, steel, detail);
 	const pool = createLightPool(group, accents, lamps);
 	const ambience = buildAmbience(group, detail);
 	const props = buildProps(group, detail);

@@ -6,7 +6,7 @@
  * Not on the low tier: there each table keeps the plain top on four posts its own file builds.
  * The top itself stays with its table (room.ts, stations.ts, build-bench.ts): its size, height and place never change.
  */
-import { BoxGeometry, BufferAttribute, type BufferGeometry, CanvasTexture, Color, CylinderGeometry, Group, type Material, Mesh, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace } from "three";
+import { BoxGeometry, BufferAttribute, type BufferGeometry, CanvasTexture, Color, CylinderGeometry, Group, LatheGeometry, type Material, Mesh, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, SRGBColorSpace, Vector2, Vector3 } from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hardware } from "../three/finish";
@@ -259,4 +259,40 @@ export function shelvingFrame(batch: Batch, x: number, z: number, width: number,
 			}
 		}
 	for (const y of boards) for (const sx of [-1, 1]) batch.box(0.003, 0.03, depth - 0.04, x + sx * (width / 2 - 0.006), y - 0.03, z, GRAPHITE);
+}
+
+/** A spun lamp shade: a closed neck, a bell and a rolled rim. It opens toward -y, its neck at the origin; `rim` its radius, `length` its depth. */
+export function lampShade(rim: number, length: number) {
+	const profile = [
+		[0.001, 0.012], [rim * 0.3, 0.012], [rim * 0.34, 0], [rim * 0.36, -length * 0.18], [rim * 0.62, -length * 0.55], [rim * 0.94, -length * 0.93], [rim, -length], [rim * 1.03, -length * 1.01], [rim * 1.03, -length * 1.04], [rim * 0.99, -length * 1.04],
+	];
+	return new LatheGeometry(profile.map(([x, y]) => new Vector2(x, y)), 28);
+}
+
+/** A round bar from `a` to `b`. */
+export function barGeometry(a: Vector3, b: Vector3, radius: number, sides = 10) {
+	const d = b.clone().sub(a);
+	const g = new CylinderGeometry(radius, radius, d.length(), sides);
+	g.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), d.clone().normalize()));
+	g.translate(a.x + d.x / 2, a.y + d.y / 2, a.z + d.z / 2);
+	return g;
+}
+
+/**
+ * A desk lamp's body into `batch` (painted steel): a weighted base with a lip and a rocker switch, a two-bar arm from
+ * `base` over `elbow` to `head`, and a knuckle with a wing nut at each joint. The shade and the bulb are the caller's.
+ */
+export function lampBody(batch: Batch, base: Vector3, elbow: Vector3, head: Vector3, baseRadius = 0.065) {
+	batch.add(new CylinderGeometry(baseRadius * 0.93, baseRadius, 0.016, 28), GRAPHITE, base.x, base.y + 0.008, base.z);
+	batch.add(new CylinderGeometry(baseRadius * 0.55, baseRadius * 0.9, 0.012, 28), GRAPHITE, base.x, base.y + 0.022, base.z);
+	batch.box(0.016, 0.006, 0.01, base.x + baseRadius * 0.55, base.y + 0.027, base.z + baseRadius * 0.3, 0xe9e4d6, 0.002);
+	const foot = new Vector3(base.x, base.y + 0.03, base.z);
+	// Two thin bars side by side on each run of the arm, as a sprung lamp has.
+	const side = new Vector3().crossVectors(elbow.clone().sub(foot), new Vector3(0, 1, 0.3)).normalize().multiplyScalar(0.009);
+	for (const [a, b] of [[foot, elbow], [elbow, head]])
+		for (const s of [-1, 1]) batch.add(barGeometry(a.clone().addScaledVector(side, s), b.clone().addScaledVector(side, s), 0.0045, 8), GRAPHITE, 0, 0, 0);
+	for (const joint of [foot, elbow, head]) {
+		batch.add(new SphereGeometry(0.014, 12, 8), GRAPHITE, joint.x, joint.y, joint.z);
+		batch.add(barGeometry(joint.clone().addScaledVector(side, -2.2), joint.clone().addScaledVector(side, 2.2), 0.006, 6), STEEL, 0, 0, 0);
+	}
 }
