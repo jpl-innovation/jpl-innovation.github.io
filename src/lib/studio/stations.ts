@@ -383,6 +383,18 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	boxAt(rack, 0.7, 0.05, 0.6, dark, rackX, 1.875, rackZ);
 	boxAt(rack, 0.7, 0.08, 0.6, dark, rackX, 0.04, rackZ);
 	boxAt(rack, 0.62, 1.8, 0.02, new MeshStandardMaterial({ color: 0x0a0d14, roughness: 0.8 }), rackX, 0.95, rackZ - 0.29);
+	if (detail) {
+		// The cabinet's own fittings (never the devices in it): the two mounting rails with their square holes down the
+		// front, vent slots in the top and in each side, one mesh (furniture.ts).
+		const fittings = new Batch([rackX, 0, rackZ]);
+		for (const sx of [-1, 1]) {
+			fittings.box(0.018, 1.74, 0.004, rackX + sx * 0.296, 0.95, rackFront - 0.022, 0x8a93a3);
+			for (let y = 0.11; y < 1.8; y += 0.03) fittings.box(0.007, 0.007, 0.0045, rackX + sx * 0.296, y, rackFront - 0.0215, 0x0a0d14);
+			for (const y0 of [0.3, 1.5]) for (let i = 0; i < 8; i++) fittings.box(0.002, 0.006, 0.34, rackX + sx * 0.3555, y0 + i * 0.018, rackZ, 0x05070b);
+		}
+		for (let i = 0; i < 9; i++) fittings.box(0.42, 0.002, 0.012, rackX, 1.9005, rackZ - 0.2 + i * 0.05, 0x05070b);
+		fittings.mesh(rack);
+	}
 	const deviceMat = hardware({ color: 0x3a4152, roughness: 0.35, metalness: 0.6 }, "metal");
 	const faceMat = new MeshStandardMaterial({ color: 0x1d2230, roughness: 0.45 });
 	const portMat = new MeshStandardMaterial({ color: 0x07090e, roughness: 0.6 });
@@ -685,6 +697,17 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	}
 	boxAt(group, 2.38, 1.34, 0.03, steel, boardX, 1.55, z1 - 0.015);
 	boxAt(group, 2.0, 0.03, 0.08, steel, boardX, 0.89, z1 - 0.06);
+	if (detail) {
+		// An aluminium profile round the board with a moulded cap at each corner, and caps on the ends of the pen tray.
+		const frame = new Batch([boardX, 1.55, z1 - 0.03]);
+		for (const s of [-1, 1]) {
+			frame.box(2.36, 0.03, 0.016, boardX, 1.55 + s * 0.6475, z1 - 0.04, 0xaab2c0, 0.004);
+			frame.box(0.03, 1.325, 0.016, boardX + s * 1.165, 1.55, z1 - 0.04, 0xaab2c0, 0.004);
+			for (const t of [-1, 1]) frame.box(0.036, 0.036, 0.02, boardX + s * 1.165, 1.55 + t * 0.6475, z1 - 0.041, 0x262c3a, 0.006);
+			frame.box(0.012, 0.036, 0.086, boardX + s * 1.006, 0.892, z1 - 0.06, 0x262c3a, 0.004);
+		}
+		frame.mesh(group);
+	}
 	for (const [i, c] of [0x1d4ed8, 0xc8283a, 0x111827].entries()) {
 		const marker = new Mesh(new CylinderGeometry(0.009, 0.009, 0.12, 10), hardware({ color: c, roughness: 0.4 }, "plastic"));
 		marker.rotation.z = Math.PI / 2;
@@ -843,6 +866,18 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	boxAt(group, winW + 0.2, 0.05, 0.22, frameMat, winX, winY - winH / 2 - 0.025, z1 - 0.1);
 	const panes = content.milestones.length || 6;
 	for (let i = 0; i <= panes; i++) boxAt(group, 0.045, winH, 0.07, frameMat, winX + winW / 2 - (winW * i) / panes, winY, z1 - 0.04);
+	if (detail) {
+		// A handle on its rose on two of the uprights, and a rubber seal down each side of every upright.
+		const fittings = new Batch([winX, winY, z1 - 0.04]);
+		for (let i = 0; i <= panes; i++) {
+			const ux = winX + winW / 2 - (winW * i) / panes;
+			for (const s of [-1, 1]) fittings.box(0.005, winH, 0.01, ux + s * 0.025, winY, z1 - 0.012, 0x0a0d14);
+			if (i !== 1 && i !== panes - 1) continue;
+			fittings.box(0.026, 0.07, 0.006, ux, winY - 0.25, z1 - 0.078, 0xaab2c0, 0.003);
+			fittings.box(0.018, 0.11, 0.014, ux, winY - 0.31, z1 - 0.09, 0xaab2c0, 0.006);
+		}
+		fittings.mesh(group);
+	}
 	const drawSky = (darkTheme: boolean) => {
 		const { g, canvas } = sky;
 		const w = canvas.width;
@@ -986,10 +1021,23 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	const doorMat = hardware({ color: 0x24345e, roughness: 0.85 }, "plastic"); // matte: a painted door, no hotspot
 	themed.push({ mat: doorMat as MeshStandardMaterial, dark: 0x1b2d6e, light: 0x3d4770 });
 	boxAt(doorPivot, 0.98, 2.08, 0.045, doorMat, -0.49, 1.04, 0);
-	const handle = new Mesh(new CylinderGeometry(0.012, 0.012, 0.14, 10), toolMetal);
-	handle.rotation.z = Math.PI / 2;
-	handle.position.set(-0.86, 1.0, -0.04);
-	doorPivot.add(handle);
+	if (detail) {
+		// On the door (it swings with it): a lever handle on its rose and the lock under it, three hinges, a kick plate.
+		const fittings = new Batch([0, 0, 0]);
+		fittings.add(new CylinderGeometry(0.027, 0.027, 0.008, 20).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.027);
+		fittings.add(new CylinderGeometry(0.009, 0.009, 0.045, 10).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.05);
+		fittings.box(0.13, 0.018, 0.014, -0.845, 1.0, -0.07, 0xaab2c0, 0.006);
+		fittings.add(new CylinderGeometry(0.018, 0.018, 0.006, 16).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 0.9, -0.026);
+		fittings.box(0.006, 0.012, 0.007, -0.9, 0.9, -0.027, 0x0a0d14);
+		for (const y of [0.25, 1.04, 1.85]) fittings.add(new CylinderGeometry(0.009, 0.009, 0.1, 10), 0xaab2c0, -0.004, y, -0.03);
+		fittings.box(0.94, 0.18, 0.002, -0.49, 0.11, -0.0235, 0x8a93a3);
+		doorPivot.add(fittings.mesh(group));
+	} else {
+		const handle = new Mesh(new CylinderGeometry(0.012, 0.012, 0.14, 10), toolMetal);
+		handle.rotation.z = Math.PI / 2;
+		handle.position.set(-0.86, 1.0, -0.04);
+		doorPivot.add(handle);
+	}
 	const sign = canvasSurface(720, 180);
 	{
 		const { g } = sign;

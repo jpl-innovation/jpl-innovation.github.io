@@ -22,6 +22,7 @@ import {
 	MeshStandardMaterial,
 	Object3D,
 	PlaneGeometry,
+	RepeatWrapping,
 	SphereGeometry,
 	SRGBColorSpace,
 	Vector3,
@@ -448,7 +449,7 @@ export interface DeskSheets {
 	footprints: { x0: number; x1: number; z0: number; z1: number }[];
 }
 
-export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[], deskTop: number, wallZ: number, cork?: { x: number; y: number; w: number; h: number }): DeskSheets {
+export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[], deskTop: number, wallZ: number, cork?: { x: number; y: number; w: number; h: number; real?: boolean }): DeskSheets {
 	const group = new Group();
 	const canvas = document.createElement("canvas");
 	canvas.width = ATLAS_W;
@@ -524,6 +525,26 @@ export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[
 	let corkMat: MeshStandardMaterial | undefined;
 	if (cork) {
 		corkMat = hardware({ color: 0x9b7650, roughness: 0.95 }, "fabric") as MeshStandardMaterial;
+		if (cork.real) {
+			// Real cork is pressed granules: a speckle of lighter and darker grains over its colour.
+			const grain = document.createElement("canvas");
+			grain.width = grain.height = 256;
+			const g = grain.getContext("2d")!;
+			g.fillStyle = "#e4e4e4";
+			g.fillRect(0, 0, 256, 256);
+			let seed = 11;
+			const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+			for (let i = 0; i < 5200; i++) {
+				const shade = 150 + Math.floor(random() * 105);
+				g.fillStyle = `rgb(${shade},${shade},${shade})`;
+				g.fillRect(random() * 256, random() * 256, 1 + random() * 3, 1 + random() * 3);
+			}
+			const map = new CanvasTexture(grain);
+			map.colorSpace = SRGBColorSpace;
+			map.wrapS = map.wrapT = RepeatWrapping;
+			map.repeat.set(cork.w / 0.32, cork.h / 0.32);
+			corkMat.map = map;
+		}
 		const board = new Mesh(new PlaneGeometry(cork.w, cork.h), corkMat);
 		board.position.set(cork.x, cork.y, wallZ + 0.006);
 		group.add(board);

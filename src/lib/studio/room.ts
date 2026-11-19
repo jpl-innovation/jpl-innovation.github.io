@@ -604,7 +604,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		{ slot: B, on: "wall", x: -7.33, y: 1.49, turn: -0.08 },
 		{ slot: 11, on: "wall", x: -7.17, y: 1.47, turn: 0.03, lift: 0.004, layer: 2 },
 	];
-	const deskSheetSet = buildDeskSheets(deskSheets, sheetPlaces, deskTop, z0, { x: -7.19, y: 1.81, w: 0.64, h: 1.0 });
+	const deskSheetSet = buildDeskSheets(deskSheets, sheetPlaces, deskTop, z0, { x: -7.19, y: 1.81, w: 0.64, h: 1.0, real: detail });
 	group.add(deskSheetSet.group);
 
 	// The monitor: the build guide on screen. It drifts while you look at it, and scrolls with the mouse wheel (screens.ts).

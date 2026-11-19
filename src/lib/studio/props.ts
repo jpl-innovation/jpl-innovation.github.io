@@ -225,12 +225,29 @@ export function buildProps(parent: Group, real: boolean): Props {
 			g.lineTo(64 + i * 48, 288);
 			g.stroke();
 		}
+		if (real) {
+			// Woven: the warp and the weft, thread by thread.
+			g.globalAlpha = 1;
+			g.fillStyle = "rgba(255,255,255,0.035)";
+			for (let y = 0; y < 352; y += 2) g.fillRect(0, y, 512, 1);
+			g.fillStyle = "rgba(0,0,0,0.07)";
+			for (let x = 0; x < 512; x += 2) g.fillRect(x, 0, 1, 352);
+		}
 		rugFace.redraw();
 	}
 	const rug = new Mesh(new PlaneGeometry(3.0, 2.1), new MeshStandardMaterial({ map: rugFace.texture, roughness: 1 }));
 	rug.rotation.x = -Math.PI / 2;
 	rug.position.set(-6, 0.006, z0 + 1.45);
 	parent.add(rug);
+	if (real) {
+		// Its bound edge, standing a little proud of the pile.
+		const binding = new Batch([-6, 0, z0 + 1.45]);
+		for (const s of [-1, 1]) {
+			binding.box(3.03, 0.011, 0.03, -6, 0.0055, z0 + 1.45 + s * 1.05, 0x0f1830, 0.005);
+			binding.box(0.03, 0.011, 2.1, -6 + s * 1.5, 0.0055, z0 + 1.45, 0x0f1830, 0.005);
+		}
+		binding.mesh(parent);
+	}
 
 	/* ---------- Robotics: a toolbox and spare wheels ---------- */
 	const red = mat(0xc8283a, 0.45);
