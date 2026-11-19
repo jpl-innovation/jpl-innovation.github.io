@@ -354,6 +354,8 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			// (Also while the logo intro covers the page: the room is drawn underneath it, so half the frames will do.)
 			// (Never while the opening words' 3D plays: it moves every frame.)
 			api.idle = !hook?.busy() && !device && (document.documentElement.classList.contains("splash") || document.documentElement.classList.contains("studio-dark") || clock > OPEN_TIME && lamp >= 1 && leaveAmt === (leaving ? 1 : 0) && hoverIndex < 0 && !room.busy() && !sim.busy() && Math.abs(speed) < 0.003 && Math.abs(s - clamp(position(), 0, n)) < 0.003 && Math.abs(pxT - px) < 0.01 && Math.abs(pyT - py) < 0.01);
+			// The robot taken apart is its full CAD, heavy on purpose: those frames don't count toward the room's resolution or tier (stage.ts).
+			api.untimed = apart > 0;
 			// The first rest (behind the opening, or still on the first view): build the flight's world then, not mid-move.
 			if (api.idle && !prepared) {
 				prepared = true;

@@ -192,6 +192,11 @@ export interface Model {
 	 * held, they are built in the background instead (compileAsync) and the first draw finds them ready.
 	 */
 	hold?: boolean;
+	/**
+	 * True while the model shows something heavy on purpose (the studio's robot taken apart: its full CAD): those frames
+	 * are not timed, so a view the visitor asked for never costs the rest of the scene its resolution or its quality tier.
+	 */
+	untimed?: boolean;
 	/** Put the model in the state it moves in, for timing frames out of sight (`calibrate`). */
 	warming?(on: boolean): void;
 	dispose?(): void;
@@ -729,7 +734,7 @@ export async function mountStage(
 				if (skip) return;
 			} else skip = false;
 			render();
-			if (!model.idle || moving) time(ms); // (a still room draws every other frame: those say nothing about the cost of a move)
+			if ((!model.idle || moving) && !model.untimed) time(ms); // (a still room draws every other frame: those say nothing about the cost of a move)
 			if (more === false && !moving && !view.spin) {
 				sleeping = true;
 				stop();
