@@ -198,6 +198,13 @@ export function createSim(ctx: StageContext, room: Room, ids: readonly string[])
 		// Build its shaders now, so the first frame of the flight never stutters.
 		rig.animate(0, 0.0001, 0.03);
 		await compileInSlices(renderer, scene, view, target);
+		// (Its points too, which are not meshes and so are passed by: built in the frame they first showed, at the bench.)
+		const drawnTo = renderer.getRenderTarget();
+		renderer.setRenderTarget(target);
+		const clouds: Promise<unknown>[] = [];
+		scene.traverse((o) => (o as { isPoints?: boolean }).isPoints && clouds.push(renderer.compileAsync(o, view, scene)));
+		renderer.setRenderTarget(drawnTo);
+		await Promise.all(clouds);
 		await uploadInSlices(renderer, scene);
 
 		state = "ready";

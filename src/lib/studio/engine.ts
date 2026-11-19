@@ -14,7 +14,7 @@
  * Nothing per frame goes through React or layout: the page's position is read from scrollY against offsets measured
  * on resize.
  */
-import { Box3, CatmullRomCurve3, type Mesh, Quaternion, Raycaster, Vector2, Vector3 } from "three";
+import { Box3, CatmullRomCurve3, type Mesh, type Object3D, type Points, Quaternion, Raycaster, Vector2, Vector3 } from "three";
 import type { Model, StageContext } from "../three/stage";
 import { createHookScene } from "./hook-scene";
 import { HOOK_3D } from "./hook-state";
@@ -380,6 +380,10 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			step(2);
 			await roomShaders;
 			await compileInSlices(ctx.renderer, ctx.scene, camera, null, 4); // the two models' own (the rest are ready: instant)
+			// Points (the dust, the sparks of the drone going together) are not meshes, so the slices pass them by: theirs here.
+			const points: Object3D[] = [];
+			ctx.scene.traverse((o) => (o as Points).isPoints && points.push(o));
+			for (const cloud of points) await ctx.renderer.compileAsync(cloud, camera, ctx.scene);
 			await flight;
 			step(3);
 			// The pages on the screens: their first tiles, once they are in (not waited for long on a slow line).
@@ -390,7 +394,8 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			// geometry to the graphics card in the frame it is first seen, and a whole drone or robot at once is a hitch.
 			for (const shot of shots) {
 				await new Promise((resolve) => requestAnimationFrame(resolve));
-				if (ctx.renderer.getContext().isContextLost()) return;
+				// (Shown already, on a device too slow to finish this under the loading screen: no more of it, the camera is the visitor's.)
+				if (ctx.renderer.getContext().isContextLost() || !api.hold) return;
 				camera.position.set(...shot.camera);
 				camera.lookAt(...shot.target);
 				room.bench.warm();
@@ -400,6 +405,7 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			const robotics = shots.find((shot) => shot.id === "robotics");
 			if (robotics) {
 				await new Promise((resolve) => requestAnimationFrame(resolve));
+				if (!api.hold) return;
 				room.parts.robot.full(true);
 				camera.position.set(...robotics.camera);
 				camera.lookAt(...robotics.target);
