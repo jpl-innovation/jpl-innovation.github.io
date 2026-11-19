@@ -6,6 +6,8 @@ on this computer only; nothing of it ships.
     "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python scripts/studio-model.py -- \
         assets-src/studio/office-chair/Office_Chair.fbx public/studio/models/office-chair.glb --size 1024
 
+--triangles N reduces a heavy scan to about N triangles; --quality is the WebP quality (default 80).
+
 An .fbx brings no pictures of its own: those beside it named *Base_Color*, *Normal*, *Roughness* and *Metallic* are put
 on its material (the height map is left out: the normal map already carries it).
 """
@@ -21,6 +23,7 @@ parser.add_argument("source")
 parser.add_argument("target")
 parser.add_argument("--size", type=int, default=1024)
 parser.add_argument("--quality", type=int, default=80)
+parser.add_argument("--triangles", type=int, default=0, help="reduce the model to about this many (0: as it is)")
 args = parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -58,6 +61,15 @@ for image in bpy.data.images:
     if image.size[0] > args.size or image.size[1] > args.size:
         scale = args.size / max(image.size)
         image.scale(max(1, round(image.size[0] * scale)), max(1, round(image.size[1] * scale)))
+
+if args.triangles:
+    # Every mesh by the same share (collapse: it keeps the texture coordinates, so leaves stay leaves).
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    now = sum(len(o.data.polygons) for o in meshes)  # (the downloads are triangles already)
+    for obj in meshes:
+        modifier = obj.modifiers.new("reduce", "DECIMATE")
+        modifier.ratio = min(1, args.triangles / max(now, 1))
 
 triangles = 0
 lo, hi = [1e9] * 3, [-1e9] * 3

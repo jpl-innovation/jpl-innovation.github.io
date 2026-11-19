@@ -93,6 +93,31 @@ export function buildProps(parent: Group, real: boolean): Props {
 		);
 	};
 
+	/**
+	 * A plant on the floor, 84 cm tall before `scale`: the real one (a cream pot) where the tier allows, turned, sized and
+	 * tinted its own way; otherwise (or if its file does not come) the one built here at `plain` times its size.
+	 */
+	const floorPlant = (x: number, z: number, scale: number, turn: number, tint: number, plain: number) => {
+		const builtHere = () => void plant(x, 0, z, plain);
+		if (!real) return builtHere();
+		loading.push(
+			model("floor-plant").then((g) => {
+				g.position.set(x, 0, z);
+				g.rotation.y = turn;
+				g.scale.setScalar(scale);
+				const lit = x < -4.55 && z < -0.6; // within the desk lamp's reach: its shadows (room.ts)
+				g.traverse((o) => {
+					const mesh = o as Mesh;
+					if (!mesh.isMesh) return;
+					mesh.castShadow = mesh.receiveShadow = lit;
+					const material = mesh.material as MeshStandardMaterial;
+					if (material.name.endsWith("_leaves")) (mesh.material = material.clone()).color.set(tint);
+				});
+				parent.add(g);
+			}, builtHere),
+		);
+	};
+
 	/** A model's glass (the clock's, the meter's) as plain clear glass: the files' own is dark, or (transmission) has the whole room drawn twice. */
 	const clearGlass = (g: Group) =>
 		g.traverse((o) => {
@@ -154,7 +179,7 @@ export function buildProps(parent: Group, real: boolean): Props {
 	// Top: a small plant.
 	smallPlant(sx, 1.855, sz + 0.02, 1.1, 0.6, 0xe4ffe0, 0.55);
 	// And a taller one on the floor beside the desk.
-	plant(-8.15, 0, -1.65, 1.2); // on open floor: from the title shot, clear of the shelving and the desk
+	floorPlant(-7.98, -1.55, 1.15, 0.9, 0xffffff, 1.2); // on open floor: from the title shot, clear of the shelving and the desk
 
 	/* ---------- A rug under the desk ---------- */
 	const rugFace = canvasSurface(512, 352);
@@ -250,7 +275,7 @@ export function buildProps(parent: Group, real: boolean): Props {
 	}
 	boxAt(parent, 0.17, 0.014, 0.23, mat(0xf4efe2, 0.9, "printed"), -2.4, tableTop + 0.007, 5.0, 0.003).rotation.y = 0.5;
 	boxAt(parent, 0.17, 0.014, 0.23, mat(0x23324f, 0.7), -2.15, tableTop + 0.007, 4.95, 0.003).rotation.y = -0.2;
-	plant(-3.95, 0, z1 - 0.5, 1.4);
+	floorPlant(-3.95, z1 - 0.5, 1.3, 3.6, 0xf2ffe6, 1.4);
 
 	/* ---------- The window sill: a small plant ---------- */
 	smallPlant(2.55, 0.88, z1 - 0.075, 1, 2.4, 0xfff6d8, 0.6);

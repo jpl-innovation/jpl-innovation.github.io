@@ -77,7 +77,7 @@ const POOLS: Record<string, { at: [number, number]; size: number }> = {
 const shadowSpots = (real: boolean, { z0, z1 } = ROOM): [number, number, number, number, number][] => [
 	[-6, 0, -2.45, 2.2, 0.85], // the desk
 	[-8.0, 0, z0 + 0.2, 0.92, 0.42], // the shelving
-	[-8.15, 0, -1.65, 0.36, 0.36], // the floor plant
+	[-7.98, 0, -1.55, 0.36, 0.36], // the floor plant
 	// (On the desk the room draws the real footprints where it can: room.ts.)
 	...(real
 		? []

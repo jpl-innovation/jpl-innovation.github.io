@@ -6,6 +6,7 @@ All CC0 (public domain). `scripts/studio-model.py` makes each one small for the 
 |---|---|---|---|
 | `office-chair/` | Office Chair, by nisu (3dmodelscc0.com) | https://opengameart.org/content/office-chair-1 | `office-chair.glb`: 4,674 triangles, 281 KB (1024 px WebP) |
 | `potted-plant-04/` | Potted Plant 04, Poly Haven | https://polyhaven.com/a/potted_plant_04 | `potted-plant.glb`: 8,929 triangles, 347 KB (512 px WebP) |
+| `potted-plant-02/` | Potted Plant 02, Poly Haven | https://polyhaven.com/a/potted_plant_02 | `floor-plant.glb`: 7,999 triangles (reduced from 69,806 with `--triangles 8000`), 360 KB (384 px WebP, `--quality 70`). Its terracotta pot is recoloured cream in the colour picture, and its roughness pictures are saved as RGB (Blender cannot pack the greyscale ones). |
 | `wall-clock/` | Wall Clock, Poly Haven | https://polyhaven.com/a/wall_clock | `wall-clock.glb`: 3,658 triangles, 190 KB (512 px WebP) |
 | `screwdriver/` | Screwdriver, Poly Haven | https://polyhaven.com/a/screwdriver | `screwdriver.glb`: 3,412 triangles, 140 KB (512 px WebP) |
 | `pliers/` | Pliers, Poly Haven | https://polyhaven.com/a/pliers | `pliers.glb`: 4,540 triangles, 227 KB (512 px WebP) |
