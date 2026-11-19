@@ -46,6 +46,8 @@ import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
 import { boxAt, canvasSurface, imageTexture, loadImage, ROOM, screenMaterial, woodMaterial } from "./room";
 import { type PageScreen, pageScreen } from "./screens";
+import { tableFrame } from "./furniture";
+import { model } from "./models";
 import type { LightSpec } from "./lights";
 import { cover, cutCorners, cutCornerSurface, projectFace } from "./panels";
 import { benchBoard } from "../../text/studio";
@@ -117,7 +119,17 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	];
 
 	/** A workbench: a top on four legs, its top surface at `benchTop`. */
+	const detail = ctx.tier !== "low";
+	const edgeBand = hardware({ color: 0x1a2030, roughness: 0.5 }, "plastic");
 	const workbench = (x: number, w = 1.6, d = 0.8, z = -2.6) => {
+		if (detail) {
+			// A 3 cm laminate top with a rounded edge and a dark edge band, on a real frame with a shelf, a cable tray and a
+			// power strip (furniture.ts).
+			boxAt(group, w, 0.03, d, bench, x, benchTop - 0.015, z, 0.006);
+			boxAt(group, w + 0.002, 0.02, d + 0.002, edgeBand, x, benchTop - 0.015, z, 0.004);
+			tableFrame(group, { x, z, w, d, top: benchTop, shelf: 0.18, bench: w > 0.9 });
+			return;
+		}
 		boxAt(group, w, 0.05, d, bench, x, benchTop - 0.025, z, 0.01);
 		for (const sx of [-1, 1]) for (const sz of [-1, 1]) boxAt(group, 0.045, benchTop - 0.05, 0.045, steel, x + sx * (w / 2 - 0.06), (benchTop - 0.05) / 2, z + sz * (d / 2 - 0.06));
 	};
@@ -812,19 +824,38 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	/* ================================================================== */
 	const tableX = -2.4;
 	const tableZ = 5.1;
-	boxAt(group, 2.2, 0.05, 0.95, woodMaterial("walnut_veneer"), tableX, 0.745, tableZ, 0.015);
-	for (const sx of [-1, 1]) boxAt(group, 0.06, 0.72, 0.8, steel, tableX + sx * 0.95, 0.36, tableZ);
+	if (detail) {
+		boxAt(group, 2.2, 0.03, 0.95, woodMaterial("walnut_veneer"), tableX, 0.755, tableZ, 0.007);
+		tableFrame(group, { x: tableX, z: tableZ, w: 2.2, d: 0.95, top: 0.77, inset: 0.08, frontRail: false });
+	} else {
+		boxAt(group, 2.2, 0.05, 0.95, woodMaterial("walnut_veneer"), tableX, 0.745, tableZ, 0.015);
+		for (const sx of [-1, 1]) boxAt(group, 0.06, 0.72, 0.8, steel, tableX + sx * 0.95, 0.36, tableZ);
+	}
 	boxAt(group, 0.3, 0.012, 0.22, hardware({ color: 0xf4efe2, roughness: 0.9 }, "printed"), tableX - 0.3, 0.776, tableZ - 0.1, 0.004).rotation.y = 0.2;
 	const tableMug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), hardware({ color: 0x2f7ce6, roughness: 0.35 }, "wrap"));
 	tableMug.position.set(tableX + 0.45, 0.82, tableZ - 0.15);
 	group.add(tableMug);
 	const chairFabric = hardware({ color: 0x1d2b4f, roughness: 0.9 }, "fabric");
 	const portraits = content.portraits.slice(0, 4);
+	const chairs: Promise<unknown>[] = [];
 	portraits.forEach((person, i) => {
 		const x = tableX + (i - (portraits.length - 1) / 2) * 1.1;
-		boxAt(group, 0.5, 0.07, 0.48, chairFabric, x, 0.47, tableZ + 0.75, 0.03);
-		boxAt(group, 0.5, 0.6, 0.06, chairFabric, x, 0.84, tableZ + 1.0, 0.03);
-		boxAt(group, 0.04, 0.44, 0.04, steel, x, 0.22, tableZ + 0.75);
+		const plainChair = () => {
+			boxAt(group, 0.5, 0.07, 0.48, chairFabric, x, 0.47, tableZ + 0.75, 0.03);
+			boxAt(group, 0.5, 0.6, 0.06, chairFabric, x, 0.84, tableZ + 1.0, 0.03);
+			boxAt(group, 0.04, 0.44, 0.04, steel, x, 0.22, tableZ + 0.75);
+		};
+		// The desk's office chair again (the same file: models.ts), each left a little differently; the plain one on the low tier.
+		if (detail)
+			chairs.push(
+				model("office-chair").then((real) => {
+					real.position.set(x, 0, tableZ + 0.82);
+					real.rotation.y = Math.PI + [0.22, -0.15, 0.3, -0.25][i % 4];
+					real.scale.setScalar(1.08);
+					group.add(real);
+				}, plainChair),
+			);
+		else plainChair();
 		// The portrait on the wall behind the chair: an instant photo taped up, a little crooked, the name written on it by
 		// hand and the role under it.
 		const photo = canvasSurface(1120, 1360);
@@ -951,7 +982,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		},
 		rack: { group: rack, center: new Vector3(rackX, 1.45, rackFront) },
 		laptop: lid,
-		loaded: Promise.allSettled([robotLoaded, droneLoaded]),
+		loaded: Promise.allSettled([robotLoaded, droneLoaded, ...chairs]),
 		software: softScreen,
 		bench: {
 			holder: droneHolder,

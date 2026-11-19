@@ -63,6 +63,7 @@ import { createSketch, paper, SKETCH_HEIGHT, SKETCH_WIDTH } from "./sketch";
 import { type PageScreen, pageScreen } from "./screens";
 import { buildStations, type Stations } from "./stations";
 import { buildBench, type BuildBench } from "./build-bench";
+import { tableFrame } from "./furniture";
 
 export const ROOM = { x0: -8.5, x1: 8.5, z0: -3.4, z1: 6.4, h: 3.4 };
 /** The desk (scenes 0 to 2): its middle and the height of its top; the sketchbook lies open on it at `book`. */
@@ -471,8 +472,14 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const deskTop = DESK.top;
 	const wood = woodMaterial("oak_veneer_01");
 	const steel = hardware({ color: 0x2d3446, roughness: 0.4, metalness: 0.7 }, "anodised");
-	boxAt(group, 2.3, 0.05, 0.9, wood, deskX, deskTop - 0.025, deskZ, 0.012);
-	for (const [dx, dz] of [[-1.08, -0.38], [1.08, -0.38], [-1.08, 0.38], [1.08, 0.38]]) boxAt(group, 0.05, deskTop - 0.05, 0.05, steel, deskX + dx, (deskTop - 0.05) / 2, deskZ + dz);
+	if (detail) {
+		// A 3 cm top with a rounded edge, on a real frame (furniture.ts); its feet stand on the rug.
+		boxAt(group, 2.3, 0.03, 0.9, wood, deskX, deskTop - 0.015, deskZ, 0.007);
+		tableFrame(group, { x: deskX, z: deskZ, w: 2.3, d: 0.9, top: deskTop, floor: 0.006, inset: 0.07, frontRail: false });
+	} else {
+		boxAt(group, 2.3, 0.05, 0.9, wood, deskX, deskTop - 0.025, deskZ, 0.012);
+		for (const [dx, dz] of [[-1.08, -0.38], [1.08, -0.38], [-1.08, 0.38], [1.08, 0.38]]) boxAt(group, 0.05, deskTop - 0.05, 0.05, steel, deskX + dx, (deskTop - 0.05) / 2, deskZ + dz);
+	}
 	// Chair, pushed in.
 	// A real office chair (models.ts) where the tier allows, lit and shadowed as the rest of the desk; the one built
 	// here otherwise, or if its file does not come.

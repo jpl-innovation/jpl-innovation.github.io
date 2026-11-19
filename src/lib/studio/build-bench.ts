@@ -22,6 +22,7 @@ import type { LightSpec } from "./lights";
 import { boxAt, canvasSurface, ROOM, type RoomState } from "./room";
 import { FEED_GLSL } from "./screens";
 import { simLabel } from "../../text/studio";
+import { tableFrame } from "./furniture";
 
 /** Where the bench stands: its middle (x, z) and the height of its top. */
 export const BENCH = { x: -4.15, z: -2.4, top: 0.82, width: 1.0, depth: 0.62 };
@@ -59,9 +60,16 @@ export function buildBench(ctx: StageContext, group: Group): BuildBench {
 	const { x, z, top, width, depth } = BENCH;
 	const benchMat = hardware({ color: 0x2a3550, roughness: 0.6 }, "plastic") as MeshStandardMaterial;
 	const steel = hardware({ color: 0x2d3446, roughness: 0.4, metalness: 0.7 }, "anodised");
-	boxAt(group, width, 0.05, depth, benchMat, x, top - 0.025, z, 0.01);
-	for (const sx of [-1, 1]) for (const sz of [-1, 1]) boxAt(group, 0.045, top - 0.05, 0.045, steel, x + sx * (width / 2 - 0.06), (top - 0.05) / 2, z + sz * (depth / 2 - 0.06));
-	boxAt(group, width - 0.12, 0.02, depth - 0.12, steel, x, 0.16, z, 0.004); // a shelf underneath
+	if (ctx.tier !== "low") {
+		// A 3 cm top with a rounded edge and a dark edge band, on a real frame with a shelf, a cable tray and a power strip (furniture.ts).
+		boxAt(group, width, 0.03, depth, benchMat, x, top - 0.015, z, 0.006);
+		boxAt(group, width + 0.002, 0.02, depth + 0.002, hardware({ color: 0x1a2030, roughness: 0.5 }, "plastic"), x, top - 0.015, z, 0.004);
+		tableFrame(group, { x, z, w: width, d: depth, top, shelf: 0.16, bench: true });
+	} else {
+		boxAt(group, width, 0.05, depth, benchMat, x, top - 0.025, z, 0.01);
+		for (const sx of [-1, 1]) for (const sz of [-1, 1]) boxAt(group, 0.045, top - 0.05, 0.045, steel, x + sx * (width / 2 - 0.06), (top - 0.05) / 2, z + sz * (depth / 2 - 0.06));
+		boxAt(group, width - 0.12, 0.02, depth - 0.12, steel, x, 0.16, z, 0.004); // a shelf underneath
+	}
 
 	// A green cutting mat with its centimetre grid, under the drone.
 	const mat = canvasSurface(1024, 640);
