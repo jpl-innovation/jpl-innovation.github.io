@@ -23,7 +23,11 @@ export function turnAbout(m: Matrix4, angle: number, y: number, z: number) {
 	return m.makeRotationX(angle).setPosition(0, y - y * c + z * n, z - y * n - z * c);
 }
 
-export async function loadExactRobot(parent: Object3D, tag?: (parts: RobotPart[]) => number[]) {
+/**
+ * `reduced`: also load each large part's reduced triangles (scripts/robot-motion.mjs: 0.15 mm at most off the CAD) and
+ * start on them; `motion(false)` then shows the full CAD. Without it nothing but the full CAD is fetched or drawn.
+ */
+export async function loadExactRobot(parent: Object3D, tag?: (parts: RobotPart[]) => number[], reduced = false) {
 	const url = new URL('/assets/robot/manifest.json', location.href);
 	const response = await fetch(url, { cache: 'no-cache' });
 	if (!response.ok) throw new Error(`Robot manifest: ${response.status}`);
@@ -94,7 +98,7 @@ export async function loadExactRobot(parent: Object3D, tag?: (parts: RobotPart[]
 				geometry.setAttribute('normal', new BufferAttribute(new Float32Array(data.buffer, batch.vertices * 12, batch.vertices * 3), 3));
 				const full = new BufferAttribute(new Uint32Array(data.buffer, batch.vertices * 24, batch.indices), 1);
 				const motion = data.motion.byteLength && batch.indices / 3 >= KEEP_FULL_UNDER ? new BufferAttribute(new Uint32Array(data.motion), 1) : full;
-				geometry.setIndex(motion);
+				geometry.setIndex(reduced ? motion : full);
 				geometry.setAttribute('feature', new InstancedBufferAttribute(data.feature, 1));
 				geometry.setAttribute('robotPartFeature', geometry.getAttribute('feature'));
 				geometry.boundingBox = new Box3(new Vector3(...batch.lo), new Vector3(...batch.hi));
@@ -126,9 +130,9 @@ export async function loadExactRobot(parent: Object3D, tag?: (parts: RobotPart[]
 				parent.add(mesh);
 			} catch (error) { fail(error); }
 		};
-		worker.postMessage({ url: url.href, features, batches: manifest.batches });
+		worker.postMessage({ url: url.href, features, batches: reduced ? manifest.batches : manifest.batches.map((batch) => ({ ...batch, motionFile: undefined })) });
 	});
-	let moving = true;
+	let moving = reduced;
 	return { materials, colors,
 		/** Parts that move together: returns the function that places them, as a matrix on top of their CAD pose. */
 		group(test: (part: RobotPart) => boolean) {

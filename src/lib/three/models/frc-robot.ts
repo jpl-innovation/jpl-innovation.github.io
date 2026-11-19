@@ -89,11 +89,11 @@ export interface RobotRig {
  * `tag` returns for its part, in CAD order), and the bumper numbers get 0, for the scroll showcase's fading
  * (src/lib/three/showcase.ts).
  */
-export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) => number[]): Promise<RobotRig> {
+export async function buildRobot(parent: Object3D, tag?: (parts: RobotPart[]) => number[], reduced = false): Promise<RobotRig> {
 	const robot = new Group();
 	parent.add(robot);
 
-	const { materials, colors, isolate, motion, spin, roll, group, own, highlight } = await loadExactRobot(robot, tag);
+	const { materials, colors, isolate, motion, spin, roll, group, own, highlight } = await loadExactRobot(robot, tag, reduced);
 	const placeExtension = group((p) => EXTENSION.test(p.name));
 	const swing = new Matrix4();
 	let swung = 0;

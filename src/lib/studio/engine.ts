@@ -297,6 +297,8 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 				if (deviceAmt === 0) device = undefined;
 			}
 		}
+		// The robot's full CAD from the moment the visitor enters it until the camera is back out; its reduced triangles otherwise.
+		room.parts.robot.full(device?.id === "robotics");
 		const inRobot = device?.id === "robotics" ? deviceAmt : 0;
 		if (device?.id === "robotics" && deviceWant === 1 && !ctx.reducedMotion) turned += dt * TURN_SPEED;
 		apart += (apartWant * (deviceWant === 1 ? 1 : 0) - apart) * (1 - Math.exp(-6 * dt));
@@ -393,6 +395,16 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 				camera.lookAt(...shot.target);
 				room.bench.warm();
 				ctx.renderer.render(ctx.scene, camera);
+			}
+			// The robot's full CAD too (the stops above drew its reduced triangles), so entering it swaps with nothing to send.
+			const robotics = shots.find((shot) => shot.id === "robotics");
+			if (robotics) {
+				await new Promise((resolve) => requestAnimationFrame(resolve));
+				room.parts.robot.full(true);
+				camera.position.set(...robotics.camera);
+				camera.lookAt(...robotics.target);
+				ctx.renderer.render(ctx.scene, camera);
+				room.parts.robot.full(false);
 			}
 			room.update(state);
 			place();

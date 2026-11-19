@@ -67,7 +67,7 @@ export interface Stations {
 	/** The drone bench's F450, once it has loaded (the opening hook's desk drone shares its geometry). */
 	drone(): DroneRig | undefined;
 	/** What the camera can fly into (src/lib/studio/devices.ts): the robot on its cart, the rack and the laptop. */
-	robot: { holder: Group; center: Vector3; explode(amount: number): void; turn(angle: number): void };
+	robot: { holder: Group; center: Vector3; explode(amount: number): void; turn(angle: number): void; /** The full CAD (entered: the turn and the take-apart view), or its reduced triangles (from the room). */ full(on: boolean): void };
 	rack: { group: Group; center: Vector3 };
 	laptop: Group;
 	/** Settles once the robot's and the drone's CAD are in (or have failed): the studio's loading screen waits for it. */
@@ -160,7 +160,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	boxAt(group, 0.5, 0.025, 0.12, steel, robotX, 1.15, z0 + 0.08); // a shelf
 	for (const [i, c] of [0xf5d042, 0x2f7ce6, 0xf2eedf].entries()) boxAt(group, 0.1, 0.07, 0.08, hardware({ color: c, roughness: 0.5 }, "plastic"), robotX - 0.15 + i * 0.15, 1.2, z0 + 0.08, 0.01);
 
-	let robot: { model: Group; animate(t: number, dt: number): void; applyPalette(p: { dark: boolean }): void } | undefined;
+	let robot: { model: Group; animate(t: number, dt: number): void; motion(active: boolean): void; applyPalette(p: { dark: boolean }): void } | undefined;
 	// Taking the robot apart (the cart's device): every CAD part's instance slides out from the robot's middle, along the
 	// line from the middle to the part, so the robot opens like an exploded drawing. The parts' poses are read once, on
 	// the first use, and put back exactly at 0.
@@ -243,7 +243,9 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		for (const mesh of robotParts) mesh.visible = seen;
 	};
 	const robotLoaded = import("../three/models/frc-robot")
-		.then(({ buildRobot }) => buildRobot(robotHolder))
+		// From the room the robot is drawn with its reduced triangles (a fifth as many, and the same picture at that
+		// distance); the full CAD comes in when the visitor enters it (`full`, engine.ts).
+		.then(({ buildRobot }) => buildRobot(robotHolder, undefined, true))
 		.then((rig) => {
 			robot = rig;
 			if (palette) rig.applyPalette(palette);
@@ -945,6 +947,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 			center: new Vector3(robotX + 0.04, cartTop + 0.3, -2.55),
 			explode,
 			turn: (angle) => (robotHolder.rotation.y = -0.55 + angle),
+			full: (on) => robot?.motion(!on),
 		},
 		rack: { group: rack, center: new Vector3(rackX, 1.45, rackFront) },
 		laptop: lid,
