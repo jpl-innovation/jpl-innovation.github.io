@@ -19,6 +19,7 @@ import {
 	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
+import { Batch, bin, binder, cardboard, cardboardBox, shelvingFrame } from "./furniture";
 import { contactShadow } from "../three/stage";
 import { model } from "./models";
 import { boxAt, canvasSurface, DESK, imageTexture, ROOM, woodMaterial } from "./room";
@@ -145,7 +146,9 @@ export function buildProps(parent: Group, real: boolean): Props {
 
 	/** Open shelving: two uprights, boards, and what sits on them. */
 	const shelving = (x: number, z: number, width: number, boards: number[], depth = 0.34) => {
-		for (const sx of [-1, 1]) boxAt(parent, 0.04, boards[boards.length - 1] + 0.12, depth, steel, x + sx * (width / 2 - 0.02), (boards[boards.length - 1] + 0.12) / 2, z);
+		// A real frame where the tier allows (furniture.ts: `small` takes its posts, feet and bolts); two plain uprights otherwise.
+		if (small) shelvingFrame(small, x, z, width, depth, boards);
+		else for (const sx of [-1, 1]) boxAt(parent, 0.04, boards[boards.length - 1] + 0.12, depth, steel, x + sx * (width / 2 - 0.02), (boards[boards.length - 1] + 0.12) / 2, z);
 		// Between the uprights and a little shallower: boards as wide and deep as them would share their faces, and flicker.
 		for (const y of boards) boxAt(parent, width - 0.082, 0.03, depth - 0.03, wood, x, y, z + 0.005, 0.006);
 		boxAt(parent, width - 0.08, boards[boards.length - 1] + 0.1, 0.01, mat(0x111a33, 0.9), x, (boards[boards.length - 1] + 0.1) / 2 + 0.02, z - depth / 2 + 0.005); // the back panel
@@ -154,28 +157,49 @@ export function buildProps(parent: Group, real: boolean): Props {
 	/* ---------- The storage shelving by the desk (the title scene's frame, left of the desk) ---------- */
 	const sx = -8.0;
 	const sz = z0 + 0.2;
+	// Where the tier allows, what stands on it is real (furniture.ts) and drawn as three meshes: the coloured parts
+	// (`small`), the cardboard and its tape. On the low tier, the plain boxes below.
+	const small = real ? new Batch([sx, 0, sz]) : undefined;
 	shelving(sx, sz, 0.9, [0.12, 0.55, 0.98, 1.41, 1.84]);
-	// Floor shelf: two big bins.
-	boxAt(parent, 0.36, 0.28, 0.28, accents[0], sx - 0.2, 0.28, sz, 0.02);
-	boxAt(parent, 0.36, 0.28, 0.28, accents[2], sx + 0.2, 0.28, sz, 0.02);
-	// Second: a row of binders.
-	const label = mat(0xf4efe2, 0.9, "printed");
-	[0x1f5fc4, 0x0a174e, 0xa98500, 0x2f7ce6, 0xf5d042, 0x3d4770].forEach((c, i) => {
-		boxAt(parent, 0.07, 0.3, 0.24, mat(c, 0.55), sx - 0.33 + i * 0.1, 0.72, sz, 0.005);
-		boxAt(parent, 0.042, 0.085, 0.002, label, sx - 0.33 + i * 0.1, 0.76, sz + 0.1205); // a blank spine label
-	});
-	// Third: cardboard boxes.
-	boxAt(parent, 0.3, 0.22, 0.26, kraft, sx - 0.22, 1.12, sz, 0.01);
-	boxAt(parent, 0.26, 0.16, 0.26, kraft, sx + 0.18, 1.09, sz, 0.01);
-	boxAt(parent, 0.2, 0.12, 0.2, kraft, sx + 0.18, 1.23, sz, 0.01);
-	// Packing tape along each box's lid and a little way down its front.
-	const tape = mat(0xc9a877, 0.35, "wrap");
-	for (const [bx, by, bh, bd] of [[sx - 0.22, 1.12, 0.22, 0.26], [sx + 0.18, 1.09, 0.16, 0.26], [sx + 0.18, 1.23, 0.12, 0.2]]) {
-		boxAt(parent, 0.048, 0.0015, bd - 0.016, tape, bx, by + bh / 2 + 0.0008, sz);
-		boxAt(parent, 0.048, 0.05, 0.0015, tape, bx, by + bh / 2 - 0.03, sz + bd / 2 + 0.0008);
+	const binderColors = [0x1f5fc4, 0x0a174e, 0xa98500, 0x2f7ce6, 0xf5d042, 0x3d4770];
+	const palette = [0x2f7ce6, 0xf5d042, 0x1b2d6e, 0xa98500, 0xf2eedf, 0x3d4770];
+	if (small) {
+		// Floor shelf: two big bins. Second: binders, one leaning on the last. Third: boxes. Fourth: small bins.
+		bin(small, sx - 0.2, 0.135, sz, 0.36, 0.28, 0.28, palette[0]);
+		bin(small, sx + 0.2, 0.135, sz, 0.36, 0.28, 0.28, palette[2]);
+		binderColors.forEach((c, i) => binder(small, sx - 0.36 + i * 0.076 + (i === 5 ? 0.075 : 0), 0.565, sz + (i % 3) * 0.004, c, 1, i === 5 ? -0.2 : 0));
+		const card = new Batch([sx, 0, sz]);
+		const tape = new Batch([sx, 0, sz]);
+		cardboardBox(card, tape, sx - 0.22, 0.995, sz, 0.3, 0.22, 0.26);
+		cardboardBox(card, tape, sx + 0.18, 0.995, sz, 0.26, 0.16, 0.26);
+		cardboardBox(card, tape, sx + 0.17, 1.155, sz + 0.01, 0.2, 0.12, 0.2);
+		card.mesh(parent, cardboard());
+		tape.mesh(parent);
+		for (let i = 0; i < 4; i++) bin(small, sx - 0.3 + i * 0.2, 1.425, sz, 0.17, 0.12, 0.24, palette[(i + 1) % palette.length]);
+		small.mesh(parent);
+	} else {
+		// Floor shelf: two big bins.
+		boxAt(parent, 0.36, 0.28, 0.28, accents[0], sx - 0.2, 0.28, sz, 0.02);
+		boxAt(parent, 0.36, 0.28, 0.28, accents[2], sx + 0.2, 0.28, sz, 0.02);
+		// Second: a row of binders.
+		const label = mat(0xf4efe2, 0.9, "printed");
+		binderColors.forEach((c, i) => {
+			boxAt(parent, 0.07, 0.3, 0.24, mat(c, 0.55), sx - 0.33 + i * 0.1, 0.72, sz, 0.005);
+			boxAt(parent, 0.042, 0.085, 0.002, label, sx - 0.33 + i * 0.1, 0.76, sz + 0.1205); // a blank spine label
+		});
+		// Third: cardboard boxes.
+		boxAt(parent, 0.3, 0.22, 0.26, kraft, sx - 0.22, 1.12, sz, 0.01);
+		boxAt(parent, 0.26, 0.16, 0.26, kraft, sx + 0.18, 1.09, sz, 0.01);
+		boxAt(parent, 0.2, 0.12, 0.2, kraft, sx + 0.18, 1.23, sz, 0.01);
+		// Packing tape along each box's lid and a little way down its front.
+		const tape = mat(0xc9a877, 0.35, "wrap");
+		for (const [bx, by, bh, bd] of [[sx - 0.22, 1.12, 0.22, 0.26], [sx + 0.18, 1.09, 0.16, 0.26], [sx + 0.18, 1.23, 0.12, 0.2]]) {
+			boxAt(parent, 0.048, 0.0015, bd - 0.016, tape, bx, by + bh / 2 + 0.0008, sz);
+			boxAt(parent, 0.048, 0.05, 0.0015, tape, bx, by + bh / 2 - 0.03, sz + bd / 2 + 0.0008);
+		}
+		// Fourth: small bins in the team's colours.
+		for (let i = 0; i < 4; i++) boxAt(parent, 0.17, 0.12, 0.24, accents[(i + 1) % accents.length], sx - 0.3 + i * 0.2, 1.5, sz, 0.015);
 	}
-	// Fourth: small bins in the team's colours.
-	for (let i = 0; i < 4; i++) boxAt(parent, 0.17, 0.12, 0.24, accents[(i + 1) % accents.length], sx - 0.3 + i * 0.2, 1.5, sz, 0.015);
 	// Top: a small plant.
 	smallPlant(sx, 1.855, sz + 0.02, 1.1, 0.6, 0xe4ffe0, 0.55);
 	// And a taller one on the floor beside the desk.

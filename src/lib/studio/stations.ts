@@ -46,7 +46,7 @@ import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
 import { boxAt, canvasSurface, imageTexture, loadImage, ROOM, screenMaterial, woodMaterial } from "./room";
 import { type PageScreen, pageScreen } from "./screens";
-import { tableFrame } from "./furniture";
+import { Batch, binder, tableFrame } from "./furniture";
 import { model } from "./models";
 import type { LightSpec } from "./lights";
 import { cover, cutCorners, cutCornerSurface, projectFace } from "./panels";
@@ -762,12 +762,16 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	boxAt(group, 0.9, 0.03, 0.3, wood, shelfX, 1.0, z1 - 0.16);
 	boxAt(group, 0.9, 0.03, 0.3, wood, shelfX, 1.5, z1 - 0.16);
 	const binderColors = [0x1f5fc4, 0x0a174e, 0xa98500, 0x2f7ce6, 0xf5d042, 0x1b2d6e, 0x3d4770]; // the palette
+	// Real binders where the tier allows (furniture.ts), their spines to the room, the last of each row leaning; one mesh.
+	const binders = detail ? new Batch([shelfX, 0, z1 - 0.17]) : undefined;
 	for (const [row, y] of [1.0, 1.5].entries())
 		binderColors.forEach((c, i) => {
 			if ((i + row) % 5 === 4) return;
-			const binder = boxAt(group, 0.075, 0.32, 0.26, hardware({ color: c, roughness: 0.55 }, "plastic"), shelfX - 0.36 + i * 0.1, y + 0.175, z1 - 0.17, 0.006);
-			binder.rotation.z = i === 6 ? 0.18 : 0;
+			if (binders) return binder(binders, shelfX - 0.36 + i * 0.1, y + 0.015, z1 - 0.17, c, -1, i === 6 ? 0.18 : 0, 0.075, 0.32, 0.26);
+			const plain = boxAt(group, 0.075, 0.32, 0.26, hardware({ color: c, roughness: 0.55 }, "plastic"), shelfX - 0.36 + i * 0.1, y + 0.175, z1 - 0.17, 0.006);
+			plain.rotation.z = i === 6 ? 0.18 : 0;
 		});
+	binders?.mesh(group);
 
 	await tick();
 
