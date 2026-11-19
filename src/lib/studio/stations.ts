@@ -46,7 +46,7 @@ import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
 import { boxAt, canvasSurface, imageTexture, loadImage, ROOM, screenMaterial, woodMaterial } from "./room";
 import { type PageScreen, pageScreen } from "./screens";
-import { Batch, binder, tableFrame } from "./furniture";
+import { Batch, binder, keyDeck, mug, tableFrame } from "./furniture";
 import { model } from "./models";
 import type { LightSpec } from "./lights";
 import { cover, cutCorners, cutCornerSurface, projectFace } from "./panels";
@@ -327,6 +327,14 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	boxAt(group, 0.05, 0.11, 0.05, steel, softX, benchTop + 0.055, softZ - 0.18);
 	boxAt(group, 0.2, 0.01, 0.14, steel, softX, benchTop + 0.005, softZ - 0.17, 0.004);
 	boxAt(group, 0.36, 0.018, 0.12, dark, softX, benchTop + 0.009, softZ + 0.1, 0.005); // the keyboard
+	if (detail) {
+		const keys = keyDeck(0.345, 0.108, false);
+		keys.position.set(softX, benchTop + 0.0183, softZ + 0.1);
+		group.add(keys);
+		// The monitor's housing behind the panel, and the hinge its neck holds it by.
+		boxAt(group, 0.3, 0.2, 0.03, dark, softX, benchTop + 0.27, softZ - 0.18, 0.012);
+		boxAt(group, 0.07, 0.05, 0.03, steel, softX, benchTop + 0.16, softZ - 0.192, 0.006);
+	}
 	boxAt(group, 0.09, 0.3, 0.26, dark, softX + 0.21, 0.15, softZ - 0.05, 0.008); // the PC, on the floor under the stand
 
 	await tick();
@@ -403,7 +411,16 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	const laptopZ = -2.5;
 	const aluminium = hardware({ color: 0xb4bccb, roughness: 0.32, metalness: 0.85 }, "anodised");
 	boxAt(group, 0.44, 0.016, 0.3, aluminium, webX, benchTop + 0.008, laptopZ + 0.02, 0.006);
-	boxAt(group, 0.38, 0.002, 0.13, dark, webX, benchTop + 0.017, laptopZ - 0.01);
+	if (detail) {
+		// Its keys, palm rest and trackpad, and the hinge the lid turns on.
+		const deck = keyDeck(0.425, 0.285, true);
+		deck.position.set(webX, benchTop + 0.0163, laptopZ + 0.02);
+		group.add(deck);
+		const hinge = new Mesh(new CylinderGeometry(0.008, 0.008, 0.34, 10), aluminium);
+		hinge.rotation.z = Math.PI / 2;
+		hinge.position.set(webX, benchTop + 0.016, laptopZ - 0.128);
+		group.add(hinge);
+	} else boxAt(group, 0.38, 0.002, 0.13, dark, webX, benchTop + 0.017, laptopZ - 0.01);
 	const lid = new Group();
 	lid.position.set(webX, benchTop + 0.016, laptopZ - 0.13);
 	lid.rotation.x = -0.28;
@@ -836,9 +853,15 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		for (const sx of [-1, 1]) boxAt(group, 0.06, 0.72, 0.8, steel, tableX + sx * 0.95, 0.36, tableZ);
 	}
 	boxAt(group, 0.3, 0.012, 0.22, hardware({ color: 0xf4efe2, roughness: 0.9 }, "printed"), tableX - 0.3, 0.776, tableZ - 0.1, 0.004).rotation.y = 0.2;
-	const tableMug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), hardware({ color: 0x2f7ce6, roughness: 0.35 }, "wrap"));
-	tableMug.position.set(tableX + 0.45, 0.82, tableZ - 0.15);
-	group.add(tableMug);
+	if (detail) {
+		const cup = new Batch([tableX, 0, tableZ]);
+		mug(cup, tableX + 0.45, 0.77, tableZ - 0.15, 0x2f7ce6, 0.8);
+		cup.mesh(group);
+	} else {
+		const tableMug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), hardware({ color: 0x2f7ce6, roughness: 0.35 }, "wrap"));
+		tableMug.position.set(tableX + 0.45, 0.82, tableZ - 0.15);
+		group.add(tableMug);
+	}
 	const chairFabric = hardware({ color: 0x1d2b4f, roughness: 0.9 }, "fabric");
 	const portraits = content.portraits.slice(0, 4);
 	const chairs: Promise<unknown>[] = [];

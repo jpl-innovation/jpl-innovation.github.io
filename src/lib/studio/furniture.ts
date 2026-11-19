@@ -6,7 +6,7 @@
  * Not on the low tier: there each table keeps the plain top on four posts its own file builds.
  * The top itself stays with its table (room.ts, stations.ts, build-bench.ts): its size, height and place never change.
  */
-import { BoxGeometry, BufferAttribute, type BufferGeometry, CanvasTexture, Color, CylinderGeometry, Group, LatheGeometry, type Material, Mesh, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, SRGBColorSpace, Vector2, Vector3 } from "three";
+import { BoxGeometry, BufferAttribute, type BufferGeometry, CanvasTexture, Color, CylinderGeometry, Group, LatheGeometry, type Material, Mesh, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3 } from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hardware } from "../three/finish";
@@ -295,4 +295,73 @@ export function lampBody(batch: Batch, base: Vector3, elbow: Vector3, head: Vect
 		batch.add(new SphereGeometry(0.014, 12, 8), GRAPHITE, joint.x, joint.y, joint.z);
 		batch.add(barGeometry(joint.clone().addScaledVector(side, -2.2), joint.clone().addScaledVector(side, 2.2), 0.006, 6), STEEL, 0, 0, 0);
 	}
+}
+
+const decks = new Map<boolean, Material>();
+/**
+ * The top of a keyboard, lying flat (w by d, its front toward +z): rows of key caps, and for a laptop the palm rest and
+ * its trackpad. A picture drawn here, lit as the case is; one material for each kind in the whole room.
+ */
+export function keyDeck(w: number, d: number, laptop: boolean) {
+	let material = decks.get(laptop);
+	if (!material) {
+		const canvas = document.createElement("canvas");
+		canvas.width = 512;
+		canvas.height = laptop ? 384 : 160;
+		const g = canvas.getContext("2d")!;
+		g.fillStyle = laptop ? "#aeb6c4" : "#161a24";
+		g.fillRect(0, 0, canvas.width, canvas.height);
+		const rows = 5;
+		const keysTop = laptop ? 26 : 10;
+		const keysH = laptop ? 190 : 140;
+		if (laptop) {
+			g.fillStyle = "#11141b"; // the well the keys sit in
+			g.fillRect(22, keysTop - 6, 468, keysH + 12);
+		}
+		for (let row = 0; row < rows; row++) {
+			const y = keysTop + (row * keysH) / rows;
+			const h = keysH / rows - 5;
+			let x = 28;
+			const widths = row === 4 ? [34, 34, 34, 190, 34, 34, 34] : Array.from({ length: 14 }, (_, i) => (i === 0 ? 28 + row * 7 : i === 13 ? 50 - row * 7 : 28.6));
+			for (const kw of widths) {
+				g.fillStyle = "#2b303c";
+				g.fillRect(x, y, kw - 4, h);
+				g.fillStyle = "rgba(255,255,255,0.05)"; // the cap's top edge catching the light
+				g.fillRect(x, y, kw - 4, 2);
+				x += kw + (row === 4 ? 2.5 : 4.2);
+			}
+		}
+		if (laptop) {
+			g.strokeStyle = "rgba(40,48,62,0.5)";
+			g.lineWidth = 2;
+			g.strokeRect(176, 246, 160, 112);
+			g.fillStyle = "rgba(255,255,255,0.08)";
+			g.fillRect(177, 247, 158, 110);
+		}
+		const map = new CanvasTexture(canvas);
+		map.colorSpace = SRGBColorSpace;
+		map.anisotropy = 8;
+		decks.set(laptop, (material = new MeshStandardMaterial({ map, roughness: 0.55, metalness: laptop ? 0.4 : 0 })));
+	}
+	const mesh = new Mesh(new PlaneGeometry(w, d), material);
+	mesh.rotation.x = -Math.PI / 2;
+	return mesh;
+}
+
+/** A mug standing at (x, y, z): thrown walls with a rim and an inside, a handle (turned by `turn`), and what is left of the coffee. */
+export function mug(batch: Batch, x: number, y: number, z: number, color: number, turn = 0) {
+	const wall = [[0, 0], [0.034, 0], [0.037, 0.004], [0.04, 0.096], [0.0385, 0.1], [0.0365, 0.097], [0.0335, 0.012], [0, 0.01]];
+	batch.add(new LatheGeometry(wall.map(([r, h]) => new Vector2(r, h)), 24), color, x, y, z);
+	batch.add(new TorusGeometry(0.026, 0.006, 8, 16, Math.PI).rotateZ(-Math.PI / 2).translate(0.039, 0.05, 0).rotateY(turn), color, x, y, z);
+	batch.add(new CylinderGeometry(0.0345, 0.0345, 0.002, 20), 0x2a1a10, x, y + 0.07, z);
+}
+
+/** A notebook lying at (x, y, z), turned by `turn`: a cover a little larger than its block of pages, an elastic band and a ribbon. */
+export function notebook(batch: Batch, x: number, y: number, z: number, w: number, d: number, color: number, turn = 0) {
+	const part = (geometry: BufferGeometry, c: number) => batch.add(geometry.rotateY(turn), c, x, y, z);
+	part(new RoundedBoxGeometry(w, 0.002, d, 1, 0.001).translate(0, 0.001, 0), color);
+	part(new BoxGeometry(w - 0.006, 0.01, d - 0.006).translate(0.001, 0.007, 0), PAPER);
+	part(new RoundedBoxGeometry(w, 0.002, d, 1, 0.001).translate(0, 0.013, 0), color);
+	part(new BoxGeometry(0.007, 0.0164, d + 0.001).translate(w / 2 - 0.022, 0.0072, 0), 0x12151c); // the elastic band
+	part(new BoxGeometry(0.005, 0.0006, 0.03).translate(-w * 0.2, 0.0005, d / 2 + 0.012), 0xf5d042); // the ribbon
 }

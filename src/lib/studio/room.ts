@@ -622,6 +622,12 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	monitor.mesh.position.set(monitorX, deskTop + 0.36, deskZ - 0.223);
 	group.add(monitor.mesh);
 	boxAt(group, 0.06, 0.1, 0.06, steel, monitorX, deskTop + 0.05, deskZ - 0.26);
+	if (detail) {
+		// The monitor's housing behind the panel, the hinge its neck holds it by, and its standby light.
+		boxAt(group, 0.5, 0.3, 0.035, new MeshStandardMaterial({ color: 0x11141c, roughness: 0.4 }), monitorX, deskTop + 0.36, deskZ - 0.265, 0.014);
+		boxAt(group, 0.09, 0.06, 0.03, steel, monitorX, deskTop + 0.2, deskZ - 0.275, 0.006);
+		boxAt(group, 0.006, 0.003, 0.002, new MeshBasicMaterial({ color: 0xf5d042, toneMapped: false }), monitorX + 0.38, deskTop + 0.108, deskZ - 0.2245);
+	}
 	boxAt(group, 0.26, 0.012, 0.18, steel, monitorX, deskTop + 0.006, deskZ - 0.24, 0.004);
 	// The keyboard: a low case and its keys (one draw), the mouse beside it, and their cables over the back of the desk.
 	const keyPlastic = hardware({ color: 0x1b1f2a, roughness: 0.6 }, "plastic");

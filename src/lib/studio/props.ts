@@ -19,7 +19,7 @@ import {
 	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
-import { Batch, bin, binder, cardboard, cardboardBox, shelvingFrame } from "./furniture";
+import { Batch, bin, binder, cardboard, cardboardBox, keyDeck, mug as realMug, notebook, shelvingFrame } from "./furniture";
 import { contactShadow } from "../three/stage";
 import { model } from "./models";
 import { boxAt, canvasSurface, DESK, imageTexture, ROOM, woodMaterial } from "./room";
@@ -265,10 +265,17 @@ export function buildProps(parent: Group, real: boolean): Props {
 	for (let i = 0; i < 5; i++) boxAt(parent, 0.2, 0.13, 0.2, accents[i % accents.length], px - 0.55 + i * 0.27, 1.975, z0 + 0.15, 0.015);
 
 	/* ---------- Web: a mug and a notebook by the laptop ---------- */
-	const mug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), mat(0xf2f4f8, 0.35, "wrap"));
-	mug.position.set(-2.6 - 0.62, 0.9, -2.75);
-	parent.add(mug);
-	boxAt(parent, 0.2, 0.016, 0.28, mat(0xf4efe2, 0.9, "printed"), -2.6 + 0.62, 0.858, -2.52, 0.003).rotation.y = -0.3; // (in front of the multimeter)
+	// (Real ones where the tier allows, with everything else small on the benches and the table: one mesh, `bits`.)
+	const bits = real ? new Batch([0, 0, 0]) : undefined;
+	if (bits) {
+		realMug(bits, -2.6 - 0.62, 0.85, -2.75, 0xf2f4f8, 2.2);
+		notebook(bits, -2.6 + 0.62, 0.85, -2.52, 0.2, 0.28, 0xf4efe2, -0.3); // (in front of the multimeter)
+	} else {
+		const mug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), mat(0xf2f4f8, 0.35, "wrap"));
+		mug.position.set(-2.6 - 0.62, 0.9, -2.75);
+		parent.add(mug);
+		boxAt(parent, 0.2, 0.016, 0.28, mat(0xf4efe2, 0.9, "printed"), -2.6 + 0.62, 0.858, -2.52, 0.003).rotation.y = -0.3; // (in front of the multimeter)
+	}
 
 	/* ---------- Networks: a cable spool at the rack's foot ---------- */
 	const spool = new Mesh(new CylinderGeometry(0.11, 0.11, 0.12, 20), mat(0xc8283a, 0.5));
@@ -288,6 +295,16 @@ export function buildProps(parent: Group, real: boolean): Props {
 		laptop.rotation.y = Math.PI + turn;
 		parent.add(laptop);
 		boxAt(laptop, 0.34, 0.012, 0.23, alu, 0, 0.006, 0, 0.005);
+		if (real) {
+			// Its keys, palm rest and trackpad, and the hinge the lid turns on.
+			const deck = keyDeck(0.33, 0.22, true);
+			deck.position.set(0, 0.0123, 0);
+			laptop.add(deck);
+			const hinge = new Mesh(new CylinderGeometry(0.006, 0.006, 0.26, 10), alu);
+			hinge.rotation.z = Math.PI / 2;
+			hinge.position.set(0, 0.012, -0.112);
+			laptop.add(hinge);
+		}
 		const lid = new Group();
 		lid.position.set(0, 0.012, -0.11);
 		lid.rotation.x = -0.32;
@@ -297,8 +314,14 @@ export function buildProps(parent: Group, real: boolean): Props {
 		screen.position.set(0, 0.11, 0.005);
 		lid.add(screen);
 	}
-	boxAt(parent, 0.17, 0.014, 0.23, mat(0xf4efe2, 0.9, "printed"), -2.4, tableTop + 0.007, 5.0, 0.003).rotation.y = 0.5;
-	boxAt(parent, 0.17, 0.014, 0.23, mat(0x23324f, 0.7), -2.15, tableTop + 0.007, 4.95, 0.003).rotation.y = -0.2;
+	if (bits) {
+		notebook(bits, -2.4, tableTop, 5.0, 0.17, 0.23, 0xf4efe2, 0.5);
+		notebook(bits, -2.15, tableTop, 4.95, 0.17, 0.23, 0x23324f, -0.2);
+		bits.mesh(parent);
+	} else {
+		boxAt(parent, 0.17, 0.014, 0.23, mat(0xf4efe2, 0.9, "printed"), -2.4, tableTop + 0.007, 5.0, 0.003).rotation.y = 0.5;
+		boxAt(parent, 0.17, 0.014, 0.23, mat(0x23324f, 0.7), -2.15, tableTop + 0.007, 4.95, 0.003).rotation.y = -0.2;
+	}
 	floorPlant(-3.95, z1 - 0.5, 1.3, 3.6, 0xf2ffe6, 1.4);
 
 	/* ---------- The window sill: a small plant ---------- */
