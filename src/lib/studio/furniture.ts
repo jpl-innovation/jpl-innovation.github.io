@@ -365,3 +365,85 @@ export function notebook(batch: Batch, x: number, y: number, z: number, w: numbe
 	part(new BoxGeometry(0.007, 0.0164, d + 0.001).translate(w / 2 - 0.022, 0.0072, 0), 0x12151c); // the elastic band
 	part(new BoxGeometry(0.005, 0.0006, 0.03).translate(-w * 0.2, 0.0005, d / 2 + 0.012), 0xf5d042); // the ribbon
 }
+
+const YELLOW = 0xf5d042;
+const NAVY = 0x1b2d6e;
+
+/** A steel toolbox on the floor at (x, z), w by h by d with its lid: a ribbed body, a lid with a carrying handle on two posts, two latches and their catches. */
+export function toolbox(batch: Batch, x: number, z: number, w = 0.52, h = 0.22, d = 0.26) {
+	batch.box(w, h, d, x, h / 2, z, YELLOW, 0.012);
+	for (const y of [0.3, 0.55, 0.8]) batch.box(w + 0.004, 0.008, d + 0.004, x, h * y, z, YELLOW, 0.003); // pressed ribs
+	batch.box(w + 0.006, 0.05, d + 0.006, x, h + 0.025, z, GRAPHITE, 0.012); // the lid
+	batch.box(w * 0.5, 0.004, d * 0.4, x, h + 0.051, z, 0x1a1f2b, 0.002); // the handle's well
+	for (const s of [-1, 1]) batch.box(0.012, 0.03, 0.012, x + s * 0.09, h + 0.064, z, STEEL, 0.003);
+	batch.add(new CylinderGeometry(0.009, 0.009, 0.2, 12).rotateZ(Math.PI / 2), 0x12151c, x, h + 0.08, z);
+	for (const s of [-1, 1]) {
+		batch.box(0.036, 0.05, 0.006, x + s * w * 0.3, h - 0.005, z + d / 2 + 0.004, STEEL, 0.002); // a latch
+		batch.box(0.026, 0.008, 0.01, x + s * w * 0.3, h + 0.012, z + d / 2 + 0.006, STEEL, 0.002);
+		batch.box(0.05, 0.02, 0.006, x + s * w * 0.3, h - 0.004, z - d / 2 - 0.003, STEEL); // a hinge
+	}
+}
+
+/** A robot wheel lying flat, its foot at (x, y, z): a rubber tyre with rounded shoulders on a hub with a bolt circle. */
+export function wheel(batch: Batch, x: number, y: number, z: number, radius = 0.1, width = 0.05) {
+	const half = width / 2;
+	const tyre = [[radius * 0.62, 0], [radius * 0.93, 0], [radius, half * 0.35], [radius, half * 1.65], [radius * 0.93, width], [radius * 0.62, width]];
+	batch.add(new LatheGeometry(tyre.map(([r, h]) => new Vector2(r, h)), 28), 0x14171f, x, y, z);
+	for (let i = 0; i < 28; i++) {
+		// The tread: blocks round the edge.
+		const a = (i / 28) * Math.PI * 2;
+		batch.add(new BoxGeometry(0.008, width * 0.8, 0.012).rotateY(-a), 0x0c0e13, x + Math.cos(a) * radius, y + half, z + Math.sin(a) * radius);
+	}
+	batch.add(new CylinderGeometry(radius * 0.64, radius * 0.64, width * 0.86, 24), 0xd8dde6, x, y + half, z);
+	batch.add(new CylinderGeometry(radius * 0.2, radius * 0.2, width * 0.9, 12), 0x2a2f3a, x, y + half, z);
+	for (let i = 0; i < 6; i++) {
+		const a = (i / 6) * Math.PI * 2;
+		batch.add(new CylinderGeometry(0.006, 0.006, width * 0.9, 6), 0x40464f, x + Math.cos(a) * radius * 0.42, y + half, z + Math.sin(a) * radius * 0.42);
+	}
+}
+
+/** A cable spool standing on one flange at (x, z): two flanges, a core, and the cable wound between them. */
+export function spool(batch: Batch, x: number, z: number, radius = 0.11, height = 0.12) {
+	for (const y of [0.006, height - 0.006]) {
+		batch.add(new CylinderGeometry(radius, radius, 0.012, 28), NAVY, x, y, z);
+		batch.add(new CylinderGeometry(radius * 0.3, radius * 0.3, 0.014, 16), 0x10131a, x, y, z);
+	}
+	batch.add(new CylinderGeometry(radius * 0.42, radius * 0.42, height, 16), 0x2a2f3a, x, height / 2, z);
+	const turns = 6;
+	for (let i = 0; i < turns; i++) batch.add(new TorusGeometry(radius * 0.72, (height - 0.024) / turns / 2, 6, 28).rotateX(Math.PI / 2), YELLOW, x, 0.012 + ((i + 0.5) * (height - 0.024)) / turns, z);
+}
+
+/** A steel bracket under a wall shelf at (x, y the shelf's underside, z the wall): an arm out from the wall, a leg down it, a strut between, and two screws. */
+export function wallBracket(batch: Batch, x: number, y: number, wall: number, reach: number, out: 1 | -1 = 1) {
+	batch.box(0.022, 0.004, reach, x, y - 0.002, wall + (out * reach) / 2, GRAPHITE);
+	batch.box(0.022, reach * 0.7, 0.004, x, y - reach * 0.35, wall + out * 0.002, GRAPHITE);
+	batch.add(barGeometry(new Vector3(x, y - 0.006, wall + out * reach * 0.8), new Vector3(x, y - reach * 0.62, wall + out * 0.006), 0.004, 6), GRAPHITE, 0, 0, 0);
+	for (const dy of [0.2, 0.5]) batch.add(new CylinderGeometry(0.004, 0.004, 0.003, 6).rotateX(Math.PI / 2), STEEL, x, y - reach * dy, wall + out * 0.005);
+}
+
+/**
+ * A hand tool hanging on a pegboard, its top at (x, y) and the board at z: a screwdriver (a turned handle and a blade)
+ * or a spanner (a flat bar with a jaw at each end), on a steel hook.
+ */
+export function hungTool(batch: Batch, x: number, y: number, z: number, length: number, color: number, spanner: boolean) {
+	batch.add(barGeometry(new Vector3(x, y + 0.012, z), new Vector3(x, y + 0.012, z + 0.03), 0.003, 6), STEEL, 0, 0, 0); // the hook
+	batch.add(barGeometry(new Vector3(x, y + 0.012, z + 0.03), new Vector3(x, y + 0.026, z + 0.03), 0.003, 6), STEEL, 0, 0, 0);
+	if (spanner) {
+		batch.box(0.016, length, 0.005, x, y - length / 2, z + 0.02, STEEL, 0.002);
+		for (const s of [0, 1]) batch.add(new TorusGeometry(0.016, 0.005, 6, 14, Math.PI * 1.5).rotateZ(s ? Math.PI * 0.75 : -Math.PI * 0.25), STEEL, x, y - s * length, z + 0.02);
+		return;
+	}
+	const grip = length * 0.42;
+	batch.add(new CylinderGeometry(0.011, 0.014, grip, 12), color, x, y - grip / 2, z + 0.02);
+	batch.add(new SphereGeometry(0.0115, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), color, x, y, z + 0.02);
+	batch.add(new CylinderGeometry(0.0085, 0.006, 0.014, 10), 0x12151c, x, y - grip - 0.007, z + 0.02);
+	batch.add(new CylinderGeometry(0.0035, 0.0035, length - grip, 8), STEEL, x, y - grip - (length - grip) / 2, z + 0.02);
+}
+
+/** A LiPo pack lying at (x, y, z): its wrapped cells, a label, and its lead with a plug. */
+export function lipo(batch: Batch, x: number, y: number, z: number) {
+	batch.box(0.14, 0.036, 0.046, x, y + 0.018, z, 0x161a24, 0.008);
+	batch.box(0.08, 0.001, 0.03, x - 0.01, y + 0.0365, z, YELLOW);
+	batch.add(barGeometry(new Vector3(x + 0.07, y + 0.02, z), new Vector3(x + 0.1, y + 0.008, z + 0.012), 0.003, 6), 0x0c0e13, 0, 0, 0);
+	batch.box(0.016, 0.01, 0.012, x + 0.106, y + 0.006, z + 0.014, YELLOW, 0.002);
+}

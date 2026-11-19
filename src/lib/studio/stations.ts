@@ -46,7 +46,7 @@ import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
 import { boxAt, canvasSurface, imageTexture, loadImage, ROOM, screenMaterial, woodMaterial } from "./room";
 import { type PageScreen, pageScreen } from "./screens";
-import { Batch, binder, keyDeck, mug, tableFrame } from "./furniture";
+import { Batch, bin, binder, hungTool, keyDeck, mug, tableFrame, wallBracket } from "./furniture";
 import { model } from "./models";
 import type { LightSpec } from "./lights";
 import { cover, cutCorners, cutCornerSurface, projectFace } from "./panels";
@@ -119,7 +119,6 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	];
 
 	/** A workbench: a top on four legs, its top surface at `benchTop`. */
-	const detail = ctx.tier !== "low";
 	const edgeBand = hardware({ color: 0x1a2030, roughness: 0.5 }, "plastic");
 	const workbench = (x: number, w = 1.6, d = 0.8, z = -2.6) => {
 		if (detail) {
@@ -139,18 +138,22 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	/* ================================================================== */
 	const robotX = -0.6;
 	const cartTop = 0.36;
-	boxAt(group, 1.1, 0.04, 0.86, steel, robotX, cartTop - 0.02, -2.55, 0.008);
-	boxAt(group, 1.1, 0.03, 0.86, steel, robotX, 0.12, -2.55, 0.008);
+	// (The cart keeps its shape, size and place: it carries the robot. Where the tier allows it is painted steel on rubber castors.)
+	const detail = ctx.tier !== "low";
+	const cartSteel = detail ? hardware({ color: 0x262c3a, roughness: 0.55, metalness: 0.1 }, "plastic") : steel;
+	const cartRubber = detail ? hardware({ color: 0x101216, roughness: 0.9 }, "rubber") : dark;
+	boxAt(group, 1.1, 0.04, 0.86, cartSteel, robotX, cartTop - 0.02, -2.55, 0.008);
+	boxAt(group, 1.1, 0.03, 0.86, cartSteel, robotX, 0.12, -2.55, 0.008);
 	for (const sx of [-1, 1])
 		for (const sz of [-1, 1]) {
-			boxAt(group, 0.03, cartTop - 0.08, 0.03, steel, robotX + sx * 0.52, cartTop / 2 + 0.02, -2.55 + sz * 0.4);
-			const caster = new Mesh(new CylinderGeometry(0.035, 0.035, 0.03, 16), dark);
+			boxAt(group, 0.03, cartTop - 0.08, 0.03, cartSteel, robotX + sx * 0.52, cartTop / 2 + 0.02, -2.55 + sz * 0.4);
+			const caster = new Mesh(new CylinderGeometry(0.035, 0.035, 0.03, 16), cartRubber);
 			caster.rotation.z = Math.PI / 2;
 			caster.position.set(robotX + sx * 0.5, 0.035, -2.55 + sz * 0.38);
 			group.add(caster);
 		}
 	// Pegboard behind it, with tools hung on it.
-	const peg = canvasSurface(512, 320);
+	const peg = ctx.tier !== "low" ? canvasSurface(1536, 960) : canvasSurface(512, 320);
 	const pegboard = new Mesh(new PlaneGeometry(1.7, 1.06), hardware({ color: 0xffffff, map: peg.texture, roughness: 0.85 }, "printed"));
 	pegboard.position.set(robotX, 1.45, z0 + 0.02);
 	group.add(pegboard);
@@ -159,18 +162,47 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		g.fillStyle = darkTheme ? "#1a2442" : "#b9c6dc";
 		g.fillRect(0, 0, canvas.width, canvas.height);
 		g.fillStyle = darkTheme ? "#0b1124" : "#8e9cb6";
-		for (let y = 12; y < canvas.height; y += 20) for (let x = 12; x < canvas.width; x += 20) g.fillRect(x - 2, y - 2, 4, 4);
+		if (detail) {
+			// Round holes on a 25 mm pitch, each with the light catching its lower lip, on board with a little grain.
+			const pitch = canvas.width / 68;
+			for (let y = pitch / 2; y < canvas.height; y += pitch)
+				for (let x = pitch / 2; x < canvas.width; x += pitch) {
+					g.fillStyle = darkTheme ? "#0b1124" : "#8e9cb6";
+					g.beginPath();
+					g.arc(x, y, pitch * 0.2, 0, Math.PI * 2);
+					g.fill();
+					g.fillStyle = "rgba(255,255,255,0.07)";
+					g.fillRect(x - pitch * 0.14, y + pitch * 0.2, pitch * 0.28, 1);
+				}
+			g.fillStyle = "rgba(0,0,0,0.035)";
+			for (let y = 0; y < canvas.height; y += 3) g.fillRect(0, y, canvas.width, 1);
+		} else for (let y = 12; y < canvas.height; y += 20) for (let x = 12; x < canvas.width; x += 20) g.fillRect(x - 2, y - 2, 4, 4);
 		peg.redraw();
 	};
 	const toolMat = hardware({ color: 0xc8283a, roughness: 0.45 }, "plastic");
 	const toolMetal = hardware({ color: 0xb8c0cc, roughness: 0.3, metalness: 0.9 }, "metal");
-	for (const [i, x] of [-0.62, -0.42, -0.22, 0.18, 0.4, 0.62].entries()) {
-		const len = 0.18 + (i % 3) * 0.06;
-		boxAt(group, 0.025, len * 0.45, 0.02, toolMat, robotX + x, 1.62 - len * 0.2, z0 + 0.05, 0.006);
-		boxAt(group, 0.012, len * 0.6, 0.012, toolMetal, robotX + x, 1.62 - len * 0.72, z0 + 0.05);
+	if (detail) {
+		// Real tools on hooks (screwdrivers and spanners, in the room's colours), a frame round the board, and the shelf
+		// on its brackets with three bins: one mesh (furniture.ts).
+		const hung = new Batch([robotX, 1.45, z0 + 0.02]);
+		for (const [i, x] of [-0.62, -0.42, -0.22, 0.18, 0.4, 0.62].entries()) hungTool(hung, robotX + x, 1.66, z0 + 0.022, 0.18 + (i % 3) * 0.06, [0xf5d042, 0x1b2d6e, 0xf5d042, 0x2f7ce6, 0xf2eedf, 0x1b2d6e][i], i === 3 || i === 5);
+		for (const s of [-1, 1]) {
+			hung.box(1.72, 0.022, 0.018, robotX, 1.45 + s * 0.535, z0 + 0.027, 0x262c3a);
+			hung.box(0.022, 1.092, 0.018, robotX + s * 0.855, 1.45, z0 + 0.027, 0x262c3a);
+			wallBracket(hung, robotX + s * 0.2, 1.1375, z0 + 0.02, 0.11);
+		}
+		hung.box(0.5, 0.025, 0.12, robotX, 1.15, z0 + 0.08, 0x262c3a, 0.004); // a shelf
+		for (const [i, c] of [0xf5d042, 0x2f7ce6, 0xf2eedf].entries()) bin(hung, robotX - 0.15 + i * 0.15, 1.1625, z0 + 0.08, 0.1, 0.07, 0.08, c);
+		hung.mesh(group);
+	} else {
+		for (const [i, x] of [-0.62, -0.42, -0.22, 0.18, 0.4, 0.62].entries()) {
+			const len = 0.18 + (i % 3) * 0.06;
+			boxAt(group, 0.025, len * 0.45, 0.02, toolMat, robotX + x, 1.62 - len * 0.2, z0 + 0.05, 0.006);
+			boxAt(group, 0.012, len * 0.6, 0.012, toolMetal, robotX + x, 1.62 - len * 0.72, z0 + 0.05);
+		}
+		boxAt(group, 0.5, 0.025, 0.12, steel, robotX, 1.15, z0 + 0.08); // a shelf
+		for (const [i, c] of [0xf5d042, 0x2f7ce6, 0xf2eedf].entries()) boxAt(group, 0.1, 0.07, 0.08, hardware({ color: c, roughness: 0.5 }, "plastic"), robotX - 0.15 + i * 0.15, 1.2, z0 + 0.08, 0.01);
 	}
-	boxAt(group, 0.5, 0.025, 0.12, steel, robotX, 1.15, z0 + 0.08); // a shelf
-	for (const [i, c] of [0xf5d042, 0x2f7ce6, 0xf2eedf].entries()) boxAt(group, 0.1, 0.07, 0.08, hardware({ color: c, roughness: 0.5 }, "plastic"), robotX - 0.15 + i * 0.15, 1.2, z0 + 0.08, 0.01);
 
 	let robot: { model: Group; animate(t: number, dt: number): void; motion(active: boolean): void; applyPalette(p: { dark: boolean }): void } | undefined;
 	// Taking the robot apart (the cart's device): every CAD part's instance slides out from the robot's middle, along the

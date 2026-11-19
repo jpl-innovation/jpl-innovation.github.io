@@ -19,7 +19,7 @@ import {
 	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
-import { Batch, bin, binder, cardboard, cardboardBox, keyDeck, mug as realMug, notebook, shelvingFrame } from "./furniture";
+import { Batch, bin, binder, cardboard, cardboardBox, keyDeck, lipo, mug as realMug, notebook, shelvingFrame, spool as realSpool, toolbox, wallBracket, wheel } from "./furniture";
 import { contactShadow } from "../three/stage";
 import { model } from "./models";
 import { boxAt, canvasSurface, DESK, imageTexture, ROOM, woodMaterial } from "./room";
@@ -234,35 +234,56 @@ export function buildProps(parent: Group, real: boolean): Props {
 
 	/* ---------- Robotics: a toolbox and spare wheels ---------- */
 	const red = mat(0xc8283a, 0.45);
-	boxAt(parent, 0.52, 0.22, 0.26, red, 0.22, 0.11, -1.95, 0.02);
-	boxAt(parent, 0.5, 0.05, 0.24, mat(0x9a1f2e, 0.45), 0.22, 0.245, -1.95, 0.015);
-	const handle = new Mesh(new TorusGeometry(0.06, 0.008, 8, 16, Math.PI), steel);
-	handle.position.set(0.22, 0.27, -1.95);
-	parent.add(handle);
-	const tire = mat(0x14171f, 0.9, "rubber");
-	for (let i = 0; i < 3; i++) {
-		const wheel = new Mesh(new CylinderGeometry(0.1, 0.1, 0.05, 20), tire);
-		wheel.position.set(-1.75, 0.03 + i * 0.052, -3.0);
-		parent.add(wheel);
+	// Real ones where the tier allows (furniture.ts), in the room's yellow and graphite, with the parts shelf's things and
+	// the spool: one mesh, `shop`. The plain ones otherwise.
+	const shop = real ? new Batch([0, 0, -2.5]) : undefined;
+	if (shop) {
+		toolbox(shop, 0.22, -1.95);
+		for (let i = 0; i < 3; i++) wheel(shop, -1.75 + (i === 2 ? 0.012 : 0), 0.005 + i * 0.052, -3.0 + (i === 1 ? 0.01 : 0));
+	} else {
+		boxAt(parent, 0.52, 0.22, 0.26, red, 0.22, 0.11, -1.95, 0.02);
+		boxAt(parent, 0.5, 0.05, 0.24, mat(0x9a1f2e, 0.45), 0.22, 0.245, -1.95, 0.015);
+		const handle = new Mesh(new TorusGeometry(0.06, 0.008, 8, 16, Math.PI), steel);
+		handle.position.set(0.22, 0.27, -1.95);
+		parent.add(handle);
+		const tire = mat(0x14171f, 0.9, "rubber");
+		for (let i = 0; i < 3; i++) {
+			const plain = new Mesh(new CylinderGeometry(0.1, 0.1, 0.05, 20), tire);
+			plain.position.set(-1.75, 0.03 + i * 0.052, -3.0);
+			parent.add(plain);
+		}
 	}
 
 	/* ---------- Drones: a parts shelf over the bench ---------- */
 	const px = 1.1;
 	boxAt(parent, 1.5, 0.03, 0.26, wood, px, 1.5, z0 + 0.15, 0.006);
 	boxAt(parent, 1.5, 0.03, 0.26, wood, px, 1.9, z0 + 0.15, 0.006);
-	for (const bx of [-0.62, 0.62]) boxAt(parent, 0.03, 0.46, 0.04, steel, px + bx, 1.7, z0 + 0.06);
-	// LiPo bags, flat, with a red label each; a stack of prop packs; a coil of wire.
-	for (let i = 0; i < 3; i++) {
-		boxAt(parent, 0.14, 0.05, 0.1, mat(0x161a24, 0.5, "wrap"), px - 0.5 + i * 0.17, 1.545, z0 + 0.15, 0.01);
-		boxAt(parent, 0.06, 0.004, 0.04, red, px - 0.5 + i * 0.17, 1.572, z0 + 0.15);
+	if (shop) {
+		// Each board on three steel brackets screwed to the wall; LiPo packs with their leads, prop packs with a label, a
+		// coil of wire wound in turns; bins on the upper shelf.
+		for (const by of [1.485, 1.885]) for (const bx of [-0.62, 0, 0.62]) wallBracket(shop, px + bx, by, z0, 0.22);
+		for (let i = 0; i < 3; i++) lipo(shop, px - 0.5 + i * 0.17, 1.515, z0 + 0.15 + (i % 2) * 0.012);
+		for (let i = 0; i < 3; i++) {
+			shop.box(0.22, 0.014, 0.12, px + 0.12 + (i - 1) * 0.006, 1.522 + i * 0.0145, z0 + 0.15, 0x1d2b4f, 0.003);
+			shop.box(0.06, 0.0142, 0.001, px + 0.12 + (i - 1) * 0.006, 1.522 + i * 0.0145, z0 + 0.2105, 0xf1ecdf);
+		}
+		for (let i = 0; i < 4; i++) shop.add(new TorusGeometry(0.05 - (i % 2) * 0.003, 0.0055, 6, 24).rotateX(Math.PI / 2), 0xf5d042, px + 0.5, 1.521 + i * 0.0105, z0 + 0.15);
+		for (let i = 0; i < 5; i++) bin(shop, px - 0.55 + i * 0.27, 1.915, z0 + 0.15, 0.2, 0.13, 0.2, [0x2f7ce6, 0xf5d042, 0x1b2d6e, 0xa98500, 0xf2eedf][i]);
+	} else {
+		for (const bx of [-0.62, 0.62]) boxAt(parent, 0.03, 0.46, 0.04, steel, px + bx, 1.7, z0 + 0.06);
+		// LiPo bags, flat, with a red label each; a stack of prop packs; a coil of wire.
+		for (let i = 0; i < 3; i++) {
+			boxAt(parent, 0.14, 0.05, 0.1, mat(0x161a24, 0.5, "wrap"), px - 0.5 + i * 0.17, 1.545, z0 + 0.15, 0.01);
+			boxAt(parent, 0.06, 0.004, 0.04, red, px - 0.5 + i * 0.17, 1.572, z0 + 0.15);
+		}
+		for (let i = 0; i < 3; i++) boxAt(parent, 0.22, 0.015, 0.12, mat(0x1d2b4f, 0.5), px + 0.12, 1.53 + i * 0.016, z0 + 0.15, 0.003);
+		const coil = new Mesh(new TorusGeometry(0.05, 0.016, 8, 20), mat(0xf0596b, 0.5));
+		coil.rotation.x = Math.PI / 2;
+		coil.position.set(px + 0.5, 1.55, z0 + 0.15);
+		parent.add(coil);
+		// Upper shelf: bins.
+		for (let i = 0; i < 5; i++) boxAt(parent, 0.2, 0.13, 0.2, accents[i % accents.length], px - 0.55 + i * 0.27, 1.975, z0 + 0.15, 0.015);
 	}
-	for (let i = 0; i < 3; i++) boxAt(parent, 0.22, 0.015, 0.12, mat(0x1d2b4f, 0.5), px + 0.12, 1.53 + i * 0.016, z0 + 0.15, 0.003);
-	const coil = new Mesh(new TorusGeometry(0.05, 0.016, 8, 20), mat(0xf0596b, 0.5));
-	coil.rotation.x = Math.PI / 2;
-	coil.position.set(px + 0.5, 1.55, z0 + 0.15);
-	parent.add(coil);
-	// Upper shelf: bins.
-	for (let i = 0; i < 5; i++) boxAt(parent, 0.2, 0.13, 0.2, accents[i % accents.length], px - 0.55 + i * 0.27, 1.975, z0 + 0.15, 0.015);
 
 	/* ---------- Web: a mug and a notebook by the laptop ---------- */
 	// (Real ones where the tier allows, with everything else small on the benches and the table: one mesh, `bits`.)
@@ -278,12 +299,17 @@ export function buildProps(parent: Group, real: boolean): Props {
 	}
 
 	/* ---------- Networks: a cable spool at the rack's foot ---------- */
-	const spool = new Mesh(new CylinderGeometry(0.11, 0.11, 0.12, 20), mat(0xc8283a, 0.5));
-	spool.position.set(3.75, 0.06, -2.2);
-	parent.add(spool);
-	const spoolCore = new Mesh(new CylinderGeometry(0.045, 0.045, 0.14, 12), steel);
-	spoolCore.position.copy(spool.position);
-	parent.add(spoolCore);
+	if (shop) {
+		realSpool(shop, 3.75, -2.2);
+		shop.mesh(parent);
+	} else {
+		const spool = new Mesh(new CylinderGeometry(0.11, 0.11, 0.12, 20), mat(0xc8283a, 0.5));
+		spool.position.set(3.75, 0.06, -2.2);
+		parent.add(spool);
+		const spoolCore = new Mesh(new CylinderGeometry(0.045, 0.045, 0.14, 12), steel);
+		spoolCore.position.copy(spool.position);
+		parent.add(spoolCore);
+	}
 
 	/* ---------- The crew's table: two laptops, notebooks, a plant ---------- */
 	const alu = hardware({ color: 0xb4bccb, roughness: 0.32, metalness: 0.85 }, "anodised");
