@@ -76,7 +76,6 @@ const POOLS: Record<string, { at: [number, number]; size: number }> = {
  * room.ts and this file import each other, so ROOM is not there yet while this module loads.) */
 const shadowSpots = (real: boolean, { z0, z1 } = ROOM): [number, number, number, number, number][] => [
 	[-6, 0, -2.45, 2.2, 0.85], // the desk
-	[-6.2, 0, -1.48, 0.55, 0.55], // its chair
 	[-8.0, 0, z0 + 0.2, 0.92, 0.42], // the shelving
 	[-8.15, 0, -1.65, 0.36, 0.36], // the floor plant
 	// (On the desk the room draws the real footprints where it can: room.ts.)

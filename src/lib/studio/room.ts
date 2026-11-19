@@ -49,14 +49,15 @@ import {
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { hardware } from "../three/finish";
-import { tick } from "../three/yield";
+import { compileInSlices, tick, uploadInSlices } from "../three/yield";
 import { deskSheets, type SketchText } from "../../text/studio";
 import type { DroneRig } from "../three/models/drone";
-import type { Palette, StageContext } from "../three/stage";
+import { contactShadow, type Palette, type StageContext } from "../three/stage";
 import { buildAmbience } from "./ambience";
 import { buildBackdrop } from "./backdrop";
 import { buildProps } from "./props";
 import { createLightPool, type LightSpec } from "./lights";
+import { model } from "./models";
 import { BLANK, buildDeskSheets, type SheetPlace } from "./desk-sheets";
 import { createSketch, paper, SKETCH_HEIGHT, SKETCH_WIDTH } from "./sketch";
 import { type PageScreen, pageScreen } from "./screens";
@@ -267,6 +268,9 @@ export function cable(parent: Group, points: [number, number, number][], materia
 	return mesh;
 }
 
+/** How the desk's real chair is turned (its model faces +z; it is pushed in, a little askew). */
+const CHAIR_TURN = Math.PI + 0.12;
+
 /** An office chair at (x, z) on the floor, its back toward +z before `turn`: a seat and a leaning back on a gas lift and a five-star base on castors. */
 export function chair(parent: Group, x: number, z: number, turn: number, fabric: Material, metal: Material) {
 	const g = new Group();
@@ -470,8 +474,36 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	boxAt(group, 2.3, 0.05, 0.9, wood, deskX, deskTop - 0.025, deskZ, 0.012);
 	for (const [dx, dz] of [[-1.08, -0.38], [1.08, -0.38], [-1.08, 0.38], [1.08, 0.38]]) boxAt(group, 0.05, deskTop - 0.05, 0.05, steel, deskX + dx, (deskTop - 0.05) / 2, deskZ + dz);
 	// Chair, pushed in.
-	const fabric = hardware({ color: 0x1d2b4f, roughness: 0.9 }, "fabric");
-	chair(group, deskX - 0.2, deskZ + 0.95, 0.12, fabric, steel);
+	// A real office chair (models.ts) where the tier allows, lit and shadowed as the rest of the desk; the one built
+	// here otherwise, or if its file does not come.
+	const chairAt = [deskX - 0.2, deskZ + 0.95] as const;
+	// It swivels round to face the room as the camera comes in over the desk, and back as it leaves (update, below).
+	let seat: Group | undefined;
+	let seatTurn = 0;
+	const codeChair = () => {
+		seat = chair(group, chairAt[0], chairAt[1], (seatTurn = 0.12), hardware({ color: 0x1d2b4f, roughness: 0.9 }, "fabric"), steel);
+	};
+	const models: Promise<unknown>[] = [];
+	if (detail)
+		models.push(
+			model("office-chair").then(
+				(real) => {
+					real.position.set(chairAt[0], 0, chairAt[1]);
+					real.rotation.y = seatTurn = CHAIR_TURN;
+					seat = real;
+					real.scale.setScalar(1.08); // (1.09 m to the top of its back)
+					real.traverse((o) => (o.castShadow = o.receiveShadow = true));
+					group.add(real);
+					ctx.refreshShadows();
+				},
+				codeChair,
+			),
+		);
+	else codeChair();
+	// Its footprint on the floor: real where the stage draws them, a soft blob on the low tier (contactShadow, stage.ts).
+	const chairShadow = contactShadow(0.5, 0.6, 0.55);
+	chairShadow.position.set(chairAt[0], 0.0095, chairAt[1]); // (above the rug)
+	group.add(chairShadow);
 
 	// The sketchbook, open flat; the pencil beside it.
 	const sketch = canvasSurface(SKETCH_WIDTH, SKETCH_HEIGHT);
@@ -696,7 +728,10 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const bulbs = buildFixtures(group, steel);
 	const pool = createLightPool(group, accents, lamps);
 	const ambience = buildAmbience(group, detail);
-	const props = buildProps(group);
+	const props = buildProps(group, detail);
+	models.push(props.loaded.then(() => ctx.refreshShadows()));
+	const loaded = Promise.all([stations.loaded, ...models]);
+	let tools = false; // (put in a moment after the room appears: props.ts)
 	if (detail) {
 		// What the desk lamp reaches casts and takes its shadows: the desk, the chair, the shelving, the plants, the rug.
 		group.updateMatrixWorld(true);
@@ -722,7 +757,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	return {
 		group,
 		wall: stations.wall,
-		loaded: stations.loaded,
+		loaded,
 		screens,
 		logo,
 		stationDrone: stations.drone,
@@ -739,6 +774,17 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 			const { lamp: on, time, near } = state;
 			if (detail && ((near.title ?? 0) > 0 || (near.sketch ?? 0) > 0 || (near.research ?? 0) > 0 || (near.build ?? 0) > 0)) ctx.renderer.shadowMap.needsUpdate = true;
 			const dt = Math.max(0, time - lastTime);
+			if (!tools && time > 1.5) {
+				tools = true;
+				// Their shaders and textures in the background, one at a time: none is built in the frame a tool first comes into view.
+				void props
+					.tools()
+					.then(() => compileInSlices(ctx.renderer, ctx.scene, ctx.camera))
+					.then(() => uploadInSlices(ctx.renderer, ctx.scene))
+					.then(() => ctx.refreshShadows());
+			}
+			const over = Math.min(1, (near.sketch ?? 0) + (near.research ?? 0)); // the camera is in over the desk
+			if (seat && !ctx.reducedMotion) seat.rotation.y = seatTurn + Math.PI * over * over * (3 - 2 * over);
 			stations.update(state, dt);
 			bench.update(state, state.ids, stations.drone());
 			backdrop.update();

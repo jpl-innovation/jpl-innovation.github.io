@@ -5,27 +5,37 @@
  * Positions are metres in the room's space (room.ts: the front wall is z = -3.4, the back wall z = 6.4).
  */
 import {
+	Box3,
 	CylinderGeometry,
 	DoubleSide,
 	Group,
 	Mesh,
 	MeshBasicMaterial,
+	MeshPhysicalMaterial,
 	MeshStandardMaterial,
 	PlaneGeometry,
 	SphereGeometry,
 	TorusGeometry,
+	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
-import { boxAt, canvasSurface, imageTexture, ROOM, woodMaterial } from "./room";
+import { contactShadow } from "../three/stage";
+import { model } from "./models";
+import { boxAt, canvasSurface, DESK, imageTexture, ROOM, woodMaterial } from "./room";
 import type { RoomState } from "./room";
 
 export interface Props {
+	/** The real models are in (or have failed, and the shapes built here stand in). */
+	loaded: Promise<unknown>;
+	/** Puts the tools and the clock in (real models; none on the low tier): after the room is shown, so the loading screen never waits for them. */
+	tools(): Promise<unknown>;
 	update(state: RoomState, dt: number): void;
 }
 
 const mat = (color: number, roughness = 0.6, finish: Parameters<typeof hardware>[1] = "plastic") => hardware({ color, roughness }, finish);
 
-export function buildProps(parent: Group): Props {
+/** `real`: the small plants are the real model (models.ts); false on the low tier, which keeps the ones built here. */
+export function buildProps(parent: Group, real: boolean): Props {
 	const { z0, z1 } = ROOM;
 	const steel = hardware({ color: 0x2d3446, roughness: 0.4, metalness: 0.7 }, "anodised");
 	const wood = woodMaterial("oak_veneer_01");
@@ -56,6 +66,57 @@ export function buildProps(parent: Group): Props {
 		}
 		return g;
 	};
+
+	/**
+	 * A small plant in its pot, 27 cm tall before `scale`: the real one where the tier allows, each turned, sized and
+	 * tinted its own way; otherwise (or if its file does not come) the one built here at `plain` times its size, if any.
+	 */
+	const loading: Promise<unknown>[] = [];
+	const smallPlant = (x: number, y: number, z: number, scale: number, turn: number, tint: number, plain = 0) => {
+		const builtHere = () => plain && plant(x, y, z, plain);
+		if (!real) return void builtHere();
+		loading.push(
+			model("potted-plant").then((g) => {
+				g.position.set(x, y, z);
+				g.rotation.y = turn;
+				g.scale.setScalar(scale);
+				const lit = x < -4.55 && z < -0.6; // within the desk lamp's reach: its shadows (room.ts)
+				g.traverse((o) => {
+					const mesh = o as Mesh;
+					if (!mesh.isMesh) return;
+					mesh.castShadow = mesh.receiveShadow = lit;
+					// One material for the whole scan: the leaves get their own copy, for their own green.
+					if (mesh.name.endsWith("_plant")) (mesh.material = (mesh.material as MeshStandardMaterial).clone()).color.set(tint);
+				});
+				parent.add(g);
+			}, builtHere),
+		);
+	};
+
+	/** A model's glass (the clock's, the meter's) as plain clear glass: the files' own is dark, or (transmission) has the whole room drawn twice. */
+	const clearGlass = (g: Group) =>
+		g.traverse((o) => {
+			const glass = (o as Mesh).material as MeshPhysicalMaterial | undefined;
+			if (glass?.name?.endsWith("_glass")) Object.assign(glass, { map: null, transmission: 0, transparent: true, opacity: 0.12, depthWrite: false });
+		});
+
+	/**
+	 * A real tool (models.ts) standing or, with `lay`, lying on a bench, over its own soft shadow; nothing on the low tier.
+	 */
+	const tool = (name: string, x: number, y: number, z: number, turn: number, lay?: [number, number, number]) =>
+		model(name, lay).then(
+			(g) => {
+				g.position.set(x, y, z);
+				g.rotation.y = turn;
+				clearGlass(g);
+				parent.add(g);
+				const size = new Box3().setFromObject(g).getSize(new Vector3());
+				const shadow = contactShadow(Math.max(size.x, size.z) * 0.6, 0.5, size.y);
+				shadow.position.set(x, y + 0.004, z);
+				parent.add(shadow);
+			},
+			() => {},
+		);
 
 	/** Open shelving: two uprights, boards, and what sits on them. */
 	const shelving = (x: number, z: number, width: number, boards: number[], depth = 0.34) => {
@@ -91,7 +152,7 @@ export function buildProps(parent: Group): Props {
 	// Fourth: small bins in the team's colours.
 	for (let i = 0; i < 4; i++) boxAt(parent, 0.17, 0.12, 0.24, accents[(i + 1) % accents.length], sx - 0.3 + i * 0.2, 1.5, sz, 0.015);
 	// Top: a small plant.
-	plant(sx, 1.86, sz, 0.55);
+	smallPlant(sx, 1.855, sz + 0.02, 1.1, 0.6, 0xe4ffe0, 0.55);
 	// And a taller one on the floor beside the desk.
 	plant(-8.15, 0, -1.65, 1.2); // on open floor: from the title shot, clear of the shelving and the desk
 
@@ -158,7 +219,7 @@ export function buildProps(parent: Group): Props {
 	const mug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), mat(0xf2f4f8, 0.35, "wrap"));
 	mug.position.set(-2.6 - 0.62, 0.9, -2.75);
 	parent.add(mug);
-	boxAt(parent, 0.2, 0.016, 0.28, mat(0xf4efe2, 0.9, "printed"), -2.6 + 0.62, 0.858, -2.78, 0.003).rotation.y = -0.3;
+	boxAt(parent, 0.2, 0.016, 0.28, mat(0xf4efe2, 0.9, "printed"), -2.6 + 0.62, 0.858, -2.52, 0.003).rotation.y = -0.3; // (in front of the multimeter)
 
 	/* ---------- Networks: a cable spool at the rack's foot ---------- */
 	const spool = new Mesh(new CylinderGeometry(0.11, 0.11, 0.12, 20), mat(0xc8283a, 0.5));
@@ -192,7 +253,10 @@ export function buildProps(parent: Group): Props {
 	plant(-3.95, 0, z1 - 0.5, 1.4);
 
 	/* ---------- The window sill: a small plant ---------- */
-	plant(2.55, 0.9, z1 - 0.22, 0.6);
+	smallPlant(2.55, 0.88, z1 - 0.075, 1, 2.4, 0xfff6d8, 0.6);
+
+	/* ---------- The desk: a small plant at its back, between the book and the monitor ---------- */
+	smallPlant(DESK.x + 0.3, DESK.top, DESK.z - 0.3, 0.9, 4.1, 0xffffff);
 
 	/* ---------- The door: a mat, and a badge on a lanyard from a hook rail ---------- */
 	const doorX = -5.6;
@@ -210,6 +274,27 @@ export function buildProps(parent: Group): Props {
 
 	let sway = 0;
 	return {
+		loaded: Promise.all(loading),
+		// Left out on the benches (stations.ts: their tops are at 0.85), clear of what each bench shows; a clock on the
+		// back wall, over the binders.
+		tools: () =>
+			Promise.all(
+				real
+					? [
+							tool("pliers", 0.84, 0.85, -2.44, 0.5, [Math.PI / 2, 0, 0]),
+							tool("screwdriver", 0.88, 0.85, -2.29, -0.25, [0, 0, Math.PI / 2]),
+							tool("drill", 0.93, 0.85, -2.6, 0.7),
+							tool("multimeter", -1.95, 0.85, -2.86, -0.3),
+							tool("measuring-tape", -3.16, 0.85, -2.42, -0.6),
+							model("wall-clock").then((g) => {
+								g.position.set(6.75, 2.2, z1 - 0.026);
+								g.rotation.y = Math.PI;
+								clearGlass(g);
+								parent.add(g);
+							}, () => {}),
+						]
+					: [],
+			),
 		update(_state, dt) {
 			// The badge sways on its lanyard in the draught of the door.
 			sway += dt;
