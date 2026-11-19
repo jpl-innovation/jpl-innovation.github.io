@@ -126,7 +126,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 			// power strip (furniture.ts).
 			boxAt(group, w, 0.03, d, bench, x, benchTop - 0.015, z, 0.006);
 			boxAt(group, w + 0.002, 0.02, d + 0.002, edgeBand, x, benchTop - 0.015, z, 0.004);
-			tableFrame(group, { x, z, w, d, top: benchTop, shelf: 0.18, bench: w > 0.9 });
+			tableFrame(group, { x, z, w, d, top: benchTop, shelf: w > 0.9 ? 0.18 : undefined, bench: w > 0.9, open: w <= 0.9 }); // (the PC stands under the small one)
 			return;
 		}
 		boxAt(group, w, 0.05, d, bench, x, benchTop - 0.025, z, 0.01);

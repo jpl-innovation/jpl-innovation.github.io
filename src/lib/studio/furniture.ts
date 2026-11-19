@@ -22,6 +22,10 @@ export interface TableSpec {
 	thick?: number;
 	/** What the feet stand on (a rug), default the floor. */
 	floor?: number;
+	/** What the two left feet (-x) stand on, where only that end of the table is over a rug. */
+	floorLeft?: number;
+	/** true: nothing between the legs low down (no shelf, no stretchers), where something stands under the table. */
+	open?: boolean;
 	/** How far the legs' middles are in from the top's edges, default 6 cm. */
 	inset?: number;
 	/** false: no rail under the front edge (+z), for knees and a chair's arms. */
@@ -61,7 +65,8 @@ function materials() {
 
 /** The frame, feet and fittings of one table, standing at (x, z). Returns its group. */
 export function tableFrame(parent: Group, spec: TableSpec) {
-	const { x, z, w, d, top, thick = 0.03, floor = 0, inset = 0.06, frontRail = true, shelf, bench } = spec;
+	const { x, z, w, d, top, thick = 0.03, inset = 0.06, frontRail = true, shelf, bench, open } = spec;
+	const floor = spec.floor ?? 0;
 	const mats = materials();
 	const parts: Record<"coat" | "foot" | "bolt" | "pale", BufferGeometry[]> = { coat: [], foot: [], bolt: [], pale: [] };
 	const put = (list: BufferGeometry[], geometry: BufferGeometry, px: number, py: number, pz: number) => {
@@ -80,9 +85,10 @@ export function tableFrame(parent: Group, spec: TableSpec) {
 	for (const sx of [-1, 1])
 		for (const sz of [-1, 1]) {
 			// A leg, and under it a levelling foot: a threaded stem into the tube and a rubber pad on the floor.
-			box(parts.coat, leg, under - floor - footH, leg, sx * lx, floor + footH + (under - floor - footH) / 2, sz * lz, 0.004);
-			put(parts.bolt, new CylinderGeometry(0.006, 0.006, footH, 8), sx * lx, floor + footH / 2 + 0.006, sz * lz);
-			put(parts.foot, new CylinderGeometry(0.019, 0.022, 0.012, 16), sx * lx, floor + 0.006, sz * lz);
+			const ground = sx < 0 ? (spec.floorLeft ?? floor) : floor;
+			box(parts.coat, leg, under - ground - footH, leg, sx * lx, ground + footH + (under - ground - footH) / 2, sz * lz, 0.004);
+			put(parts.bolt, new CylinderGeometry(0.006, 0.006, footH, 8), sx * lx, ground + footH / 2 + 0.006, sz * lz);
+			put(parts.foot, new CylinderGeometry(0.019, 0.022, 0.012, 16), sx * lx, ground + 0.006, sz * lz);
 			// A bracket plate on the leg's outer side where the frame meets it, with two bolt heads.
 			box(parts.coat, 0.003, 0.07, leg + 0.03, sx * (lx + leg / 2 + 0.0015), under - 0.04, sz * (lz - 0.015));
 			for (const by of [0.022, 0.058]) put(parts.bolt, new CylinderGeometry(0.0055, 0.0055, 0.004, 6).rotateZ(Math.PI / 2), sx * (lx + leg / 2 + 0.004), under - by, sz * lz);
@@ -95,7 +101,7 @@ export function tableFrame(parent: Group, spec: TableSpec) {
 		// A lower shelf on its own rails.
 		box(parts.coat, 2 * lx - leg, 0.018, 2 * lz + leg, 0, shelf, 0, 0.004);
 		for (const sz of [-1, 1]) box(parts.coat, 2 * lx - leg, 0.03, 0.02, 0, shelf - 0.024, sz * lz);
-	} else {
+	} else if (!open) {
 		// A stretcher low between each pair of side legs, and one across the back.
 		for (const sx of [-1, 1]) box(parts.coat, 0.02, 0.03, 2 * lz - leg, sx * lx, floor + 0.16, 0);
 		box(parts.coat, 2 * lx - leg, 0.03, 0.02, 0, floor + 0.3, -lz);

@@ -64,7 +64,7 @@ export function buildBench(ctx: StageContext, group: Group): BuildBench {
 		// A 3 cm top with a rounded edge and a dark edge band, on a real frame with a shelf, a cable tray and a power strip (furniture.ts).
 		boxAt(group, width, 0.03, depth, benchMat, x, top - 0.015, z, 0.006);
 		boxAt(group, width + 0.002, 0.02, depth + 0.002, hardware({ color: 0x1a2030, roughness: 0.5 }, "plastic"), x, top - 0.015, z, 0.004);
-		tableFrame(group, { x, z, w: width, d: depth, top, shelf: 0.16, bench: true });
+		tableFrame(group, { x, z, w: width, d: depth, top, shelf: 0.16, bench: true, floorLeft: 0.006 }); // (its left feet are on the desk's rug)
 	} else {
 		boxAt(group, width, 0.05, depth, benchMat, x, top - 0.025, z, 0.01);
 		for (const sx of [-1, 1]) for (const sz of [-1, 1]) boxAt(group, 0.045, top - 0.05, 0.045, steel, x + sx * (width / 2 - 0.06), (top - 0.05) / 2, z + sz * (depth / 2 - 0.06));
