@@ -297,12 +297,13 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 				if (deviceAmt === 0) device = undefined;
 			}
 		}
-		// The robot's full CAD from the moment the visitor enters it until the camera is back out; its reduced triangles otherwise.
-		room.parts.robot.full(device?.id === "robotics");
 		const inRobot = device?.id === "robotics" ? deviceAmt : 0;
 		if (device?.id === "robotics" && deviceWant === 1 && !ctx.reducedMotion) turned += dt * TURN_SPEED;
 		apart += (apartWant * (deviceWant === 1 ? 1 : 0) - apart) * (1 - Math.exp(-6 * dt));
 		if (Math.abs(apart) < 0.001) apart = 0;
+		// The robot's full CAD only while it is taken apart (the slider), in the frame its first part moves; its reduced
+		// triangles while it turns and from the room: the two look the same there, at a third of the cost.
+		room.parts.robot.full(apart > 0);
 		room.parts.robot.explode(Math.round(apart * 1000) / 1000);
 		room.parts.robot.turn(turned * smoothstep(inRobot));
 		if (inRobot === 0) turned = 0;

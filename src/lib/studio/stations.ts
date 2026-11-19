@@ -67,7 +67,7 @@ export interface Stations {
 	/** The drone bench's F450, once it has loaded (the opening hook's desk drone shares its geometry). */
 	drone(): DroneRig | undefined;
 	/** What the camera can fly into (src/lib/studio/devices.ts): the robot on its cart, the rack and the laptop. */
-	robot: { holder: Group; center: Vector3; explode(amount: number): void; turn(angle: number): void; /** The full CAD (entered: the turn and the take-apart view), or its reduced triangles (from the room). */ full(on: boolean): void };
+	robot: { holder: Group; center: Vector3; explode(amount: number): void; turn(angle: number): void; /** The full CAD (taken apart), or its reduced triangles (from the room, and while it turns). */ full(on: boolean): void };
 	rack: { group: Group; center: Vector3 };
 	laptop: Group;
 	/** Settles once the robot's and the drone's CAD are in (or have failed): the studio's loading screen waits for it. */
