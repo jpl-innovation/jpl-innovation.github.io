@@ -168,7 +168,7 @@ export function buildProps(parent: Group, real: boolean): Props {
 		bin(small, sx - 0.2, 0.135, sz, 0.36, 0.28, 0.28, palette[0]);
 		bin(small, sx + 0.2, 0.135, sz, 0.36, 0.28, 0.28, palette[2]);
 		binderColors.forEach((c, i) => binder(small, sx - 0.36 + i * 0.076 + (i === 5 ? 0.075 : 0), 0.565, sz + (i % 3) * 0.004, c, 1, i === 5 ? -0.2 : 0));
-		const card = new Batch([sx, 0, sz]);
+		const card = new Batch([sx, 0, sz], true);
 		const tape = new Batch([sx, 0, sz]);
 		cardboardBox(card, tape, sx - 0.22, 0.995, sz, 0.3, 0.22, 0.26);
 		cardboardBox(card, tape, sx + 0.18, 0.995, sz, 0.26, 0.16, 0.26);
@@ -250,7 +250,7 @@ export function buildProps(parent: Group, real: boolean): Props {
 	}
 
 	/* ---------- Robotics: a toolbox and spare wheels ---------- */
-	const red = mat(0xc8283a, 0.45);
+	const yellow = mat(0xf5d042, 0.45);
 	// Real ones where the tier allows (furniture.ts), in the room's yellow and graphite, with the parts shelf's things and
 	// the spool: one mesh, `shop`. The plain ones otherwise.
 	const shop = real ? new Batch([0, 0, -2.5]) : undefined;
@@ -258,8 +258,8 @@ export function buildProps(parent: Group, real: boolean): Props {
 		toolbox(shop, 0.22, -1.95);
 		for (let i = 0; i < 3; i++) wheel(shop, -1.75 + (i === 2 ? 0.012 : 0), 0.005 + i * 0.052, -3.0 + (i === 1 ? 0.01 : 0));
 	} else {
-		boxAt(parent, 0.52, 0.22, 0.26, red, 0.22, 0.11, -1.95, 0.02);
-		boxAt(parent, 0.5, 0.05, 0.24, mat(0x9a1f2e, 0.45), 0.22, 0.245, -1.95, 0.015);
+		boxAt(parent, 0.52, 0.22, 0.26, yellow, 0.22, 0.11, -1.95, 0.02);
+		boxAt(parent, 0.5, 0.05, 0.24, mat(0x262c3a, 0.45), 0.22, 0.245, -1.95, 0.015);
 		const handle = new Mesh(new TorusGeometry(0.06, 0.008, 8, 16, Math.PI), steel);
 		handle.position.set(0.22, 0.27, -1.95);
 		parent.add(handle);
@@ -288,13 +288,13 @@ export function buildProps(parent: Group, real: boolean): Props {
 		for (let i = 0; i < 5; i++) bin(shop, px - 0.55 + i * 0.27, 1.915, z0 + 0.15, 0.2, 0.13, 0.2, [0x2f7ce6, 0xf5d042, 0x1b2d6e, 0xa98500, 0xf2eedf][i]);
 	} else {
 		for (const bx of [-0.62, 0.62]) boxAt(parent, 0.03, 0.46, 0.04, steel, px + bx, 1.7, z0 + 0.06);
-		// LiPo bags, flat, with a red label each; a stack of prop packs; a coil of wire.
+		// LiPo bags, flat, with a yellow label each; a stack of prop packs; a coil of wire.
 		for (let i = 0; i < 3; i++) {
 			boxAt(parent, 0.14, 0.05, 0.1, mat(0x161a24, 0.5, "wrap"), px - 0.5 + i * 0.17, 1.545, z0 + 0.15, 0.01);
-			boxAt(parent, 0.06, 0.004, 0.04, red, px - 0.5 + i * 0.17, 1.572, z0 + 0.15);
+			boxAt(parent, 0.06, 0.004, 0.04, yellow, px - 0.5 + i * 0.17, 1.572, z0 + 0.15);
 		}
 		for (let i = 0; i < 3; i++) boxAt(parent, 0.22, 0.015, 0.12, mat(0x1d2b4f, 0.5), px + 0.12, 1.53 + i * 0.016, z0 + 0.15, 0.003);
-		const coil = new Mesh(new TorusGeometry(0.05, 0.016, 8, 20), mat(0xf0596b, 0.5));
+		const coil = new Mesh(new TorusGeometry(0.05, 0.016, 8, 20), mat(0xf5d042, 0.5));
 		coil.rotation.x = Math.PI / 2;
 		coil.position.set(px + 0.5, 1.55, z0 + 0.15);
 		parent.add(coil);
@@ -320,7 +320,7 @@ export function buildProps(parent: Group, real: boolean): Props {
 		realSpool(shop, 3.75, -2.2);
 		shop.mesh(parent);
 	} else {
-		const spool = new Mesh(new CylinderGeometry(0.11, 0.11, 0.12, 20), mat(0xc8283a, 0.5));
+		const spool = new Mesh(new CylinderGeometry(0.11, 0.11, 0.12, 20), mat(0x1b2d6e, 0.5));
 		spool.position.set(3.75, 0.06, -2.2);
 		parent.add(spool);
 		const spoolCore = new Mesh(new CylinderGeometry(0.045, 0.045, 0.14, 12), steel);

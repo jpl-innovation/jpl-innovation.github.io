@@ -6,7 +6,7 @@
  * Not on the low tier: there each table keeps the plain top on four posts its own file builds.
  * The top itself stays with its table (room.ts, stations.ts, build-bench.ts): its size, height and place never change.
  */
-import { BoxGeometry, BufferAttribute, type BufferGeometry, CanvasTexture, Color, CylinderGeometry, Group, LatheGeometry, type Material, Mesh, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3 } from "three";
+import { BoxGeometry, BufferAttribute, type BufferGeometry, CanvasTexture, CylinderGeometry, Group, LatheGeometry, type Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, NearestFilter, PlaneGeometry, Quaternion, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3 } from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hardware } from "../three/finish";
@@ -40,13 +40,12 @@ let shared: { coat: Material; foot: Material; bolt: Material; pale: Material; we
 /** The furniture's own materials, one set for the whole room (the room's finishes: no new kind of shader). */
 function materials() {
 	if (shared) return shared;
-	// Where hands and sleeves rest, the top is rubbed a little smoother and paler: a soft patch, lit as the top is.
+	// Where hands and sleeves rest, the top is rubbed a little paler: a soft patch, drawn as the room's blob shadows are
+	// (ambience.ts), so it needs no shader of its own.
 	const canvas = document.createElement("canvas");
 	canvas.width = 256;
 	canvas.height = 64;
 	const g = canvas.getContext("2d")!;
-	g.fillStyle = "#000";
-	g.fillRect(0, 0, 256, 64); // (an alpha map is read from the green channel: black is none)
 	for (const [cx, rx] of [[78, 70], [178, 70], [128, 110]]) {
 		const patch = g.createRadialGradient(cx, 64, 0, cx, 64, rx);
 		patch.addColorStop(0, "rgba(255,255,255,0.5)");
@@ -59,7 +58,7 @@ function materials() {
 		foot: hardware({ color: 0x101216, roughness: 0.9 }, "rubber"),
 		bolt: hardware({ color: 0xb8c0cc, roughness: 0.3, metalness: 0.9 }, "metal"),
 		pale: hardware({ color: 0xe9e4d6, roughness: 0.5 }, "plastic"),
-		wear: new MeshStandardMaterial({ color: 0xffffff, alphaMap: new CanvasTexture(canvas), transparent: true, opacity: 0.11, roughness: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+		wear: new MeshBasicMaterial({ color: 0xffffff, map: new CanvasTexture(canvas), transparent: true, opacity: 0.07, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
 	});
 }
 
@@ -141,15 +140,18 @@ export function tableFrame(parent: Group, spec: TableSpec) {
  */
 export class Batch {
 	private list: BufferGeometry[] = [];
-	constructor(private origin: [number, number, number]) {}
+	/** `pictured`: the parts keep their own UVs, for a material with a picture of its own (the cardboard). */
+	constructor(private origin: [number, number, number], private pictured = false) {}
 	add(geometry: BufferGeometry, color: number, x: number, y: number, z: number) {
 		const g = geometry.index ? geometry.toNonIndexed() : geometry;
 		g.translate(x - this.origin[0], y - this.origin[1], z - this.origin[2]);
-		const c = new Color(color);
-		const count = g.getAttribute("position").count;
-		const colors = new Float32Array(count * 3);
-		for (let i = 0; i < count; i++) colors.set([c.r, c.g, c.b], i * 3);
-		g.setAttribute("color", new BufferAttribute(colors, 3));
+		if (!this.pictured) {
+			// The whole part reads one dot of the palette: its colour.
+			const u = swatch(color);
+			const uv = new Float32Array(g.getAttribute("position").count * 2);
+			for (let i = 0; i < uv.length; i += 2) uv.set([u, 0.5], i);
+			g.setAttribute("uv", new BufferAttribute(uv, 2));
+		}
 		this.list.push(g);
 		return this;
 	}
@@ -165,9 +167,40 @@ export class Batch {
 	}
 }
 
+/**
+ * The Batches' colours: a strip of dots, one a colour, that every painted part reads its own from. (A picture, not
+ * colours on the corners: a material with a picture is a shader the room has already, so nothing more to build on loading.)
+ */
+const SWATCHES = 128;
+let palette: { map: CanvasTexture; g: CanvasRenderingContext2D; at: Map<number, number> } | undefined;
+function swatches() {
+	if (palette) return palette;
+	const canvas = document.createElement("canvas");
+	canvas.width = SWATCHES;
+	canvas.height = 1;
+	const map = new CanvasTexture(canvas);
+	map.colorSpace = SRGBColorSpace;
+	map.magFilter = map.minFilter = NearestFilter;
+	map.generateMipmaps = false;
+	return (palette = { map, g: canvas.getContext("2d")!, at: new Map() });
+}
+/** Where `color`'s dot is along the strip (0 to 1), put there the first time it is asked for. */
+function swatch(color: number) {
+	const { map, g, at } = swatches();
+	let i = at.get(color);
+	if (i === undefined) {
+		// ponytail: the 129th colour would take the first one's dot; a longer strip if the room ever has that many.
+		at.set(color, (i = at.size % SWATCHES));
+		g.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
+		g.fillRect(i, 0, 1, 1);
+		map.needsUpdate = true;
+	}
+	return (i + 0.5) / SWATCHES;
+}
+
 let paint: Material | undefined;
-/** Moulded or painted parts that take their colour from a Batch: one material for all of them. */
-export const painted = () => (paint ??= hardware({ color: 0xffffff, roughness: 0.5, vertexColors: true }, "plastic"));
+/** Moulded or painted parts that take their colour from a Batch: one material for all of them (the plain one: with a finish it was one more shader to build). */
+export const painted = () => (paint ??= hardware({ color: 0xffffff, roughness: 0.5, map: swatches().map }));
 
 const GRAPHITE = 0x262c3a;
 const STEEL = 0xaab2c0;
