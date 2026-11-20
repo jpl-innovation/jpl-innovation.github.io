@@ -256,7 +256,7 @@ export function buildProps(parent: Group, real: boolean): Props {
 	const shop = real ? new Batch([0, 0, -2.5]) : undefined;
 	if (shop) {
 		toolbox(shop, 0.22, -1.95);
-		for (let i = 0; i < 3; i++) wheel(shop, -1.75 + (i === 2 ? 0.012 : 0), 0.005 + i * 0.052, -3.0 + (i === 1 ? 0.01 : 0));
+		for (let i = 0; i < 3; i++) wheel(shop, -1.75 + (i === 2 ? 0.012 : 0), i * 0.0505, -3.0 + (i === 1 ? 0.01 : 0));
 	} else {
 		boxAt(parent, 0.52, 0.22, 0.26, yellow, 0.22, 0.11, -1.95, 0.02);
 		boxAt(parent, 0.5, 0.05, 0.24, mat(0x262c3a, 0.45), 0.22, 0.245, -1.95, 0.015);

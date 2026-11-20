@@ -96,6 +96,32 @@ const shadowSpots = (real: boolean, { z0, z1 } = ROOM): [number, number, number,
 	[1.4, 0, -2.6, 1.6, 0.8], // the drone bench
 	[3.3, 0, -2.95, 0.8, 0.72], // the rack
 	[3.59, 0, -2.3, 0.12, 0.7], // its door, standing open
+	// Where the tier has the real things, the dark under each where it stands (measured against its surface).
+	...(real
+		? ([
+				[1.95, 0.851, -2.75, 0.2, 0.16], // the charger
+				[1.95, 0.851, -2.5, 0.19, 0.09], // the spare pack
+				[0.93, 0.851, -2.6, 0.2, 0.12], // the drill
+				[0.84, 0.851, -2.44, 0.18, 0.1], // the pliers
+				[0.88, 0.851, -2.29, 0.2, 0.06], // the screwdriver
+				[0.76, 0.851, -2.86, 0.17, 0.17], // the drone bench's lamp
+				[2.58, 0.851, -2.87, 0.26, 0.2], // the software stand's monitor
+				[2.58, 0.851, -2.6, 0.42, 0.17], // its keyboard
+				[-1.95, 0.851, -2.86, 0.17, 0.13], // the multimeter
+				[-2.24, 0.851, -2.84, 0.3, 0.16], // the checklist on its stand
+				[-1.98, 0.851, -2.52, 0.27, 0.33], // the notebook
+				[-3.22, 0.851, -2.75, 0.12, 0.12], // the mug
+				[-3.16, 0.851, -2.42, 0.1, 0.1], // the measuring tape
+				[-3.28, 0.851, -2.88, 0.17, 0.17], // the test bench's lamp
+				[-3.74, 0.821, -2.66, 0.17, 0.17], // the build bench's lamp
+				[-3.05, 0.771, 4.78, 0.4, 0.28], // the table's laptops, notebooks and mug
+				[-1.75, 0.771, 4.78, 0.4, 0.28],
+				[-2.4, 0.771, 5.0, 0.24, 0.28],
+				[-2.15, 0.771, 4.95, 0.24, 0.28],
+				[-1.75, 0, -3.0, 0.26, 0.26], // the spare wheels
+				[3.75, 0, -2.2, 0.28, 0.28], // the cable spool
+			] as [number, number, number, number, number][])
+		: []),
 	[-2.4, 0, 5.1, 2.1, 0.9], // the table
 	[-3.95, 0, z1 - 0.5, 0.4, 0.4], // the plant by the window
 	...[-4.05, -2.95, -1.85, -0.75].map((x): [number, number, number, number, number] => [x, 0, 5.85, 0.5, 0.5]), // the crew's chairs

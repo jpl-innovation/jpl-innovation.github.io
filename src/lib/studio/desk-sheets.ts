@@ -511,23 +511,24 @@ export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[
 	const ballMat = hardware({ color: 0xece4d2, roughness: 0.95, flatShading: true }, "printed") as MeshStandardMaterial;
 	// (Where the tier allows, a waste-paper bin stands by the desk's corner: the floor one lies where it missed, two more made it in.)
 	const BIN = { x: -6.98, z: -1.84, h: 0.3 };
+	const BALL = 0.031; // a ball's middle over what it lies on (measured: at 0.026 its underside was up to 11 mm into the surface)
 	const balls = cork?.real
 		? [
-				[-7.06, deskTop + 0.026, -2.78],
-				[BIN.x + 0.2, 0.026, BIN.z + 0.13],
+				[-7.06, deskTop + BALL, -2.78],
+				[BIN.x + 0.2, 0.006 + BALL, BIN.z + 0.13], // (on the rug)
 				[BIN.x - 0.03, BIN.h - 0.04, BIN.z + 0.02],
 				[BIN.x + 0.045, BIN.h - 0.055, BIN.z - 0.03],
 			]
 		: [
-				[-7.06, deskTop + 0.026, -2.78],
-				[-6.62, 0.026, -1.62],
+				[-7.06, deskTop + BALL, -2.78],
+				[-6.62, 0.006 + BALL, -1.62], // (on the rug)
 			];
 	if (cork?.real) {
 		const binMat = hardware({ color: 0x262c3a, roughness: 0.6, side: DoubleSide }, "plastic");
 		const wall = new Mesh(new CylinderGeometry(0.135, 0.105, BIN.h, 28, 1, true), binMat);
-		wall.position.set(BIN.x, BIN.h / 2, BIN.z);
+		wall.position.set(BIN.x, 0.006 + BIN.h / 2, BIN.z); // (the bin stands on the rug, 6 mm up)
 		const rim = new Mesh(new TorusGeometry(0.135, 0.006, 8, 28).rotateX(Math.PI / 2), binMat);
-		rim.position.set(BIN.x, BIN.h, BIN.z);
+		rim.position.set(BIN.x, 0.006 + BIN.h, BIN.z);
 		// Its floor, raised: the crumpled paper it is nearly full of.
 		const fill = new Mesh(new CylinderGeometry(0.125, 0.125, 0.01, 20), ballMat);
 		fill.position.set(BIN.x, BIN.h - 0.085, BIN.z);
@@ -543,7 +544,7 @@ export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[
 		group.add(ball);
 		const shadow = new Mesh(new PlaneGeometry(0.1, 0.1), shadowMat);
 		shadow.rotation.x = -Math.PI / 2;
-		shadow.position.set(x + 0.008, y - 0.0255, z + 0.006);
+		shadow.position.set(x + 0.008, y - BALL + 0.0008, z + 0.006);
 		group.add(shadow);
 	}
 

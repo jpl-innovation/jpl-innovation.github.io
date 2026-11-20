@@ -47,7 +47,7 @@ import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
 import { boxAt, canvasSurface, imageTexture, loadImage, ROOM, screenMaterial, woodMaterial } from "./room";
 import { type PageScreen, pageScreen } from "./screens";
-import { Batch, bin, binder, hungTool, keyDeck, mug, tableFrame, wallBracket } from "./furniture";
+import { barGeometry, Batch, bin, binder, hungTool, keyDeck, lipo, mug, tableFrame, wallBracket } from "./furniture";
 import { model } from "./models";
 import type { LightSpec } from "./lights";
 import { cover, cutCorners, cutCornerSurface, projectFace } from "./panels";
@@ -339,8 +339,27 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		})
 		.catch((error) => console.warn("Studio: the drone did not load.", error));
 	// A battery charger and a spare pack beside it.
-	boxAt(group, 0.16, 0.06, 0.12, dark, droneX + 0.55, benchTop + 0.03, -2.75, 0.01);
-	boxAt(group, 0.14, 0.035, 0.05, hardware({ color: 0x24324f, roughness: 0.3 }, "wrap"), droneX + 0.55, benchTop + 0.018, -2.5, 0.008);
+	if (detail) {
+		// Real ones (furniture.ts), one mesh: the charger with its display, four buttons, vents down each side and the
+		// balance port on its front; its lead across the bench to the pack, a LiPo with its label.
+		const cx = droneX + 0.55;
+		const gear = new Batch([cx, benchTop, -2.62]);
+		gear.box(0.16, 0.06, 0.12, cx, benchTop + 0.03, -2.75, 0x262c3a, 0.01);
+		gear.box(0.086, 0.002, 0.046, cx - 0.02, benchTop + 0.0605, -2.765, 0x0a0d14, 0.001);
+		gear.box(0.074, 0.002, 0.034, cx - 0.02, benchTop + 0.0612, -2.765, 0x1b2d6e);
+		for (let i = 0; i < 4; i++) gear.add(new CylinderGeometry(0.006, 0.006, 0.003, 12), 0xaab2c0, cx - 0.056 + i * 0.024, benchTop + 0.0612, -2.715);
+		gear.add(new CylinderGeometry(0.004, 0.004, 0.002, 10), 0xf5d042, cx + 0.058, benchTop + 0.0608, -2.775);
+		for (const s of [-1, 1]) for (let i = 0; i < 6; i++) gear.box(0.002, 0.03, 0.005, cx + s * 0.0805, benchTop + 0.032, -2.79 + i * 0.016, 0x05070b);
+		gear.box(0.05, 0.014, 0.003, cx + 0.03, benchTop + 0.026, -2.6895, 0xe9e4d6, 0.001);
+		gear.box(0.022, 0.012, 0.003, cx - 0.04, benchTop + 0.026, -2.6895, 0xf5d042, 0.001);
+		lipo(gear, cx, benchTop, -2.5);
+		const lead = [new Vector3(cx - 0.04, benchTop + 0.024, -2.688), new Vector3(cx - 0.05, benchTop + 0.004, -2.655), new Vector3(cx - 0.085, benchTop + 0.004, -2.58), new Vector3(cx - 0.07, benchTop + 0.004, -2.515), new Vector3(cx - 0.068, benchTop + 0.018, -2.5)];
+		for (let i = 1; i < lead.length; i++) gear.add(barGeometry(lead[i - 1], lead[i], 0.003, 6), 0x0c0e13, 0, 0, 0);
+		gear.mesh(group);
+	} else {
+		boxAt(group, 0.16, 0.06, 0.12, dark, droneX + 0.55, benchTop + 0.03, -2.75, 0.01);
+		boxAt(group, 0.14, 0.035, 0.05, hardware({ color: 0x24324f, roughness: 0.3 }, "wrap"), droneX + 0.55, benchTop + 0.018, -2.5, 0.008);
+	}
 
 	await tick();
 
@@ -536,7 +555,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	// The light theme's room is bright enough to wash a white board out: dimmed there so the marker keeps its contrast.
 	themed.push({ mat: easelBoard.material as MeshStandardMaterial, dark: 0xffffff, light: 0x9da3ad });
 	boxAt(easel, boardW + 0.03, 0.012, 0.04, aluminium, 0, 0.03, 0.035, 0.003); // the marker tray
-	const leg = boxAt(easel, 0.014, boardH + 0.03, 0.01, aluminium, 0, (boardH + 0.03) / 2, -0.12);
+	const leg = boxAt(easel, 0.014, boardH + 0.03, 0.01, aluminium, 0, ((boardH + 0.03) / 2) * Math.cos(0.3) + 0.0015, -0.12); // (leaning 0.3: its foot on the bench)
 	leg.rotation.x = 0.3;
 	for (const [i, c] of [0x1d4ed8, 0x15803d, 0xc8283a].entries()) {
 		const marker = new Mesh(new CylinderGeometry(0.006, 0.006, 0.09, 10), hardware({ color: c, roughness: 0.4 }, "plastic"));
@@ -742,12 +761,25 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		}
 		frame.mesh(group);
 	}
+	// The markers lie in the tray (its top at 0.905): where the tier allows, a white barrel with the ink's colour on its
+	// cap, its end plug and a band, one mesh.
+	const pens = detail ? new Batch([boardX, 0.9, z1 - 0.07]) : undefined;
 	for (const [i, c] of [0x1d4ed8, 0xc8283a, 0x111827].entries()) {
+		const mx = boardX - 0.6 + i * 0.16;
+		if (pens) {
+			const lie = (radius: number, length: number, color: number, dx: number) => pens.add(new CylinderGeometry(radius, radius, length, 14).rotateZ(Math.PI / 2), color, mx + dx, 0.9145, z1 - 0.07 + (i - 1) * 0.004);
+			lie(0.0085, 0.085, 0xf2f4f8, 0);
+			lie(0.0095, 0.034, c, -0.0575);
+			lie(0.0075, 0.008, c, 0.0465);
+			lie(0.0088, 0.006, c, 0.02);
+			continue;
+		}
 		const marker = new Mesh(new CylinderGeometry(0.009, 0.009, 0.12, 10), hardware({ color: c, roughness: 0.4 }, "plastic"));
 		marker.rotation.z = Math.PI / 2;
-		marker.position.set(boardX - 0.6 + i * 0.16, 0.92, z1 - 0.07);
+		marker.position.set(mx, 0.914, z1 - 0.07);
 		group.add(marker);
 	}
+	pens?.mesh(group);
 	// Written in marker (the sketchbook's handwriting, Caveat): the standards with hand-drawn ticks, then the three steps
 	// on sticky notes, joined by hand-drawn arrows. Each line appears in turn, as if being written, as the scene opens.
 	const drawBoard = (progress: number) => {

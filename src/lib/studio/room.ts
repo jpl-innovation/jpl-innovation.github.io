@@ -63,7 +63,7 @@ import { createSketch, paper, SKETCH_HEIGHT, SKETCH_WIDTH } from "./sketch";
 import { type PageScreen, pageScreen } from "./screens";
 import { buildStations, type Stations } from "./stations";
 import { buildBench, type BuildBench } from "./build-bench";
-import { Batch, lampBody, lampShade, tableFrame } from "./furniture";
+import { Batch, deskMouse, lampBody, lampShade, tableFrame } from "./furniture";
 
 export const ROOM = { x0: -8.5, x1: 8.5, z0: -3.4, z1: 6.4, h: 3.4 };
 /** The desk (scenes 0 to 2): its middle and the height of its top; the sketchbook lies open on it at `book`. */
@@ -641,12 +641,27 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 			keys.setMatrixAt(row * 15 + col, key.matrix);
 		}
 	group.add(keys);
-	const mouse = new Mesh(new SphereGeometry(0.03, 20, 12), keyPlastic);
-	mouse.scale.set(1, 0.55, 1.75);
-	mouse.position.set(monitorX + 0.33, deskTop + 0.012, deskZ + 0.14);
-	group.add(mouse);
 	const rubber = hardware({ color: 0x101319, roughness: 0.85 }, "rubber");
 	const back = deskZ - 0.45;
+	if (detail) {
+		// A real mouse (furniture.ts), flat on the desk, its lead over the back with the others, and the dark right under it.
+		const mx = monitorX + 0.33;
+		const mz = deskZ + 0.14;
+		const mouse = new Batch([mx, deskTop, mz]);
+		deskMouse(mouse, mx, deskTop, mz);
+		mouse.mesh(group);
+		cable(group, [[mx, deskTop + 0.007, mz - 0.05], [mx + 0.01, deskTop + 0.003, mz - 0.1], [mx - 0.05, deskTop + 0.003, deskZ - 0.3], [monitorX + 0.14, deskTop + 0.002, back - 0.01], [monitorX + 0.14, deskTop - 0.2, back - 0.02]], rubber, 0.002);
+		const under = contactShadow(0.062, 0.6);
+		under.scale.set(0.72, 1.12, 1);
+		under.position.set(mx + 0.003, deskTop + 0.0006, mz + 0.002);
+		under.userData.shadow = false;
+		group.add(under);
+	} else {
+		const mouse = new Mesh(new SphereGeometry(0.03, 20, 12), keyPlastic);
+		mouse.scale.set(1, 0.55, 1.75);
+		mouse.position.set(monitorX + 0.33, deskTop + 0.0165, deskZ + 0.14); // (its underside on the desk)
+		group.add(mouse);
+	}
 	cable(group, [[monitorX, deskTop + 0.3, deskZ - 0.262], [monitorX + 0.03, deskTop + 0.12, deskZ - 0.3], [monitorX + 0.06, deskTop + 0.004, deskZ - 0.36], [monitorX + 0.05, deskTop + 0.002, back - 0.01], [monitorX + 0.05, deskTop - 0.2, back - 0.02]], rubber, 0.0045);
 	cable(group, [[monitorX - 0.12, deskTop + 0.008, deskZ + 0.045], [monitorX - 0.18, deskTop + 0.003, deskZ - 0.1], [monitorX - 0.1, deskTop + 0.003, deskZ - 0.33], [monitorX - 0.09, deskTop + 0.002, back - 0.01], [monitorX - 0.09, deskTop - 0.2, back - 0.02]], rubber, 0.0025);
 	const ceramic = hardware({ color: 0xf2f4f8, roughness: 0.35 }, "wrap");

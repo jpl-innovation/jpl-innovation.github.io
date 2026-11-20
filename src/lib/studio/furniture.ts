@@ -232,7 +232,7 @@ export function binder(batch: Batch, x: number, y: number, z: number, color: num
 	const part = (geometry: BufferGeometry, c: number, px: number, py: number, pz: number) => {
 		geometry.translate(px, py + h / 2, pz * face);
 		if (lean) geometry.rotateZ(lean);
-		batch.add(geometry, c, x, y, z);
+		batch.add(geometry, c, x, y + (w / 2) * Math.abs(Math.sin(lean)), z); // (tipped, it stands on its lower corner)
 	};
 	const spine = d / 2;
 	part(new RoundedBoxGeometry(w, h, 0.005, 1, 0.002), color, 0, 0, spine - 0.0025);
@@ -504,3 +504,46 @@ export function lipo(batch: Batch, x: number, y: number, z: number) {
 	batch.add(barGeometry(new Vector3(x + 0.07, y + 0.02, z), new Vector3(x + 0.1, y + 0.008, z + 0.012), 0.003, 6), 0x0c0e13, 0, 0, 0);
 	batch.box(0.016, 0.01, 0.012, x + 0.106, y + 0.006, z + 0.014, YELLOW, 0.002);
 }
+
+/**
+ * A computer mouse on a surface at (x, y, z), its buttons toward -z: a flat base, a shell that humps toward the palm and
+ * falls to the buttons, the seam between the two buttons and the one across behind them, a rubber scroll wheel.
+ */
+export function deskMouse(batch: Batch, x: number, y: number, z: number) {
+	const A = 0.031; // half its width
+	const L = 0.054; // half its length
+	const H = 0.033; // the hump's height over the base
+	const BASE = 0.004;
+	// The shell's height over (px, pz): half an ellipsoid, lower toward the buttons.
+	const fall = (pz: number) => 1 - 0.34 * Math.max(0, -pz / L) + 0.06 * Math.max(0, pz / L) * (1 - pz / L);
+	const height = (px: number, pz: number) => BASE + H * Math.sqrt(Math.max(0, 1 - (px / A) ** 2 - (pz / L) ** 2)) * fall(pz);
+	const shell = new SphereGeometry(1, 28, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+	const at = shell.getAttribute("position");
+	for (let i = 0; i < at.count; i++) {
+		const px = at.getX(i) * A;
+		const pz = at.getZ(i) * L;
+		at.setXYZ(i, px, BASE + at.getY(i) * H * fall(pz), pz);
+	}
+	shell.computeVertexNormals();
+	batch.add(shell, 0x1b1f2a, x, y, z);
+	// The base: the shell's own outline, flat on the surface.
+	batch.add(new CylinderGeometry(1, 1, BASE, 28).scale(A, 1, L), 0x101319, x, y + BASE / 2, z);
+	// The seams, lying on the shell: down the middle between the buttons, and across behind them.
+	const lift = 0.0004;
+	const middle: Vector3[] = [];
+	for (let i = 0; i <= 8; i++) {
+		const pz = -L * 0.93 + (L * 0.93 - L * 0.08) * (i / 8);
+		middle.push(new Vector3(0, height(0, pz) + lift, pz));
+	}
+	const across: Vector3[] = [];
+	for (let i = 0; i <= 10; i++) {
+		const px = -A * 0.93 + A * 1.86 * (i / 10);
+		across.push(new Vector3(px, height(px, -L * 0.08) + lift, -L * 0.08));
+	}
+	for (const line of [middle, across]) for (let i = 1; i < line.length; i++) batch.add(barGeometry(line[i - 1], line[i], 0.0007, 5), 0x07090d, x, y, z);
+	// The wheel, half out of its slot between the buttons.
+	const wz = -L * 0.52;
+	batch.add(new CylinderGeometry(0.0075, 0.0075, 0.006, 16).rotateZ(Math.PI / 2), 0x2a2f3d, x, y + height(0, wz) - 0.0025, z + wz);
+	batch.box(0.009, 0.002, 0.02, x, y + height(0, wz) - 0.0006, z + wz, 0x07090d, 0.001);
+}
+
