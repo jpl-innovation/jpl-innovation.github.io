@@ -118,6 +118,8 @@ const shadowSpots = (real: boolean, { z0, z1 } = ROOM): [number, number, number,
 				[-1.75, 0.771, 4.78, 0.4, 0.28],
 				[-2.4, 0.771, 5.0, 0.24, 0.28],
 				[-2.15, 0.771, 4.95, 0.24, 0.28],
+				[-1.95, 0.771, 4.95, 0.11, 0.11], // the blue mug
+				[-2.7, 0.771, 5.0, 0.34, 0.26], // the pad of paper
 				[-1.75, 0, -3.0, 0.26, 0.26], // the spare wheels
 				[3.75, 0, -2.2, 0.28, 0.28], // the cable spool
 			] as [number, number, number, number, number][])

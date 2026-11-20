@@ -47,7 +47,7 @@ import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
 import { boxAt, canvasSurface, imageTexture, loadImage, ROOM, screenMaterial, woodMaterial } from "./room";
 import { type PageScreen, pageScreen } from "./screens";
-import { barGeometry, Batch, bin, binder, hungTool, keyDeck, lipo, mug, tableFrame, wallBracket } from "./furniture";
+import { barGeometry, Batch, bin, binder, hungTool, keyDeck, lipo, mug, notebook, tableFrame, wallBracket } from "./furniture";
 import { model } from "./models";
 import type { LightSpec } from "./lights";
 import { cover, cutCorners, cutCornerSurface, projectFace } from "./panels";
@@ -985,10 +985,12 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		boxAt(group, 2.2, 0.05, 0.95, woodMaterial("walnut_veneer"), tableX, 0.745, tableZ, 0.015);
 		for (const sx of [-1, 1]) boxAt(group, 0.06, 0.72, 0.8, steel, tableX + sx * 0.95, 0.36, tableZ);
 	}
-	boxAt(group, 0.3, 0.012, 0.22, hardware({ color: 0xf4efe2, roughness: 0.9 }, "printed"), tableX - 0.3, 0.776, tableZ - 0.1, 0.004).rotation.y = 0.2;
+	if (!detail) boxAt(group, 0.3, 0.012, 0.22, hardware({ color: 0xf4efe2, roughness: 0.9 }, "printed"), tableX - 0.3, 0.776, tableZ - 0.1, 0.004).rotation.y = 0.2;
 	if (detail) {
+		// The mug, and the pad of paper as a real one: a spiral-bound pad lying open (furniture.ts).
 		const cup = new Batch([tableX, 0, tableZ]);
 		mug(cup, tableX + 0.45, 0.77, tableZ - 0.15, 0x2f7ce6, 0.8);
+		notebook(cup, tableX - 0.3, 0.77, tableZ - 0.1, 0.22, 0.3, 0xf4efe2, 0.2 + Math.PI / 2);
 		cup.mesh(group);
 	} else {
 		const tableMug = new Mesh(new CylinderGeometry(0.04, 0.036, 0.1, 20), hardware({ color: 0x2f7ce6, roughness: 0.35 }, "wrap"));
