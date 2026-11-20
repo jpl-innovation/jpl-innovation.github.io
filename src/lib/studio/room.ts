@@ -645,12 +645,12 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const back = deskZ - 0.45;
 	if (detail) {
 		// A real mouse (furniture.ts), flat on the desk, its lead over the back with the others, and the dark right under it.
-		const mx = monitorX + 0.33;
+		const mx = monitorX - 0.33; // (left of the keyboard: on its right the desk ends 5 cm on, and the mouse hung over the floor)
 		const mz = deskZ + 0.14;
 		const mouse = new Batch([mx, deskTop, mz]);
 		deskMouse(mouse, mx, deskTop, mz);
 		mouse.mesh(group);
-		cable(group, [[mx, deskTop + 0.007, mz - 0.05], [mx + 0.01, deskTop + 0.003, mz - 0.1], [mx - 0.05, deskTop + 0.003, deskZ - 0.3], [monitorX + 0.14, deskTop + 0.002, back - 0.01], [monitorX + 0.14, deskTop - 0.2, back - 0.02]], rubber, 0.002);
+		cable(group, [[mx, deskTop + 0.007, mz - 0.05], [mx + 0.01, deskTop + 0.003, mz - 0.1], [mx + 0.05, deskTop + 0.003, deskZ - 0.3], [monitorX - 0.17, deskTop + 0.002, back - 0.01], [monitorX - 0.17, deskTop - 0.2, back - 0.02]], rubber, 0.002);
 		const under = contactShadow(0.062, 0.6);
 		under.scale.set(0.72, 1.12, 1);
 		under.position.set(mx + 0.003, deskTop + 0.0006, mz + 0.002);
@@ -659,7 +659,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	} else {
 		const mouse = new Mesh(new SphereGeometry(0.03, 20, 12), keyPlastic);
 		mouse.scale.set(1, 0.55, 1.75);
-		mouse.position.set(monitorX + 0.33, deskTop + 0.0165, deskZ + 0.14); // (its underside on the desk)
+		mouse.position.set(monitorX - 0.33, deskTop + 0.0165, deskZ + 0.14); // (its underside on the desk)
 		group.add(mouse);
 	}
 	cable(group, [[monitorX, deskTop + 0.3, deskZ - 0.262], [monitorX + 0.03, deskTop + 0.12, deskZ - 0.3], [monitorX + 0.06, deskTop + 0.004, deskZ - 0.36], [monitorX + 0.05, deskTop + 0.002, back - 0.01], [monitorX + 0.05, deskTop - 0.2, back - 0.02]], rubber, 0.0045);

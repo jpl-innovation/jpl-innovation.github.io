@@ -516,8 +516,8 @@ export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[
 		? [
 				[-7.06, deskTop + BALL, -2.78],
 				[BIN.x + 0.2, 0.006 + BALL, BIN.z + 0.13], // (on the rug)
-				[BIN.x - 0.03, BIN.h - 0.04, BIN.z + 0.02],
-				[BIN.x + 0.045, BIN.h - 0.055, BIN.z - 0.03],
+				[BIN.x - 0.03, 0.006 + BIN.h - 0.04, BIN.z + 0.02],
+				[BIN.x + 0.045, 0.006 + BIN.h - 0.055, BIN.z - 0.03],
 			]
 		: [
 				[-7.06, deskTop + BALL, -2.78],
@@ -531,10 +531,10 @@ export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[
 		rim.position.set(BIN.x, 0.006 + BIN.h, BIN.z);
 		// Its floor, raised: the crumpled paper it is nearly full of.
 		const fill = new Mesh(new CylinderGeometry(0.125, 0.125, 0.01, 20), ballMat);
-		fill.position.set(BIN.x, BIN.h - 0.085, BIN.z);
+		fill.position.set(BIN.x, 0.006 + BIN.h - 0.085, BIN.z);
 		const under = new Mesh(new PlaneGeometry(0.4, 0.4), shadowMat);
 		under.rotation.x = -Math.PI / 2;
-		under.position.set(BIN.x + 0.02, 0.0125, BIN.z + 0.015);
+		under.position.set(BIN.x + 0.02, 0.0068, BIN.z + 0.015); // (just over the rug, as the balls' shadows are)
 		group.add(wall, rim, fill, under);
 	}
 	for (const [x, y, z] of balls) {
