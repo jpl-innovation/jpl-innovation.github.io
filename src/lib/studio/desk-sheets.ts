@@ -13,6 +13,8 @@
 import {
 	BufferGeometry,
 	CanvasTexture,
+	CylinderGeometry,
+	DoubleSide,
 	Group,
 	IcosahedronGeometry,
 	InstancedMesh,
@@ -25,6 +27,7 @@ import {
 	RepeatWrapping,
 	SphereGeometry,
 	SRGBColorSpace,
+	TorusGeometry,
 	Vector3,
 } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -506,10 +509,33 @@ export function buildDeskSheets(text: typeof DeskSheetsText, places: SheetPlace[
 	}
 	ballGeometry.computeVertexNormals();
 	const ballMat = hardware({ color: 0xece4d2, roughness: 0.95, flatShading: true }, "printed") as MeshStandardMaterial;
-	const balls = [
-		[-7.06, deskTop + 0.026, -2.78],
-		[-6.62, 0.026, -1.62],
-	];
+	// (Where the tier allows, a waste-paper bin stands by the desk's corner: the floor one lies where it missed, two more made it in.)
+	const BIN = { x: -6.98, z: -1.84, h: 0.3 };
+	const balls = cork?.real
+		? [
+				[-7.06, deskTop + 0.026, -2.78],
+				[BIN.x + 0.2, 0.026, BIN.z + 0.13],
+				[BIN.x - 0.03, BIN.h - 0.04, BIN.z + 0.02],
+				[BIN.x + 0.045, BIN.h - 0.055, BIN.z - 0.03],
+			]
+		: [
+				[-7.06, deskTop + 0.026, -2.78],
+				[-6.62, 0.026, -1.62],
+			];
+	if (cork?.real) {
+		const binMat = hardware({ color: 0x262c3a, roughness: 0.6, side: DoubleSide }, "plastic");
+		const wall = new Mesh(new CylinderGeometry(0.135, 0.105, BIN.h, 28, 1, true), binMat);
+		wall.position.set(BIN.x, BIN.h / 2, BIN.z);
+		const rim = new Mesh(new TorusGeometry(0.135, 0.006, 8, 28).rotateX(Math.PI / 2), binMat);
+		rim.position.set(BIN.x, BIN.h, BIN.z);
+		// Its floor, raised: the crumpled paper it is nearly full of.
+		const fill = new Mesh(new CylinderGeometry(0.125, 0.125, 0.01, 20), ballMat);
+		fill.position.set(BIN.x, BIN.h - 0.085, BIN.z);
+		const under = new Mesh(new PlaneGeometry(0.4, 0.4), shadowMat);
+		under.rotation.x = -Math.PI / 2;
+		under.position.set(BIN.x + 0.02, 0.0125, BIN.z + 0.015);
+		group.add(wall, rim, fill, under);
+	}
 	for (const [x, y, z] of balls) {
 		const ball = new Mesh(ballGeometry, ballMat);
 		ball.position.set(x, y, z);

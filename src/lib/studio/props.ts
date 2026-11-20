@@ -377,13 +377,29 @@ export function buildProps(parent: Group, real: boolean): Props {
 	const doorX = -5.6;
 	boxAt(parent, 0.9, 0.012, 0.5, mat(0x1c2540, 1, "fabric"), doorX, 0.006, z1 - 0.55, 0.004);
 	boxAt(parent, 0.5, 0.03, 0.03, steel, doorX + 1.15, 1.72, z1 - 0.025);
+	const strap = mat(0xf5d042, 0.6, "fabric");
 	const badgeHolder = new Group();
 	badgeHolder.position.set(doorX + 1.15, 1.72, z1 - 0.06);
 	parent.add(badgeHolder);
-	boxAt(badgeHolder, 0.012, 0.34, 0.004, mat(0x3b4fd8, 0.6, "fabric"), 0, -0.17, 0);
-	const badgeFace = new Mesh(new PlaneGeometry(0.11, 0.15), new MeshBasicMaterial({ map: imageTexture("/assets/jpl-logo-dark-480.webp"), transparent: true, toneMapped: false }));
+	if (real) {
+		// A coat rail of three pegs; the lanyard loops over the middle one, its two sides meeting at a steel clip on the
+		// badge's sleeve.
+		const pegs = new Batch([doorX + 1.15, 1.72, z1 - 0.04]);
+		for (const px of [-0.17, 0, 0.17]) {
+			pegs.add(new CylinderGeometry(0.007, 0.007, 0.05, 10).rotateX(Math.PI / 2), 0xaab2c0, doorX + 1.15 + px, 1.72, z1 - 0.062);
+			pegs.add(new SphereGeometry(0.011, 12, 8), 0xaab2c0, doorX + 1.15 + px, 1.72, z1 - 0.088);
+		}
+		for (const s of [-1, 1]) pegs.box(0.012, 0.042, 0.034, doorX + 1.15 + s * 0.25, 1.72, z1 - 0.025, 0x262c3a, 0.004);
+		pegs.mesh(parent);
+		boxAt(badgeHolder, 0.016, 0.034, 0.006, steel, 0, -0.345, 0, 0.002);
+		for (const s of [-1, 1]) boxAt(badgeHolder, 0.01, 0.332, 0.003, strap, s * 0.015, -0.16, 0).rotation.z = -s * 0.09;
+		boxAt(badgeHolder, 0.132, 0.176, 0.004, mat(0xf1ecdf, 0.4, "plastic"), 0, -0.44, 0.004, 0.01);
+	} else boxAt(badgeHolder, 0.012, 0.34, 0.004, strap, 0, -0.17, 0);
+	// (The logo at its own shape, 480 by 173, across the top of the card where the tier allows; two ruled lines under it.)
+	const badgeFace = new Mesh(new PlaneGeometry(real ? 0.1 : 0.11, real ? 0.036 : 0.15), new MeshBasicMaterial({ map: imageTexture("/assets/jpl-logo-dark-480.webp"), transparent: true, toneMapped: false }));
 	badgeFace.rotation.y = Math.PI;
-	badgeFace.position.set(0, -0.44, -0.004);
+	badgeFace.position.set(0, real ? -0.405 : -0.44, -0.004);
+	if (real) for (const [w, y] of [[0.07, -0.455], [0.05, -0.475]]) boxAt(badgeHolder, w, 0.005, 0.001, strap, 0, y, -0.0015);
 	badgeHolder.add(badgeFace);
 	boxAt(badgeHolder, 0.12, 0.16, 0.006, mat(0x0b1226, 0.5), 0, -0.44, 0.002, 0.008);
 
