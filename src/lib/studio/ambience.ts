@@ -94,7 +94,8 @@ const shadowSpots = (real: boolean, { z0, z1 } = ROOM): [number, number, number,
 	[-0.56, 0.36, -2.55, 0.8, 0.7], // the robot on it
 	[0.22, 0, -1.95, 0.54, 0.28], // the toolbox
 	[1.4, 0, -2.6, 1.6, 0.8], // the drone bench
-	[3.3, 0, -2.95, 0.74, 0.64], // the rack
+	[3.3, 0, -2.95, 0.8, 0.72], // the rack
+	[3.59, 0, -2.3, 0.12, 0.7], // its door, standing open
 	[-2.4, 0, 5.1, 2.1, 0.9], // the table
 	[-3.95, 0, z1 - 0.5, 0.4, 0.4], // the plant by the window
 	...[-4.05, -2.95, -1.85, -0.75].map((x): [number, number, number, number, number] => [x, 0, 5.85, 0.5, 0.5]), // the crew's chairs

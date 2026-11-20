@@ -21,6 +21,7 @@
  */
 import {
 	Box3,
+	BoxGeometry,
 	CatmullRomCurve3,
 	Color,
 	CylinderGeometry,
@@ -379,18 +380,26 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	const rackFront = rackZ + 0.31;
 	const rack = new Group();
 	group.add(rack);
-	for (const sx of [-1, 1]) boxAt(rack, 0.05, 1.9, 0.6, dark, rackX + sx * 0.33, 0.95, rackZ);
+	// (Where the tier allows the cabinet stands on four levelling feet, 3 cm clear of the floor.)
+	for (const sx of [-1, 1]) boxAt(rack, 0.05, detail ? 1.87 : 1.9, 0.6, dark, rackX + sx * 0.33, detail ? 0.965 : 0.95, rackZ);
 	boxAt(rack, 0.7, 0.05, 0.6, dark, rackX, 1.875, rackZ);
-	boxAt(rack, 0.7, 0.08, 0.6, dark, rackX, 0.04, rackZ);
+	boxAt(rack, 0.7, detail ? 0.05 : 0.08, 0.6, dark, rackX, detail ? 0.055 : 0.04, rackZ);
 	boxAt(rack, 0.62, 1.8, 0.02, new MeshStandardMaterial({ color: 0x0a0d14, roughness: 0.8 }), rackX, 0.95, rackZ - 0.29);
 	if (detail) {
 		// The cabinet's own fittings (never the devices in it): the two mounting rails with their square holes down the
-		// front, vent slots in the top and in each side, one mesh (furniture.ts).
+		// front; on each side a pressed panel held by four screws, with vent slots; vent slots in the top; the feet. One
+		// mesh (furniture.ts).
 		const fittings = new Batch([rackX, 0, rackZ]);
 		for (const sx of [-1, 1]) {
 			fittings.box(0.018, 1.74, 0.004, rackX + sx * 0.296, 0.95, rackFront - 0.022, 0x8a93a3);
 			for (let y = 0.11; y < 1.8; y += 0.03) fittings.box(0.007, 0.007, 0.0045, rackX + sx * 0.296, y, rackFront - 0.0215, 0x0a0d14);
-			for (const y0 of [0.3, 1.5]) for (let i = 0; i < 8; i++) fittings.box(0.002, 0.006, 0.34, rackX + sx * 0.3555, y0 + i * 0.018, rackZ, 0x05070b);
+			fittings.box(0.004, 1.7, 0.52, rackX + sx * 0.357, 0.98, rackZ, 0x1b2029, 0.0015);
+			for (const y0 of [0.3, 0.9, 1.5]) for (let i = 0; i < 8; i++) fittings.box(0.002, 0.006, 0.34, rackX + sx * 0.3595, y0 + i * 0.018, rackZ, 0x05070b);
+			for (const sz of [-1, 1]) {
+				for (const y of [0.17, 1.79]) fittings.add(new CylinderGeometry(0.006, 0.006, 0.003, 10).rotateZ(Math.PI / 2), 0x8a93a3, rackX + sx * 0.3602, y, rackZ + sz * 0.235);
+				fittings.add(new CylinderGeometry(0.009, 0.009, 0.022, 10), 0xaab2c0, rackX + sx * 0.3, 0.02, rackZ + sz * 0.25);
+				fittings.add(new CylinderGeometry(0.026, 0.03, 0.01, 16), 0x101216, rackX + sx * 0.3, 0.005, rackZ + sz * 0.25);
+			}
 		}
 		for (let i = 0; i < 9; i++) fittings.box(0.42, 0.002, 0.012, rackX, 1.9005, rackZ - 0.2 + i * 0.05, 0x05070b);
 		fittings.mesh(rack);
@@ -408,10 +417,16 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		{ y: 0.9, h: 0.3, ports: 4 },
 	];
 	const leds: { x: number; y: number; phase: number; rate: number; color: Color }[] = [];
+	const ears = detail ? new Batch([rackX, 0, rackFront]) : undefined;
 	const ledColors = [new Color(0x7cc47f), new Color(0x7cc47f), new Color(0xf5b942), new Color(0x2f7ce6)]; // link, link, activity, the brand blue
 	for (const [u, unit] of units.entries()) {
 		boxAt(rack, 0.6, unit.h, 0.5, deviceMat, rackX, unit.y, rackZ + 0.02, 0.004);
 		boxAt(rack, 0.6, unit.h, 0.006, faceMat, rackX, unit.y, rackFront - 0.03);
+		// Its mounting ears on the rails, a screw or two in each.
+		for (const sx of [-1, 1]) {
+			ears?.box(0.034, unit.h, 0.003, rackX + sx * 0.296, unit.y, rackFront - 0.0175, 0x2a3040);
+			for (const dy of unit.h > 0.06 ? [-0.3, 0.3] : [0]) ears?.add(new CylinderGeometry(0.0045, 0.0045, 0.003, 8).rotateX(Math.PI / 2), 0xc0c6d0, rackX + sx * 0.296, unit.y + dy * unit.h, rackFront - 0.0148);
+		}
 		const row = Math.min(unit.ports, 24);
 		for (let p = 0; p < row; p++) {
 			const px = rackX - 0.22 + (0.44 * p) / Math.max(1, row - 1);
@@ -429,6 +444,25 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		ledMesh.setColorAt(i, led.color);
 	});
 	rack.add(ledMesh);
+	if (ears) {
+		ears.mesh(rack);
+		// The cabinet's glass door, standing open on its hinges at the right (in the room, not the rack: what is pointed at
+		// and entered stays the rack itself). A steel frame, the pane, a handle and its lock on the free edge.
+		const rackDoor = new Group();
+		rackDoor.position.set(rackX + 0.35, 0, rackZ + 0.302);
+		rackDoor.rotation.y = 1.4;
+		group.add(rackDoor);
+		const frame = new Batch([0, 0, 0]);
+		for (const x of [-0.0175, -0.6825]) frame.box(0.035, 1.78, 0.02, x, 0.98, 0.012, 0x1b2029, 0.003);
+		for (const y of [0.1075, 1.8525]) frame.box(0.7, 0.035, 0.02, -0.35, y, 0.012, 0x1b2029, 0.003);
+		for (const y of [0.4, 1.56]) frame.add(new CylinderGeometry(0.008, 0.008, 0.07, 10), 0xaab2c0, 0.004, y, 0.004);
+		frame.box(0.014, 0.13, 0.016, -0.668, 1.0, 0.03, 0xaab2c0, 0.004);
+		frame.add(new CylinderGeometry(0.008, 0.008, 0.006, 12).rotateX(Math.PI / 2), 0xaab2c0, -0.668, 0.9, 0.024);
+		frame.mesh(rackDoor);
+		const pane = new Mesh(new BoxGeometry(0.632, 1.712, 0.004), new MeshStandardMaterial({ color: 0xa9bccf, roughness: 0.08, transparent: true, opacity: 0.16, depthWrite: false }));
+		pane.position.set(-0.35, 0.98, 0.012);
+		rackDoor.add(pane);
+	}
 	// Patch cables between the patch panel and the switches, in the site's chart colours.
 	const cableColors = [0x1f5fd1, 0xb87a00, 0x8fb8f5, 0xc8283a, 0x1f5fd1, 0xf5d042];
 	for (let c = 0; c < 10; c++) {
