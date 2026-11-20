@@ -36,7 +36,7 @@ export interface TableSpec {
 	bench?: boolean;
 }
 
-let shared: { coat: Material; foot: Material; bolt: Material; pale: Material; wear: Material } | undefined;
+let shared: { coat: Material; foot: Material; bolt: Material; pale: Material; wear: Material; shade: Material } | undefined;
 /** The furniture's own materials, one set for the whole room (the room's finishes: no new kind of shader). */
 function materials() {
 	if (shared) return shared;
@@ -53,8 +53,20 @@ function materials() {
 		g.fillStyle = patch;
 		g.fillRect(0, 0, 256, 64);
 	}
+	// Under each foot, the dark where it meets the floor: a soft round blot, drawn as the wear patch is.
+	const blot = document.createElement("canvas");
+	blot.width = blot.height = 64;
+	const b = blot.getContext("2d")!;
+	const round = b.createRadialGradient(32, 32, 0, 32, 32, 32);
+	round.addColorStop(0, "rgba(0,0,0,1)");
+	round.addColorStop(0.35, "rgba(0,0,0,0.55)");
+	round.addColorStop(1, "rgba(0,0,0,0)");
+	b.fillStyle = round;
+	b.fillRect(0, 0, 64, 64);
 	return (shared = {
-		coat: hardware({ color: 0x262c3a, roughness: 0.55, metalness: 0.1 }, "plastic"), // graphite powder coat
+		// Graphite steel tube, satin: it takes a soft highlight down its rounded corners instead of reading as a flat black stick.
+		coat: hardware({ color: 0x4d5567, roughness: 0.42, metalness: 0.3 }, "plastic"),
+		shade: new MeshBasicMaterial({ color: 0x000000, map: new CanvasTexture(blot), transparent: true, opacity: 0.5, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
 		foot: hardware({ color: 0x101216, roughness: 0.9 }, "rubber"),
 		bolt: hardware({ color: 0xb8c0cc, roughness: 0.3, metalness: 0.9 }, "metal"),
 		pale: hardware({ color: 0xe9e4d6, roughness: 0.5 }, "plastic"),
@@ -67,7 +79,7 @@ export function tableFrame(parent: Group, spec: TableSpec) {
 	const { x, z, w, d, top, thick = 0.03, inset = 0.06, frontRail = true, shelf, bench, open } = spec;
 	const floor = spec.floor ?? 0;
 	const mats = materials();
-	const parts: Record<"coat" | "foot" | "bolt" | "pale", BufferGeometry[]> = { coat: [], foot: [], bolt: [], pale: [] };
+	const parts: Record<"coat" | "foot" | "bolt" | "pale" | "shade", BufferGeometry[]> = { coat: [], foot: [], bolt: [], pale: [], shade: [] };
 	const put = (list: BufferGeometry[], geometry: BufferGeometry, px: number, py: number, pz: number) => {
 		const g = geometry.index ? geometry.toNonIndexed() : geometry;
 		g.translate(px, py, pz);
@@ -85,7 +97,8 @@ export function tableFrame(parent: Group, spec: TableSpec) {
 		for (const sz of [-1, 1]) {
 			// A leg, and under it a levelling foot: a threaded stem into the tube and a rubber pad on the floor.
 			const ground = sx < 0 ? (spec.floorLeft ?? floor) : floor;
-			box(parts.coat, leg, under - ground - footH, leg, sx * lx, ground + footH + (under - ground - footH) / 2, sz * lz, 0.004);
+			put(parts.coat, new RoundedBoxGeometry(leg, under - ground - footH, leg, 3, 0.009), sx * lx, ground + footH + (under - ground - footH) / 2, sz * lz);
+			put(parts.shade, new PlaneGeometry(0.17, 0.17).rotateX(-Math.PI / 2), sx * lx + 0.012, ground + 0.004, sz * lz + 0.008);
 			put(parts.bolt, new CylinderGeometry(0.006, 0.006, footH, 8), sx * lx, ground + footH / 2 + 0.006, sz * lz);
 			put(parts.foot, new CylinderGeometry(0.019, 0.022, 0.012, 16), sx * lx, ground + 0.006, sz * lz);
 			// A bracket plate on the leg's outer side where the frame meets it, with two bolt heads.
@@ -123,7 +136,12 @@ export function tableFrame(parent: Group, spec: TableSpec) {
 
 	const group = new Group();
 	group.position.set(x, 0, z);
-	for (const key of Object.keys(parts) as (keyof typeof parts)[]) if (parts[key].length) group.add(new Mesh(mergeGeometries(parts[key], false)!, mats[key]));
+	for (const key of Object.keys(parts) as (keyof typeof parts)[]) {
+		if (!parts[key].length) continue;
+		const mesh = new Mesh(mergeGeometries(parts[key], false)!, mats[key]);
+		if (key === "shade") mesh.userData.shadow = false;
+		group.add(mesh);
+	}
 	// Wear on the top, along the front edge.
 	const wear = new Mesh(new PlaneGeometry(Math.min(0.9, w * 0.6), 0.2), mats.wear);
 	wear.rotation.x = -Math.PI / 2;
