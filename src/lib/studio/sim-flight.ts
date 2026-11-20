@@ -206,6 +206,15 @@ export function createSim(ctx: StageContext, room: Room, ids: readonly string[])
 		renderer.setRenderTarget(drawnTo);
 		await Promise.all(clouds);
 		await uploadInSlices(renderer, scene);
+		// And drawn a few times now, small and out of sight. A shader built in the background still has its first use to
+		// pay for (three.js reads its log and its uniforms from the graphics process), and the world's geometry is sent in
+		// the frame it is first drawn: together a long frame as the camera reached the bench, where the flight first shows.
+		for (const f of [0, 0.3, 0.6, 1]) {
+			await new Promise((resolve) => requestAnimationFrame(resolve));
+			if (renderer.getContext().isContextLost()) return;
+			draw(f, camera.aspect);
+		}
+		lastClock = 0;
 
 		state = "ready";
 		dirty = true;
