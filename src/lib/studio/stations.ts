@@ -1065,7 +1065,35 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		fittings.box(0.006, 0.012, 0.007, -0.9, 0.9, -0.027, 0x0a0d14);
 		for (const y of [0.25, 1.04, 1.85]) fittings.add(new CylinderGeometry(0.009, 0.009, 0.1, 10), 0xaab2c0, -0.004, y, -0.03);
 		fittings.box(0.94, 0.18, 0.002, -0.49, 0.11, -0.0235, 0x8a93a3);
+		// The latch's plate on the door's edge, and its bolt.
+		fittings.box(0.002, 0.16, 0.026, -0.981, 1.0, 0, 0xaab2c0);
+		fittings.box(0.008, 0.03, 0.014, -0.984, 1.0, 0, 0x8a93a3, 0.002);
 		doorPivot.add(fittings.mesh(group));
+		// Two fielded panels on its face, in the door's own paint: a moulding round each and the raised field inside it.
+		const panels = new Batch([0, 0, 0], true);
+		for (const [y, h] of [[0.66, 0.62], [1.52, 0.86]]) {
+			for (const s of [-1, 1]) {
+				panels.box(0.76, 0.024, 0.012, -0.49, y + (s * (h - 0.024)) / 2, -0.0255, 0, 0.004);
+				panels.box(0.024, h, 0.012, -0.49 + s * 0.368, y, -0.0255, 0, 0.004);
+			}
+			panels.box(0.6, h - 0.16, 0.008, -0.49, y, -0.0245, 0, 0.003);
+		}
+		panels.mesh(doorPivot, doorMat);
+		// The frame: a stop bead the door shuts against, an architrave's outer step on the wall, the strike plate the
+		// latch meets, and a steel threshold.
+		const trim = new Batch([doorX, 0, z1], true);
+		for (const s of [-1, 1]) {
+			trim.box(0.012, 2.148, 0.02, doorX + s * 0.494, 1.074, z1 - 0.017, 0);
+			trim.box(0.03, 2.27, 0.012, doorX + s * 0.595, 1.135, z1 - 0.006, 0, 0.004);
+		}
+		trim.box(0.976, 0.012, 0.02, doorX, 2.154, z1 - 0.017, 0);
+		trim.box(1.22, 0.03, 0.012, doorX, 2.255, z1 - 0.006, 0, 0.004);
+		trim.mesh(group, frameMat);
+		const steelTrim = new Batch([doorX, 0, z1]);
+		steelTrim.box(0.002, 0.15, 0.03, doorX - 0.499, 1.0, z1 - 0.05, 0xaab2c0);
+		steelTrim.box(0.004, 0.035, 0.016, doorX - 0.499, 1.0, z1 - 0.05, 0x0a0d14);
+		steelTrim.box(1.0, 0.006, 0.11, doorX, 0.003, z1 - 0.045, 0x8a93a3, 0.002);
+		steelTrim.mesh(group);
 	} else {
 		const handle = new Mesh(new CylinderGeometry(0.012, 0.012, 0.14, 10), toolMetal);
 		handle.rotation.z = Math.PI / 2;
