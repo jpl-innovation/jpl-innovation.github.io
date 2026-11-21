@@ -1,14 +1,15 @@
 /**
- * The walls' own looks (preview: ?walls=a|b|c), each zone of the room its own treatment, over the plain painted shell
- * (room.ts), on the medium and high tiers only; phones and the low tier keep the plain walls.
+ * The walls, each zone of the room its own treatment, over the plain painted shell (room.ts), on the medium and high
+ * tiers only; phones and the low tier keep the plain walls. A high-floor studio at night over Saigon:
  *
- *   a  Navy studio      the desk's wall deep navy, matt; the workshop painted brick; services along the top
- *   b  Oak & blueprint  the desk's wall oak slats on a dark ground; the workshop formed concrete, an F450 drawn on it
- *   c  Concrete & felt  board-formed concrete; navy and yellow felt panels, where a workshop needs them
+ *   behind the desk   walnut slats on a dark ground, turning the left corner onto a brass edge; the logo and its line
+ *                     on a navy plate with a brass edge and pins, under a brass picture light that washes the slats
+ *   the workshop      formed concrete with a steel cable tray, conduit, sockets and switches over each bench, and an
+ *                     F450 drawn large on it as an engineer's mural
+ *   the empty walls   hung with our own work (gallery.ts)
  *
- * Every look: a skirting board all round, a shadow gap under the ceiling, the logo standing off the wall with its
- * shadow, a lower band and a dado rail by the door. The surfaces are real (Poly Haven, CC0) and use the walls' own kind
- * of material (a colour map, bumps and shine), so they add textures but no shader.
+ * And all round: a skirting board, a shadow gap under the ceiling, a lower band and oak rails where knocks land.
+ * The surfaces are real (Poly Haven, CC0) and use the walls' own kind of material (a colour map, bumps and shine).
  */
 import { BoxGeometry, CanvasTexture, CylinderGeometry, type Group, type Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -17,14 +18,9 @@ import { buildGallery } from "./gallery";
 import { hardware } from "../three/finish";
 import { loadImage, metreUv, ROOM, surface, tiled, tint, woodMaterial } from "./room";
 
-export type WallLook = "a" | "b" | "c";
 let brassMat: Material | undefined;
-/** Brass, a few touches of it (look b): the picture light, the plate's edge, the desk lamp, the tray's brackets, the coat pegs, the door handle. */
+/** Brass, a few touches of it: the picture lights, the plate's edge, the desk lamp, the tray's brackets, the coat pegs, the door handle. */
 export const brass = () => (brassMat ??= hardware({ color: 0xc09a5b, roughness: 0.32, metalness: 1 }, "metal"));
-export function wallLook(): WallLook | undefined {
-	const v = new URLSearchParams(location.search).get("walls");
-	return v === "a" || v === "b" || v === "c" ? v : undefined;
-}
 
 /** Where the front wall's zones meet (x, m): the desk's wall, the workshop, then the project wall (left as it is). */
 const DESK_END = -4.72;
@@ -34,7 +30,7 @@ const RAIL = 1.0; // the dado rail's height by the door
 
 type Tinted = { mat: MeshStandardMaterial; light: number; dark: number };
 
-export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mesh, logoOnDark: (yes: boolean) => void) {
+export function buildWalls(group: Group, logo: Mesh, slogan: Mesh) {
 	const { x0, x1, z0, z1, h } = ROOM;
 	const tinted: Tinted[] = [];
 	const paint = (name: string, light: number, dark: number, normal = 0.6, roughness = 0.95) => {
@@ -52,9 +48,9 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		return mesh;
 	};
 	const trim = new Batch([0, 0, 0]);
-	const brassy = new Batch([0, 0, 0]); // (look b's brass touches: one mesh)
+	const brassy = new Batch([0, 0, 0]); // (the brass touches: one mesh)
 
-	/* ---------- Every look: skirting, the shadow gap under the ceiling ---------- */
+	/* ---------- Skirting, the shadow gap under the ceiling ---------- */
 	const SKIRT = 0.12;
 	const runs: [number, number, number, number][] = [
 		// [from, to, the wall's z, which way it faces]: the front, the back on either side of the door
@@ -73,19 +69,17 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		trim.box(0.006, 0.022, z1 - z0, x + f * 0.003, h - 0.011, (z0 + z1) / 2, 0x05070b);
 	}
 
-	/* ---------- Every look: the door's pier, a lower band and a dado rail to take the knocks ---------- */
-	const bandLight = look === "b" ? 0x262c3a : 0x1b2d6e;
-	const bandDark = look === "b" ? 0x1b2029 : 0x111c4c;
-	const band = paint("painted_plaster_wall", bandLight, bandDark, 0.5, 0.9);
+	/* ---------- The door's pier, a lower band and a dado rail to take the knocks ---------- */
+	const band = paint("painted_plaster_wall", 0x262c3a, 0x1b2029, 0.5, 0.9);
 	panel(band, DOOR.a, DOOR.gap0, SKIRT, RAIL, 2.4, true, 0.003);
 	panel(band, DOOR.gap1, DOOR.b, SKIRT, RAIL, 2.4, true, 0.003);
-	const sill = look === "b" ? 0.3 : 0.85; // (look b's glass comes down to a low ledge: room.ts)
+	const sill = 0.3; // (the glass comes down to a low ledge: room.ts)
 	panel(band, x0, DOOR.a, SKIRT, sill, 2.4, true, 0.0025); // under the sill, the rest of the back wall
 	panel(band, DOOR.b, x1, SKIRT, sill, 2.4, true, 0.0025);
-	const railMat = look === "c" ? new MeshStandardMaterial({ color: 0x262c3a, roughness: 0.6 }) : woodMaterial("oak_veneer_01");
+	const railMat = woodMaterial("oak_veneer_01");
 	group.add(new Mesh(railGeometry([[DOOR.a, DOOR.gap0 - 0.06], [DOOR.gap1 + 0.06, DOOR.b]], RAIL, z1), railMat));
 
-	/* ---------- Every look: the logo stands off the wall on pins, its shadow on the wall behind ---------- */
+	/* ---------- The logo stands off the wall on pins, its shadow on the wall behind ---------- */
 	logo.position.z = z0 + 0.045;
 	const shadowMat = new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false });
 	const shadow = new Mesh(new PlaneGeometry(1.66 * (512 / 480), 0.6 * (186 / 173)), shadowMat);
@@ -118,7 +112,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		const run = SHOP_END - 0.05 - DESK_END;
 		trim.box(run, 0.004, 0.16, (DESK_END + SHOP_END) / 2, y, z0 + 0.1, 0x8a93a3);
 		for (const s of [0, 1]) trim.box(run, 0.05, 0.003, (DESK_END + SHOP_END) / 2, y + 0.025, z0 + 0.02 + s * 0.16, 0x8a93a3);
-		const brackets = look === "b" ? brassy : trim;
+		const brackets = brassy;
 		for (let x = DESK_END + 0.3; x < SHOP_END; x += 1.2) {
 			brackets.box(0.03, 0.12, 0.004, x, y - 0.04, z0 + 0.004, 0x5d6577);
 			brackets.box(0.03, 0.004, 0.18, x, y - 0.004, z0 + 0.09, 0x5d6577);
@@ -143,119 +137,89 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		}
 	};
 
-	/* ---------- The looks ---------- */
-	const logoDark = true;
+	/* ---------- Behind the desk, and the workshop ---------- */
 	let gallery: ReturnType<typeof buildGallery> | undefined;
-	if (look === "a") {
-		// The desk's wall in deep navy, matt; the logo's light version on it in both themes.
-		panel(paint("painted_plaster_wall", 0x14235e, 0x0f1a48, 0.6, 1), x0, DESK_END, 0, h, 2.4);
-		panel(paint("painted_brick", 0xe6e1d2, 0x2a3044, 0.9, 1), DESK_END, SHOP_END, 0, h, 1.8);
-		trim.box(0.03, h - 0.02, 0.02, DESK_END, h / 2, z0 + 0.01, 0x262c3a, 0.004); // a steel edge where the two meet
-		services();
-	} else if (look === "b") {
-		// Oak slats on a dark ground behind the desk; the workshop's formed concrete, an F450 drawn large on it.
-		const RETURN = 0.6; // (m: how far the slats turn the corner; 1 m reached the opening words)
-		const darkGround = paint("painted_plaster_wall", 0x0b1230, 0x070c22, 0.3, 1);
-		panel(darkGround, x0, DESK_END, 0, h, 2.4);
-		const slats: BoxGeometry[] = [];
-		// (Round the corkboard (room.ts, desk-sheets.ts) the slats stop, so the board sits inset in the panel.)
-		const CORK = { x0: -7.55, x1: -6.83, y0: 1.27, y1: 2.35 };
-		const slat = (x: number, y0: number, y1: number) => {
-			const g = new BoxGeometry(0.046, y1 - y0, 0.022);
-			metreUv(g, [0.046, y1 - y0, 0.022], (x * 7.31) % 1);
-			slats.push(g.translate(x, (y0 + y1) / 2, z0 + 0.012) as BoxGeometry);
-		};
-		for (let x = x0 + 0.04; x < DESK_END - 0.03; x += 0.064) {
-			if (x > CORK.x0 && x < CORK.x1) {
-				slat(x, 0.015, CORK.y0);
-				slat(x, CORK.y1, h - 0.035);
-			} else slat(x, 0.015, h - 0.035);
-		}
-		// The left wall by the shelves: the slats turn the corner for a short return on their dark ground, ending on a brass
-		// edge, so the panel reads as wrapping the corner; beyond, the door's lower band and oak rail all along that wall,
-		// plaster above. (The page's opening words lie over the rest of this wall at the title: slats behind them were
-		// hard to read in the light theme, so the return stays short.)
-		const WRAP = z0 + RETURN;
-		for (let z = z0 + 0.04; z < WRAP - 0.02; z += 0.064) {
-			const g = new BoxGeometry(0.022, h - 0.05, 0.046);
-			metreUv(g, [0.022, h - 0.05, 0.046], (z * 5.17) % 1);
-			slats.push(g.translate(x0 + 0.012, h / 2 - 0.01, z) as BoxGeometry);
-		}
-		const returnGround = new Mesh(tiled(new PlaneGeometry(RETURN, h), 2.4), darkGround);
-		returnGround.rotation.y = Math.PI / 2;
-		returnGround.position.set(x0 + 0.002, h / 2, z0 + RETURN / 2);
-		group.add(returnGround);
-		brassy.box(0.03, h - 0.05, 0.012, x0 + 0.015, h / 2 - 0.01, WRAP + 0.006, 0xc09a5b);
-		const SIDE = 0.78; // (lower than the door's: clear of the opening words at the title)
-		const side = new Mesh(tiled(new PlaneGeometry(z1 - WRAP, SIDE - SKIRT), 2.4), band);
-		side.rotation.y = Math.PI / 2;
-		side.position.set(x0 + 0.003, (SKIRT + SIDE) / 2, (WRAP + z1) / 2);
-		side.receiveShadow = true;
-		group.add(side);
-		const sideRail = new BoxGeometry(0.022, 0.045, z1 - WRAP - 0.02);
-		metreUv(sideRail, [0.022, 0.045, z1 - WRAP], 0.4);
-		group.add(new Mesh(sideRail.translate(x0 + 0.011, SIDE, (WRAP + z1) / 2), woodMaterial("oak_veneer_01")));
-		const oak = new Mesh(mergeGeometries(slats, false)!, woodMaterial("walnut_veneer"));
-		oak.receiveShadow = true;
-		group.add(oak);
-		// The logo and its line on a navy powder-coated plate, standing off the slats (clear of the corkboard on its left).
-		const PW = 1.72;
-		const plate = new Mesh(new BoxGeometry(PW, 0.98, 0.012), paint("painted_plaster_wall", 0x14235e, 0x101b4a, 0.25, 0.8));
-		plate.position.set(logo.position.x, 2.0, z0 + 0.034);
-		plate.receiveShadow = true;
-		group.add(plate);
-		// Brass: a fine edge round the plate, a cap on each of its four stand-off pins, and above it a brass picture light
-		// on its arm (the warm wash down the slats is its light: room.ts, the title's lamp).
-		const fittings: BoxGeometry[] = [];
-		const px = logo.position.x;
-		for (const s of [-1, 1]) {
-			fittings.push(new BoxGeometry(PW + 0.02, 0.01, 0.016).translate(px, 2.0 + s * 0.495, z0 + 0.034));
-			fittings.push(new BoxGeometry(0.01, 1.0, 0.016).translate(px + s * (PW / 2 + 0.005), 2.0, z0 + 0.034));
-		}
-		const caps = [-1, 1].flatMap((sx) => [-1, 1].map((sy) => new CylinderGeometry(0.014, 0.014, 0.008, 16).rotateX(Math.PI / 2).translate(px + sx * (PW / 2 - 0.045), 2.0 + sy * 0.42, z0 + 0.044)));
-		const bar = new CylinderGeometry(0.022, 0.022, 0.72, 20).rotateZ(Math.PI / 2).translate(px, 2.62, z0 + 0.2);
-		const arm = new CylinderGeometry(0.008, 0.008, 0.2, 10).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.1);
-		const rose = new CylinderGeometry(0.035, 0.035, 0.012, 20).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.03);
-		const brassMesh = new Mesh(mergeGeometries([...fittings, ...caps, bar, arm, rose].map((g) => (g.index ? g.toNonIndexed() : g)), false)!, brass());
-		group.add(brassMesh);
-		logo.position.z = z0 + 0.075;
-		shadow.position.z = z0 + 0.0405;
-		panel(paint("concrete_wall_008", 0xdcd7c9, 0x2d3346, 0.7, 1), DESK_END, SHOP_END, 0, h, 2.7);
-		const drawing = blueprint();
-		const muralMat = new MeshStandardMaterial({ map: drawing, normalMap: band.normalMap, roughnessMap: band.roughnessMap, roughness: 1 });
-		// The two walls that stood empty: the gallery on the left wall, the networks wall (gallery.ts).
-		gallery = buildGallery(group, drawing, { navy: paint("caban", 0x1b2d6e, 0x34477f, 1, 1), yellow: paint("caban", 0xf5d042, 0xd9b52e, 1, 1) }, brass());
-		tinted.push({ mat: muralMat, light: 0xffffff, dark: 0xb8bcd0 });
-		const mural = new Mesh(new PlaneGeometry(1.92, 1.92), muralMat);
-		mural.position.set(-2.46, 2.18, z0 + 0.006);
-		mural.receiveShadow = true;
-		group.add(mural);
-		services();
-	} else {
-		// Board-formed concrete; the logo on a navy felt panel; felt squares high over the benches, where the noise is.
-		panel(paint("concrete_layers", 0xd8d3c5, 0x2b3143, 1, 1), x0, SHOP_END, 0, h, 1.55);
-		const feltNavy = paint("caban", 0x1b2d6e, 0x14235e, 1, 1);
-		const feltYellow = paint("caban", 0xf5d042, 0xd9b52e, 1, 1);
-		const felt = (mat: Material, x: number, y: number, w: number, hh: number) => {
-			const g = new BoxGeometry(w, hh, 0.03);
-			const uv = g.getAttribute("uv");
-			for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / 0.27, (uv.getY(i) * hh) / 0.27);
-			const m = new Mesh(g, mat);
-			m.position.set(x, y, z0 + 0.016);
-			m.receiveShadow = true;
-			group.add(m);
-		};
-		felt(feltNavy, -6, 2.0, 2.3, 1.12);
-		logo.position.z = z0 + 0.075;
-		shadow.position.z = z0 + 0.0315;
-		const xs = [-3.9, -3.3, -2.7, -2.1, -1.5, -0.9, -0.3, 0.3, 0.9, 1.5, 2.1, 2.7];
-		xs.forEach((x, i) => felt(i % 5 === 2 ? feltYellow : feltNavy, x, i % 2 ? 2.62 : 2.98, 0.56, 0.56));
-		services();
+	// Oak slats on a dark ground behind the desk; the workshop's formed concrete, an F450 drawn large on it.
+	const RETURN = 0.6; // (m: how far the slats turn the corner; 1 m reached the opening words)
+	const darkGround = paint("painted_plaster_wall", 0x0b1230, 0x070c22, 0.3, 1);
+	panel(darkGround, x0, DESK_END, 0, h, 2.4);
+	const slats: BoxGeometry[] = [];
+	// (Round the corkboard (room.ts, desk-sheets.ts) the slats stop, so the board sits inset in the panel.)
+	const CORK = { x0: -7.55, x1: -6.83, y0: 1.27, y1: 2.35 };
+	const slat = (x: number, y0: number, y1: number) => {
+		const g = new BoxGeometry(0.046, y1 - y0, 0.022);
+		metreUv(g, [0.046, y1 - y0, 0.022], (x * 7.31) % 1);
+		slats.push(g.translate(x, (y0 + y1) / 2, z0 + 0.012) as BoxGeometry);
+	};
+	for (let x = x0 + 0.04; x < DESK_END - 0.03; x += 0.064) {
+		if (x > CORK.x0 && x < CORK.x1) {
+			slat(x, 0.015, CORK.y0);
+			slat(x, CORK.y1, h - 0.035);
+		} else slat(x, 0.015, h - 0.035);
 	}
+	// The left wall by the shelves: the slats turn the corner for a short return on their dark ground, ending on a brass
+	// edge, so the panel reads as wrapping the corner; beyond, the door's lower band and oak rail all along that wall,
+	// plaster above. (The page's opening words lie over the rest of this wall at the title: slats behind them were
+	// hard to read in the light theme, so the return stays short.)
+	const WRAP = z0 + RETURN;
+	for (let z = z0 + 0.04; z < WRAP - 0.02; z += 0.064) {
+		const g = new BoxGeometry(0.022, h - 0.05, 0.046);
+		metreUv(g, [0.022, h - 0.05, 0.046], (z * 5.17) % 1);
+		slats.push(g.translate(x0 + 0.012, h / 2 - 0.01, z) as BoxGeometry);
+	}
+	const returnGround = new Mesh(tiled(new PlaneGeometry(RETURN, h), 2.4), darkGround);
+	returnGround.rotation.y = Math.PI / 2;
+	returnGround.position.set(x0 + 0.002, h / 2, z0 + RETURN / 2);
+	group.add(returnGround);
+	brassy.box(0.03, h - 0.05, 0.012, x0 + 0.015, h / 2 - 0.01, WRAP + 0.006, 0xc09a5b);
+	const SIDE = 0.78; // (lower than the door's: clear of the opening words at the title)
+	const side = new Mesh(tiled(new PlaneGeometry(z1 - WRAP, SIDE - SKIRT), 2.4), band);
+	side.rotation.y = Math.PI / 2;
+	side.position.set(x0 + 0.003, (SKIRT + SIDE) / 2, (WRAP + z1) / 2);
+	side.receiveShadow = true;
+	group.add(side);
+	const sideRail = new BoxGeometry(0.022, 0.045, z1 - WRAP - 0.02);
+	metreUv(sideRail, [0.022, 0.045, z1 - WRAP], 0.4);
+	group.add(new Mesh(sideRail.translate(x0 + 0.011, SIDE, (WRAP + z1) / 2), woodMaterial("oak_veneer_01")));
+	const oak = new Mesh(mergeGeometries(slats, false)!, woodMaterial("walnut_veneer"));
+	oak.receiveShadow = true;
+	group.add(oak);
+	// The logo and its line on a navy powder-coated plate, standing off the slats (clear of the corkboard on its left).
+	const PW = 1.72;
+	const plate = new Mesh(new BoxGeometry(PW, 0.98, 0.012), paint("painted_plaster_wall", 0x14235e, 0x101b4a, 0.25, 0.8));
+	plate.position.set(logo.position.x, 2.0, z0 + 0.034);
+	plate.receiveShadow = true;
+	group.add(plate);
+	// Brass: a fine edge round the plate, a cap on each of its four stand-off pins, and above it a brass picture light
+	// on its arm (the warm wash down the slats is its light: room.ts, the title's lamp).
+	const fittings: BoxGeometry[] = [];
+	const px = logo.position.x;
+	for (const s of [-1, 1]) {
+		fittings.push(new BoxGeometry(PW + 0.02, 0.01, 0.016).translate(px, 2.0 + s * 0.495, z0 + 0.034));
+		fittings.push(new BoxGeometry(0.01, 1.0, 0.016).translate(px + s * (PW / 2 + 0.005), 2.0, z0 + 0.034));
+	}
+	const caps = [-1, 1].flatMap((sx) => [-1, 1].map((sy) => new CylinderGeometry(0.014, 0.014, 0.008, 16).rotateX(Math.PI / 2).translate(px + sx * (PW / 2 - 0.045), 2.0 + sy * 0.42, z0 + 0.044)));
+	const bar = new CylinderGeometry(0.022, 0.022, 0.72, 20).rotateZ(Math.PI / 2).translate(px, 2.62, z0 + 0.2);
+	const arm = new CylinderGeometry(0.008, 0.008, 0.2, 10).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.1);
+	const rose = new CylinderGeometry(0.035, 0.035, 0.012, 20).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.03);
+	const brassMesh = new Mesh(mergeGeometries([...fittings, ...caps, bar, arm, rose].map((g) => (g.index ? g.toNonIndexed() : g)), false)!, brass());
+	group.add(brassMesh);
+	logo.position.z = z0 + 0.075;
+	shadow.position.z = z0 + 0.0405;
+	panel(paint("concrete_wall_008", 0xdcd7c9, 0x2d3346, 0.7, 1), DESK_END, SHOP_END, 0, h, 2.7);
+	const drawing = blueprint();
+	const muralMat = new MeshStandardMaterial({ map: drawing, normalMap: band.normalMap, roughnessMap: band.roughnessMap, roughness: 1 });
+	// The two walls that stood empty: the gallery on the left wall, the networks wall (gallery.ts).
+	gallery = buildGallery(group, drawing, { navy: paint("caban", 0x1b2d6e, 0x34477f, 1, 1), yellow: paint("caban", 0xf5d042, 0xd9b52e, 1, 1) }, brass());
+	tinted.push({ mat: muralMat, light: 0xffffff, dark: 0xb8bcd0 });
+	const mural = new Mesh(new PlaneGeometry(1.92, 1.92), muralMat);
+	mural.position.set(-2.46, 2.18, z0 + 0.006);
+	mural.receiveShadow = true;
+	group.add(mural);
+	services();
 	slogan.position.z = logo.position.z;
-	logoOnDark(logoDark);
 	trim.mesh(group);
-	if (look === "b") brassy.mesh(group, brass());
+	brassy.mesh(group, brass());
 
 	return {
 		applyPalette(dark: boolean) {

@@ -67,10 +67,10 @@ export const BACKDROP = {
 	/**
 	 * On the river (the middle layer's): boats, each a short row of deck lights drifting along it, and the riverside
 	 * road's street lamps along the far bank. Radius and height (m) in the layers' own space, the stretch of the arc
-	 * (0 to 1), how many, and the boats' speed (m/s). Off unless `river.on` (look b, walls.ts).
+	 * (0 to 1), how many, and the boats' speed (m/s). Off unless `river.on` (the medium and high tiers: room.ts).
 	 */
 	/**
-	 * Look b (walls.ts): the city from pictures instead of the drawn layers (scripts/studio-city.py makes them, into
+	 * The medium and high tiers (room.ts): the city from pictures instead of the drawn layers (scripts/studio-city.py makes them, into
 	 * public/studio/window/city-LAYER-THEME.webp; `size` is each one's, from city.json). Each is a curve round the room
 	 * at `radius`, from `bottom` to `bottom + height` (m); its arc follows the picture's proportions, so nothing is
 	 * stretched but the sky, which spans the whole arc. Far to near: the sky, District 1's skyline, the river with the
@@ -109,7 +109,7 @@ export const BACKDROP = {
 	},
 };
 
-/** The city's pictures (look b), named in full so the site's check for unused files finds them. */
+/** The city's pictures (the medium and high tiers), named in full so the site's check for unused files finds them. */
 const CITY = {
 	sky: { night: "/studio/window/city-sky-night.webp", golden: "/studio/window/city-sky-golden.webp" },
 	skyline: { night: "/studio/window/city-skyline-night.webp", golden: "/studio/window/city-skyline-golden.webp" },
@@ -539,7 +539,7 @@ export function buildBackdrop(parent: Group): Backdrop {
 	const far = P.on ? undefined : layer(BACKDROP.far, drawFar, true, -30);
 	const mid = P.on ? undefined : layer(BACKDROP.mid, drawMid, false, -29);
 	const near = P.on ? undefined : layer(BACKDROP.near, drawNear, false, -28);
-	// The pictures (look b): each layer a curve showing its picture at its own proportions, one material per layer whose
+	// The pictures (the medium and high tiers): each layer a curve showing its picture at its own proportions, one material per layer whose
 	// picture the theme swaps (the room's own kind of picture material: no shader of its own).
 	const photos: { material: MeshBasicMaterial; night: Texture; golden: Texture }[] = [];
 	const photoArc = (spec: { radius: number; height: number; size: number[] }) => Math.min(arc, (spec.height * spec.size[0]) / spec.size[1] / spec.radius);
@@ -565,7 +565,7 @@ export function buildBackdrop(parent: Group): Backdrop {
 			photos.push({ material, night, golden });
 		});
 	}
-	// With glass nearly to the floor (look b) the eye sees below the layers' foot: the riverside there, plain, in each
+	// With glass nearly to the floor the eye sees below the layers' foot: the riverside there, plain, in each
 	// theme's tone, so the page behind the canvas never shows through.
 	const foot = BACKDROP.river.on ? new MeshBasicMaterial({ color: 0x0a0f1e, toneMapped: false }) : undefined; // (the light strips. kind: no new shader)
 	if (foot) {

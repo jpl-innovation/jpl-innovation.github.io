@@ -42,7 +42,7 @@ import {
 	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
-import { brass, wallLook } from "./walls";
+import { brass } from "./walls";
 import { tick } from "../three/yield";
 import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
@@ -142,7 +142,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	const cartTop = 0.36;
 	// (The cart keeps its shape, size and place: it carries the robot. Where the tier allows it is painted steel on rubber castors.)
 	const detail = ctx.tier !== "low";
-	const tall = detail && wallLook() === "b"; // look b (walls.ts, preview): the back wall glass to a low ledge, a few brass touches
+	const tall = detail; // the back wall glass to a low ledge, a few brass touches (walls.ts)
 	const cartSteel = detail ? hardware({ color: 0x262c3a, roughness: 0.55, metalness: 0.1 }, "plastic") : steel;
 	const cartRubber = detail ? hardware({ color: 0x101216, roughness: 0.9 }, "rubber") : dark;
 	boxAt(group, 1.1, 0.04, 0.86, cartSteel, robotX, cartTop - 0.02, -2.55, 0.008);
@@ -932,7 +932,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	if (!tall) themed.push({ mat: frameMat as MeshStandardMaterial, dark: 0x13235f, light: 0xfffdf4 });
 	const panes = content.milestones.length || 6;
 	if (tall) {
-		// Look b: the glass runs from the low ledge to the ceiling (room.ts), so the timeline's panes are that wall's own
+		// The glass runs from the low ledge to the ceiling (room.ts), so the timeline's panes are that wall's own
 		// bays: its uprights run the full height in the same slim graphite as every other frame, with a transom where
 		// the old window's head was. The years stay on their panes.
 		const LEDGE = 0.3;
@@ -1103,7 +1103,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	if (detail) {
 		// On the door (it swings with it): a lever handle on its rose and the lock under it, three hinges, a kick plate.
 		const fittings = new Batch([0, 0, 0]);
-		const handle = tall ? new Batch([0, 0, 0]) : fittings; // (brass in look b)
+		const handle = tall ? new Batch([0, 0, 0]) : fittings; // (brass)
 		handle.add(new CylinderGeometry(0.027, 0.027, 0.008, 20).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.027);
 		handle.add(new CylinderGeometry(0.009, 0.009, 0.045, 10).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.05);
 		handle.box(0.13, 0.018, 0.014, -0.845, 1.0, -0.07, 0xaab2c0, 0.006);

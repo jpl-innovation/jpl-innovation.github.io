@@ -64,7 +64,7 @@ import { type PageScreen, pageScreen } from "./screens";
 import { buildStations, type Stations } from "./stations";
 import { buildBench, type BuildBench } from "./build-bench";
 import { Batch, deskMouse, lampBody, lampShade, tableFrame } from "./furniture";
-import { brass, buildWalls, wallLook } from "./walls";
+import { brass, buildWalls } from "./walls";
 
 export const ROOM = { x0: -8.5, x1: 8.5, z0: -3.4, z1: 6.4, h: 3.4 };
 /** The desk (scenes 0 to 2): its middle and the height of its top; the sketchbook lies open on it at `book`. */
@@ -411,9 +411,8 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		.catch(() => undefined);
 	// Real shadows (the desk lamp's) and real contact shadows, on the medium and high tiers.
 	const detail = ctx.tier !== "low";
-	// The walls' own looks (walls.ts, preview), where the tier allows. Look b makes the back wall glass nearly to the floor.
-	const look = detail ? wallLook() : undefined;
-	const tall = look === "b";
+	// Where the tier allows, the walls' own treatment (walls.ts) and the back wall glass nearly to the floor.
+	const tall = detail;
 
 	/* ---------- Shell ---------- */
 	// Real plaster and concrete (surface()), tinted by the theme (applyPalette).
@@ -479,7 +478,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	// Mullions, clear of the long window (it has its own, stations.ts) and of the portraits' middles.
 	for (const x of tall ? [-8.0, -7.4, -3.55, -1.6, 7.95] : [-7.4, -3.55, -1.6]) boxAt(group, tall ? 0.035 : 0.05, h - SILL, tall ? 0.06 : 0.08, mullionMat, x, SILL + (h - SILL) / 2, z1 - (tall ? 0.03 : 0.04));
 	if (tall) {
-		// Golden hour and a warm night outside (backdrop.ts's palettes, warmed for this look).
+		// Golden hour and a warm night outside (backdrop.ts's palettes, warmed).
 		Object.assign(BACKDROP.night, { haze: "#3b2a2e", lights: ["#ffd7a0", "#ffb46a", "#ff9a45", "#ff3b30"], off: "#101522" });
 		Object.assign(BACKDROP.dusk, {
 			haze: "#e8b47e",
@@ -701,7 +700,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	group.add(coffee);
 
 	// The lamp: a base, an arm, a shade; it switches on as the first scene opens.
-	const lampMetal = tall ? brass() : steel; // (brass in look b)
+	const lampMetal = tall ? brass() : steel;
 	const lampBase = new Mesh(new CylinderGeometry(0.09, 0.1, 0.025, 24), lampMetal);
 	lampBase.position.set(deskX - 0.78, deskTop + 0.012, deskZ - 0.22);
 	group.add(lampBase);
@@ -724,7 +723,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const bulb = new Mesh(new SphereGeometry(0.03, 16, 12), new MeshBasicMaterial({ color: 0xfff0d0, toneMapped: false }));
 	bulb.position.set(shade.position.x + 0.012, shade.position.y - 0.03, shade.position.z);
 	group.add(bulb);
-	const lamp = new SpotLight(tall ? 0xffc278 : 0xffd59a, 0, 5, 0.95, 0.95, 1.6); // (warmer in look b)
+	const lamp = new SpotLight(tall ? 0xffc278 : 0xffd59a, 0, 5, 0.95, 0.95, 1.6);
 	lamp.position.copy(bulb.position);
 	lamp.target.position.set(deskX - 0.25, deskTop, deskZ + 0.12);
 	group.add(lamp, lamp.target);
@@ -792,8 +791,9 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	slogan.position.set(deskX, 1.76, z0 + 0.02);
 	group.add(slogan);
 	// The walls' own looks (walls.ts), where the tier allows.
-	let logoAlwaysLight = false;
-	const walls = look ? buildWalls(group, look, logo, slogan, (yes) => (logoAlwaysLight = yes)) : undefined;
+	// (On its navy plate the logo and its line keep their light version in both themes.)
+	const walls = detail ? buildWalls(group, logo, slogan) : undefined;
+	const logoAlwaysLight = !!walls;
 
 	await tick();
 
@@ -806,7 +806,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	// The bench lamps: a warm spot over each scene's subject (lights.ts), hung toward the room so the pool spills forward.
 	const lamps: Record<string, LightSpec> = {};
 	for (const [id, l] of Object.entries(SCENE_LAMPS)) lamps[id] = { at: l.at, aim: l.aim, angle: l.angle, color: 0xffcf96, dark: l.power, light: l.power * 0.5, distance: 6, decay: 2 };
-	// Look b: at the title the room's bench lamp becomes a warm wash down the walnut slats from the picture light.
+	// At the title the room's bench lamp becomes a warm wash down the walnut slats from the picture light.
 	if (tall) lamps.title = { at: [-6, 2.75, -3.05], aim: [-6, 1.0, -3.4], angle: 0.95, color: 0xffc27a, dark: 7, light: 4, distance: 4, decay: 2 };
 	const bulbs = buildFixtures(group, steel, detail);
 	const pool = createLightPool(group, accents, lamps);
