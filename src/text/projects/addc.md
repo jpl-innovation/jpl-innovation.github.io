@@ -1,7 +1,7 @@
 ---
 title: ADDC website
-img: /work/addc/after-desktop.webp
-img_alt: "The new ADDC home page: two men in hard hats shake hands at a groundbreaking, beside the headline 'Từ bản vẽ đến chìa khóa trao tay'"
+img: /work/addc/hook-build.webp
+img_alt: "The new ADDC home page: a townhouse going up in 3D, scaffolding and safety netting on its face, with the words 'Từng tầng được dựng lên'"
 badge: Live
 description: |
   A construction and interior firm in Ho Chi Minh City, rebuilt for the web: a site that shows a house going up as you
@@ -27,7 +27,8 @@ The new site splits ADDC's work the way clients think about it: architecture (Ki
 
 ## Built to feel finished
 
-- A loader that tells the company's story in four photos (drawing, site, finished room, groundbreaking) while the page really loads, and opens into the first picture.
+- The first screen is the house itself: scroll, and a 3D townhouse is surveyed, drawn, built floor by floor and entered, one short line of words at each stage.
+- A loader that tells the company's story in four photos (drawing, site, finished room, groundbreaking) while the page really loads, then opens onto that 3D scene.
 - Every picture can be opened large, growing out of its own spot.
 - Titles rise into place, photos wait in a dark frame instead of a pale card, and the 3D is prepared before it is seen, so scrolling stays smooth.
 - 31 3D models of the materials and furniture ADDC works with: concrete, steel, brick, stone, timber, tiles, a townhouse in seven stages and the rooms inside it.

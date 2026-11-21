@@ -38,8 +38,8 @@ export const addcPage = {
 			phone: "The old addc.vn home page on a phone: a small slider photo and a heading for the company's fields of work.",
 		},
 		afterAlt: {
-			desktop: "The new ADDC home page on a desktop: two men in hard hats shake hands at a groundbreaking, beside the headline 'Từ bản vẽ đến chìa khóa trao tay'.",
-			phone: "The new ADDC home page on a phone: the groundbreaking photo above the headline, with call, Zalo and quote buttons along the bottom.",
+			desktop: "The new ADDC home page on a desktop: the headline 'Từ bản vẽ đến chìa khóa trao tay' over a 3D view of an empty plot, where the house goes up as the visitor scrolls.",
+			phone: "The new ADDC home page on a phone: the headline over the 3D plot, with call, Zalo and quote buttons along the bottom.",
 		},
 	},
 
@@ -71,7 +71,9 @@ export const addcPage = {
 		intro: "Every screen below is the live site.",
 		items: [
 			{ src: "/work/addc/loader.webp", alt: "The loader: a counter at 87 and a photo of a finished living room in a window, captioned 'Hoàn thiện'." },
-			{ src: "/work/addc/journey.webp", alt: "The home page's build story: a townhouse going up in 3D as the visitor scrolls, beside the step 'Thi công có giám sát'." },
+			{ src: "/work/addc/hook-plan.webp", alt: "The first screen, scrolled: the house drawn in 3D lines over the plot, with the words 'Bản vẽ thành hình'." },
+			{ src: "/work/addc/hook-build.webp", alt: "Further down the same screen: the townhouse going up, scaffolding and netting on its face, with the words 'Từng tầng được dựng lên'." },
+			{ src: "/work/addc/hook-inside.webp", alt: "At the end of the flight the camera is inside: the finished living room, with the words 'Và bước vào nhà'." },
 			{ src: "/work/addc/blueprint.webp", alt: "The architecture page: the house as a line drawing in 3D, with its view, finish and facade colour to choose." },
 			{ src: "/work/addc/materials.webp", alt: "The construction page's materials: a concrete column with steel starter bars in 3D, beside its specification." },
 			{ src: "/work/addc/price.webp", alt: "The price tables and a quick estimate: choose the service and the floor area, and the cost is worked out at once." },
