@@ -376,6 +376,9 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			prepared = true;
 			const flight = sim.prepare();
 			const roomShaders = compileInSlices(ctx.renderer, ctx.scene, camera, null, 4);
+			// The room's pictures that are in already go to the graphics card now too, while the models are still on their
+			// way (the card is idle then); the pass below sends only what came in after.
+			const earlyPictures = uploadInSlices(ctx.renderer, ctx.scene);
 			await room.loaded;
 			// The build bench's own drone is made from the drones' one (build-bench.ts) in the room's next update: now, so
 			// its shaders are built with the models' below, not when the camera first comes to the bench.
@@ -392,6 +395,7 @@ export async function drive(ctx: StageContext, { shots, content, position, onFra
 			// The pages on the screens: their first tiles, once they are in (not waited for long on a slow line).
 			await Promise.race([Promise.all(room.screens.map((screen) => screen.loaded)), new Promise((resolve) => setTimeout(resolve, 2500))]);
 			room.update(state);
+			await earlyPictures;
 			await uploadInSlices(ctx.renderer, ctx.scene);
 			// Every stop is drawn once, out of sight under the loading screen, one a frame: three.js sends a model's
 			// geometry to the graphics card in the frame it is first seen, and a whole drone or robot at once is a hitch.

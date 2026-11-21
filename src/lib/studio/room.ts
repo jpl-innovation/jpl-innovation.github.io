@@ -165,7 +165,12 @@ const loader = new TextureLoader();
  * shine, tiled. The floor's and the walls' colour maps are grey detail only, at a linear mean of 0.6, so the theme's
  * own colours (applyPalette) still decide the room's colour: set those through `tint`, which makes up the 0.6.
  */
+const surfaces = new Map<string, { map: Texture; normalMap: Texture; roughnessMap: Texture }>();
 export function surface(name: string, normalScale = 1) {
+	// (One set of pictures per surface for the whole room, however many materials tint it: each picture is sent to the
+	// graphics card once, a frame each, under the loading screen.)
+	const known = surfaces.get(name);
+	if (known) return { ...known, normalScale: new Vector2(normalScale, normalScale) };
 	const map = (kind: string, srgb: boolean) => {
 		const texture = loader.load(asset(`/studio/tex/${name}-${kind}.webp`));
 		texture.wrapS = texture.wrapT = RepeatWrapping;
@@ -173,7 +178,9 @@ export function surface(name: string, normalScale = 1) {
 		if (srgb) texture.colorSpace = SRGBColorSpace;
 		return texture;
 	};
-	return { map: map("diff", true), normalMap: map("nor", false), normalScale: new Vector2(normalScale, normalScale), roughnessMap: map("rough", false) };
+	const maps = { map: map("diff", true), normalMap: map("nor", false), roughnessMap: map("rough", false) };
+	surfaces.set(name, maps);
+	return { ...maps, normalScale: new Vector2(normalScale, normalScale) };
 }
 const woods = new Map<string, MeshStandardMaterial>();
 /** Real wood (its own colour and grain), one material per kind for the whole room. */

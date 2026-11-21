@@ -44,6 +44,7 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 	const trim = new Batch([0, 0, 0]);
 	const shine = new Batch([0, 0, 0]); // brass
 	const oak = woodMaterial("oak_veneer_01");
+	const mountMat = new MeshStandardMaterial({ color: 0xf1ecdf, roughness: 0.95 });
 
 	/**
 	 * A framed print on a wall: `at` its middle, `turn` which way it faces (0: +z, the front wall; π/2: +x, the left
@@ -67,7 +68,7 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 				boxAt(holder, F, fh - 2 * F, D, frameMat, s * (fw / 2 - F / 2), 0, D / 2, 0.004);
 			}
 		}
-		const mount = new Mesh(new PlaneGeometry(w + 2 * M, h + 2 * M), new MeshStandardMaterial({ color: 0xf1ecdf, roughness: 0.95 }));
+		const mount = new Mesh(new PlaneGeometry(w + 2 * M, h + 2 * M), mountMat);
 		mount.position.z = 0.006;
 		holder.add(mount);
 		const picture = new Mesh(new PlaneGeometry(w, h), new MeshStandardMaterial({ map, roughness: 0.85 }));
