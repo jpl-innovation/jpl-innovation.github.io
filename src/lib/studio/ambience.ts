@@ -25,6 +25,7 @@ import {
 import type { Palette } from "../three/stage";
 import { ROOM } from "./room";
 import type { RoomState } from "./room";
+import { wallLook } from "./walls";
 
 /** A soft round sprite: white in the middle, nothing at the edge. */
 function softDot() {
@@ -153,6 +154,7 @@ export function buildAmbience(parent: Group, realDeskShadows: boolean): Ambience
 	parent.add(shadows);
 
 	/* ---------- Dust ---------- */
+	const calm = realDeskShadows && wallLook() === "b";
 	const COUNT = 200;
 	const base = new Float32Array(COUNT * 3);
 	const phase = new Float32Array(COUNT * 3);
@@ -203,7 +205,7 @@ export function buildAmbience(parent: Group, realDeskShadows: boolean): Ambience
 				}
 				geometry.attributes.position.needsUpdate = true;
 			}
-			dustMaterial.opacity = (dark ? 0.35 : 0) * level;
+			dustMaterial.opacity = (dark ? (calm ? 0.1 : 0.35) : 0) * level; // (look b: faint, so specks never read as marks on its dark walls)
 			for (const pool of pools) pool.material.opacity = (dark ? 0.22 : 0.1) * (focus[pool.id] ?? 0) * level;
 			shadowMat.opacity = (dark ? 0.55 : 0.32) * (0.4 + 0.6 * level);
 		},

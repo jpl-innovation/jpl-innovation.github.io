@@ -13,6 +13,7 @@
 import { BoxGeometry, CanvasTexture, CylinderGeometry, type Group, type Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { Batch } from "./furniture";
+import { buildGallery } from "./gallery";
 import { hardware } from "../three/finish";
 import { loadImage, metreUv, ROOM, surface, tiled, tint, woodMaterial } from "./room";
 
@@ -144,6 +145,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 
 	/* ---------- The looks ---------- */
 	const logoDark = true;
+	let gallery: ReturnType<typeof buildGallery> | undefined;
 	if (look === "a") {
 		// The desk's wall in deep navy, matt; the logo's light version on it in both themes.
 		panel(paint("painted_plaster_wall", 0x14235e, 0x0f1a48, 0.6, 1), x0, DESK_END, 0, h, 2.4);
@@ -219,7 +221,10 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		logo.position.z = z0 + 0.075;
 		shadow.position.z = z0 + 0.0405;
 		panel(paint("concrete_wall_008", 0xdcd7c9, 0x2d3346, 0.7, 1), DESK_END, SHOP_END, 0, h, 2.7);
-		const muralMat = new MeshStandardMaterial({ map: blueprint(), normalMap: band.normalMap, roughnessMap: band.roughnessMap, roughness: 1 });
+		const drawing = blueprint();
+		const muralMat = new MeshStandardMaterial({ map: drawing, normalMap: band.normalMap, roughnessMap: band.roughnessMap, roughness: 1 });
+		// The two walls that stood empty: the gallery on the left wall, the networks wall (gallery.ts).
+		gallery = buildGallery(group, drawing, { navy: paint("caban", 0x1b2d6e, 0x34477f, 1, 1), yellow: paint("caban", 0xf5d042, 0xd9b52e, 1, 1) }, brass());
 		tinted.push({ mat: muralMat, light: 0xffffff, dark: 0xb8bcd0 });
 		const mural = new Mesh(new PlaneGeometry(1.92, 1.92), muralMat);
 		mural.position.set(-2.46, 2.18, z0 + 0.006);
@@ -255,6 +260,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 	return {
 		applyPalette(dark: boolean) {
 			for (const t of tinted) tint(t.mat, dark ? t.dark : t.light);
+			gallery?.applyPalette(dark);
 		},
 	};
 }
