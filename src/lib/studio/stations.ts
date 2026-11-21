@@ -532,7 +532,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 		scene: "web",
 		address: `${content.domain}/work/drone/camera-pov`,
 		background: "#0b1220",
-		feedRect: [15.4, 121, 828, 532], // the dashboard's camera feed (public/studio/screens/pov-0.jpg): the flight lands in it
+		feedRect: [15.4, 121, 828, 532], // the dashboard's camera feed (public/studio/screens/pov-0.webp): the flight lands in it
 		reducedMotion: ctx.reducedMotion,
 		wake: () => ctx.wake(),
 	});

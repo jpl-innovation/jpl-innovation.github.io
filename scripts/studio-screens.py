@@ -18,6 +18,8 @@ Needs Python Playwright, and Chrome (or a Chromium given with --executable). Rep
 (public/studio/research.webp and site.webp).
 """
 import argparse
+import io
+from PIL import Image
 import json
 import time
 from pathlib import Path
@@ -39,13 +41,13 @@ OUT.mkdir(parents=True, exist_ok=True)
 def shoot(page, name, top, height, width, tile, left=0):
     """Cuts the page from `top` (CSS px) for `height`, `width` wide from `left`, into tiles `tile` CSS px tall (taller
     than the screen shows at once: the screen draws from two tiles at most); returns the manifest entry."""
-    for old in OUT.glob(f"{name}-*.jpg"):
+    for old in [*OUT.glob(f"{name}-*.jpg"), *OUT.glob(f"{name}-*.webp")]:
         old.unlink()
     files = []
     for i, y in enumerate(range(0, height, tile)):
-        path = OUT / f"{name}-{i}.jpg"
-        page.screenshot(path=str(path), full_page=True, type="jpeg", quality=80,
-                        clip={"x": left, "y": top + y, "width": width, "height": min(tile, height - y)})
+        path = OUT / f"{name}-{i}.webp"  # WebP: about a third smaller than the JPEG at the same look
+        shot = page.screenshot(full_page=True, type="png", clip={"x": left, "y": top + y, "width": width, "height": min(tile, height - y)})
+        Image.open(io.BytesIO(shot)).convert("RGB").save(path, "WEBP", quality=82, method=6)
         files.append(f"/studio/screens/{path.name}")
     print(f"{name}: {width} x {height} CSS px at {SCALE}x, {len(files)} tiles")
     return {"width": width, "height": height, "tile": tile, "files": files}
