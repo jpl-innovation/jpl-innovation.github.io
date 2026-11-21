@@ -1,0 +1,18 @@
+{
+ "sky": {
+  "width": 2048,
+  "height": 683
+ },
+ "skyline": {
+  "width": 2048,
+  "height": 639
+ },
+ "river": {
+  "width": 2048,
+  "height": 598
+ },
+ "near": {
+  "width": 2048,
+  "height": 129
+ }
+}

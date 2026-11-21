@@ -489,6 +489,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		});
 		BACKDROP.lit.light = 0.3;
 		BACKDROP.river.on = true; // boats on the river, lamps along its far bank
+		BACKDROP.photo.on = true; // the city from pictures (scripts/studio-city.py)
 	}
 	const backdrop = buildBackdrop(group);
 	wall(depth, x0, (z0 + z1) / 2, Math.PI / 2);

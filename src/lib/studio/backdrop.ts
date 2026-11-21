@@ -69,6 +69,27 @@ export const BACKDROP = {
 	 * road's street lamps along the far bank. Radius and height (m) in the layers' own space, the stretch of the arc
 	 * (0 to 1), how many, and the boats' speed (m/s). Off unless `river.on` (look b, walls.ts).
 	 */
+	/**
+	 * Look b (walls.ts): the city from pictures instead of the drawn layers (scripts/studio-city.py makes them, into
+	 * public/studio/window/city-LAYER-THEME.webp; `size` is each one's, from city.json). Each is a curve round the room
+	 * at `radius`, from `bottom` to `bottom + height` (m); its arc follows the picture's proportions, so nothing is
+	 * stretched but the sky, which spans the whole arc. Far to near: the sky, District 1's skyline, the river with the
+	 * Thu Thiem bridge, the near bank's roofs and trees.
+	 */
+	photo: {
+		on: false,
+		sky: { radius: 40, bottom: -6, height: 33, size: [2048, 683] },
+		skyline: { radius: 38, bottom: -1.8, height: 16.5, size: [2048, 639] },
+		river: { radius: 31, bottom: -9, height: 19, size: [2048, 598] },
+		near: { radius: 26, bottom: -11.4, height: 3.4, size: [2048, 129] },
+		/** In the river picture (0 to 1 across it, and down from its top): the far bank's road, the water, the bridge's deck and span. */
+		/** How far the river picture is turned round the room (radians): its bridge, at the picture's right, into the back wall's view. */
+		turn: 0.45,
+		road: 0.66,
+		water: 0.8,
+		deck: 0.585,
+		span: [0.63, 1.0] as [number, number],
+	},
 	river: { on: false, radius: 30.4, water: -1.05, bank: -0.72, from: 0.04, to: 0.96, boats: 7, perBoat: 5, lamps: 48, speed: 0.55 },
 	night: {
 		haze: "#3a2433",
@@ -506,16 +527,45 @@ export function buildBackdrop(parent: Group): Backdrop {
 		layers.push(material);
 		return material;
 	};
-	const far = layer(BACKDROP.far, drawFar, true, -30);
-	const mid = layer(BACKDROP.mid, drawMid, false, -29);
-	const near = layer(BACKDROP.near, drawNear, false, -28);
+	const P = BACKDROP.photo;
+	const far = P.on ? undefined : layer(BACKDROP.far, drawFar, true, -30);
+	const mid = P.on ? undefined : layer(BACKDROP.mid, drawMid, false, -29);
+	const near = P.on ? undefined : layer(BACKDROP.near, drawNear, false, -28);
+	// The pictures (look b): each layer a curve showing its picture at its own proportions, one material per layer whose
+	// picture the theme swaps (the room's own kind of picture material: no shader of its own).
+	const photos: { material: MeshBasicMaterial; night: Texture; golden: Texture }[] = [];
+	const photoArc = (spec: { radius: number; height: number; size: number[] }) => Math.min(arc, (spec.height * spec.size[0]) / spec.size[1] / spec.radius);
+	if (P.on) {
+		const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+		const load = (name: string) => {
+			const t = new TextureLoader().load(`${base}/studio/window/city-${name}.webp`);
+			t.colorSpace = SRGBColorSpace;
+			t.anisotropy = 4;
+			return t;
+		};
+		(["sky", "skyline", "river", "near"] as const).forEach((name, i) => {
+			const spec = P[name];
+			const a = name === "sky" ? arc : photoArc(spec);
+			const night = load(`${name}-night`);
+			const golden = load(`${name}-golden`);
+			const material = new MeshBasicMaterial({ map: night, transparent: name !== "sky", depthWrite: name === "sky", toneMapped: false, fog: false });
+			const mesh = new Mesh(new CylinderGeometry(spec.radius, spec.radius, spec.height, 96, 1, true, -a / 2, a).scale(-1, 1, 1), material);
+			mesh.position.set(cx, spec.bottom + spec.height / 2, cz);
+			if (name === "river") mesh.rotation.y = P.turn;
+			mesh.renderOrder = -31 + i;
+			parent.add(mesh);
+			photos.push({ material, night, golden });
+		});
+	}
 	// With glass nearly to the floor (look b) the eye sees below the layers' foot: the riverside there, plain, in each
 	// theme's tone, so the page behind the canvas never shows through.
 	const foot = BACKDROP.river.on ? new MeshBasicMaterial({ color: 0x0a0f1e, toneMapped: false }) : undefined; // (the light strips. kind: no new shader)
 	if (foot) {
 		const depth = 9;
-		const band = new Mesh(new CylinderGeometry(BACKDROP.near.radius - 0.4, BACKDROP.near.radius - 0.4, depth, 64, 1, true, -arc / 2, arc).scale(-1, 1, 1), foot); // (turned inside out: seen from within)
-		band.position.set(cx, ground - depth / 2 + 0.3, cz);
+		const r = (P.on ? P.near.radius : BACKDROP.near.radius) - 0.4;
+		const top = P.on ? P.near.bottom + 0.6 : ground + 0.3;
+		const band = new Mesh(new CylinderGeometry(r, r, depth, 64, 1, true, -arc / 2, arc).scale(-1, 1, 1), foot); // (turned inside out: seen from within)
+		band.position.set(cx, top - depth / 2, cz);
 		band.renderOrder = -27.5;
 		parent.add(band);
 	}
@@ -533,7 +583,12 @@ export function buildBackdrop(parent: Group): Backdrop {
 	/* ---------- The traffic: the street in front, and across the bridge ---------- */
 	const R = BACKDROP.river;
 	const boatLights = R.on ? R.boats * R.perBoat : 0;
-	const lampLights = R.on ? R.lamps : 0;
+	const lampLights = R.on && !P.on ? R.lamps : 0; // (the pictures have their own street lamps)
+	// With the pictures the traffic and the boats keep to the river picture: its road, its water, its bridge.
+	const riverArc = photoArc(P.river);
+	const inRiver = (down: number) => P.river.bottom + P.river.height * (1 - down);
+	// (The points run round the arc the other way from the picture's left-to-right: 1 - u.)
+	const span = [1 - P.span[1], 1 - P.span[0]];
 	const n = BACKDROP.cars + boatLights + lampLights;
 	const seeds = new Float32Array(n);
 	const lanes = new Float32Array(n);
@@ -570,15 +625,17 @@ export function buildBackdrop(parent: Group): Backdrop {
 				uTime: { value: 0 },
 				uSize: { value: BACKDROP.carSize * Math.min(window.devicePixelRatio, 1.5) },
 				uCentre: { value: [cx, cz] },
-				uArc: { value: arc },
-				// The street just in front of the near houses; the bridge's deck on the middle layer, over its span.
-				uStreet: { value: [BACKDROP.near.radius - 0.8, ground + 0.25] },
-				uBridge: { value: [BACKDROP.mid.radius - 0.3, deck + 0.05, from, to] },
+				uArc: { value: P.on ? riverArc : arc },
+				// The street just in front of the near houses; the bridge's deck on the middle layer, over its span. (With
+				// the pictures: the riverside road on the far bank, and the bridge's deck, both in the river picture.)
+				uStreet: { value: P.on ? [P.river.radius - 0.15, inRiver(P.road)] : [BACKDROP.near.radius - 0.8, ground + 0.25] },
+				uBridge: { value: P.on ? [P.river.radius - 0.15, inRiver(P.deck), span[0], span[1]] : [BACKDROP.mid.radius - 0.3, deck + 0.05, from, to] },
 				uSpeed: { value: BACKDROP.carSpeed },
 				uBright: { value: 1 },
-				uRiver: { value: [R.radius, R.water, R.from, R.to] },
+				uRiver: { value: P.on ? [P.river.radius - 0.2, inRiver(P.water), 0.05, 0.95] : [R.radius, R.water, R.from, R.to] },
 				uBank: { value: R.bank },
 				uBoatSpeed: { value: R.speed },
+				uTurn: { value: P.on ? P.turn : 0 },
 			},
 			vertexShader: /* glsl */ `
 				attribute float seed;
@@ -594,6 +651,7 @@ export function buildBackdrop(parent: Group): Backdrop {
 				uniform vec4 uRiver;
 				uniform float uBank;
 				uniform float uBoatSpeed;
+				uniform float uTurn;
 				varying vec3 vColour;
 				varying float vAlpha;
 				void main() {
@@ -605,7 +663,7 @@ export function buildBackdrop(parent: Group): Backdrop {
 						float dir = fract(seed * 17.0) < 0.5 ? 1.0 : -1.0;
 						float u = lamp ? seed : fract(seed + dir * uTime * uBoatSpeed * (0.6 + 0.8 * fract(seed * 29.0)) / span);
 						float along = lamp ? 0.0 : (fract(lane) - 0.4) * 0.9 / span; // the deck: about 0.9 m on this scale
-						float a = (uRiver.z + (uRiver.w - uRiver.z) * (u + along) - 0.5) * uArc;
+						float a = (uRiver.z + (uRiver.w - uRiver.z) * (u + along) - 0.5) * uArc + uTurn;
 						float y = lamp ? uBank : uRiver.y + (fract(lane) > 0.5 ? 0.06 : 0.0);
 						vec3 p = vec3(uCentre.x + r * sin(a), y, uCentre.y + r * cos(a));
 						gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
@@ -622,7 +680,7 @@ export function buildBackdrop(parent: Group): Backdrop {
 					float a1 = bridge ? uBridge.w : 1.0;
 					float span = r * uArc * (a1 - a0);
 					float u = fract(seed + dir * uTime * uSpeed * (0.7 + 0.6 * fract(seed * 7.0)) / span);
-					float a = (a0 + (a1 - a0) * u - 0.5) * uArc;
+					float a = (a0 + (a1 - a0) * u - 0.5) * uArc + uTurn;
 					vec3 p = vec3(uCentre.x + r * sin(a), y, uCentre.y + r * cos(a));
 					gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
 					gl_PointSize = uSize * (bridge ? 0.7 : 1.0) * (0.75 + 0.5 * fract(seed * 13.0));
@@ -653,11 +711,12 @@ export function buildBackdrop(parent: Group): Backdrop {
 			m.uniforms.uOff.value.set(p.off);
 			m.uniforms.uLit.value = lit;
 		}
-		far.uniforms.uGlow.value = p.glow * 0.6;
-		mid.uniforms.uGlow.value = p.glow * 0.8;
-		near.uniforms.uGlow.value = p.glow;
+		if (far) far.uniforms.uGlow.value = p.glow * 0.6;
+		if (mid) mid.uniforms.uGlow.value = p.glow * 0.8;
+		if (near) near.uniforms.uGlow.value = p.glow;
 		carMaterial.uniforms.uBright.value = p === BACKDROP.night ? 1 : 0.6;
-		far.uniforms.uSkyMap.value = p === BACKDROP.night ? skies.night : skies.dusk;
+		if (far) far.uniforms.uSkyMap.value = p === BACKDROP.night ? skies.night : skies.dusk;
+		for (const photo of photos) photo.material.map = p === BACKDROP.night ? photo.night : photo.golden;
 		foot?.color.set(p === BACKDROP.night ? 0x0a0f1e : 0x3a3036);
 	};
 	apply(BACKDROP.night, BACKDROP.lit.dark);
