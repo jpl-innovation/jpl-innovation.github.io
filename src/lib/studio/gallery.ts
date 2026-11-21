@@ -12,7 +12,7 @@
  *
  * Every material is a kind the room already has (no new shader).
  */
-import { BoxGeometry, CanvasTexture, CylinderGeometry, Group, type Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, type Texture, Vector3 } from "three";
+import { BoxGeometry, CanvasTexture, CylinderGeometry, Group, type Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, type Texture, TorusGeometry, Vector3 } from "three";
 import { lab } from "../look/ios";
 import { barGeometry, Batch } from "./furniture";
 import { boxAt, imageTexture, loadImage, ROOM, woodMaterial } from "./room";
@@ -94,13 +94,13 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 	const side = Math.PI / 2;
 	const onLeft = (z: number, y: number) => new Vector3(x0 + 0.004, y, z);
 	// (The page's opening words lie over this wall between about 1.0 and 1.9 m at the title: the prints hang above them.)
-	print(blueprint, onLeft(-2.42, 2.3), side, 0.5, 0.5, true);
-	print(imageTexture("/studio/prints/robot-lines.webp"), onLeft(-1.76, 2.34), side, 0.48, 0.36, false);
+	print(blueprint, onLeft(-2.49, 2.18), side, 0.44, 0.44, true);
+	print(imageTexture("/studio/prints/robot-lines.webp"), onLeft(-1.86, 2.22), side, 0.48, 0.36, false);
 	const lifetime = canvasPrint(800, 600, async (g) => {
 		const image = await loadImage("/assets/lifetime.svg", 800);
 		g.drawImage(image, 0, 0, 800, 600);
 	});
-	print(lifetime, onLeft(-1.2, 2.42), side, 0.24, 0.18, true);
+	print(lifetime, onLeft(-1.33, 2.3), side, 0.24, 0.18, true);
 	const team = canvasPrint(600, 600, async (g) => {
 		const image = await loadImage("/assets/10951-400.webp");
 		g.save();
@@ -115,12 +115,12 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 		g.arc(300, 300, 246, 0, Math.PI * 2);
 		g.stroke();
 	});
-	print(team, onLeft(-1.2, 2.06), side, 0.2, 0.2, false);
+	print(team, onLeft(-1.33, 1.95), side, 0.2, 0.2, false);
 	// The picture light over the gallery: a brass bar on two arms, and the warm wash it throws down the wall.
-	shine.add(new CylinderGeometry(0.018, 0.018, 1.2, 18).rotateX(Math.PI / 2), BRASS, x0 + 0.17, 2.74, -1.85);
-	for (const z of [-2.25, -1.45]) {
-		shine.add(new CylinderGeometry(0.007, 0.007, 0.17, 10).rotateZ(Math.PI / 2), BRASS, x0 + 0.085, 2.74, z);
-		shine.add(new CylinderGeometry(0.03, 0.03, 0.01, 18).rotateZ(Math.PI / 2), BRASS, x0 + 0.005, 2.74, z);
+	shine.add(new CylinderGeometry(0.018, 0.018, 1.2, 18).rotateX(Math.PI / 2), BRASS, x0 + 0.17, 2.6, -1.95);
+	for (const z of [-2.35, -1.55]) {
+		shine.add(new CylinderGeometry(0.007, 0.007, 0.17, 10).rotateZ(Math.PI / 2), BRASS, x0 + 0.085, 2.6, z);
+		shine.add(new CylinderGeometry(0.03, 0.03, 0.01, 18).rotateZ(Math.PI / 2), BRASS, x0 + 0.005, 2.6, z);
 	}
 	const washCanvas = document.createElement("canvas");
 	washCanvas.width = 256;
@@ -134,7 +134,7 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 	const washMat = new MeshBasicMaterial({ color: 0xffc27a, map: new CanvasTexture(washCanvas), transparent: true, opacity: 0.16, depthWrite: false });
 	const wash = new Mesh(new PlaneGeometry(2.0, 1.1), washMat);
 	wash.rotation.y = side;
-	wash.position.set(x0 + 0.002, 2.25, -1.8);
+	wash.position.set(x0 + 0.002, 2.1, -1.95);
 	wash.userData.shadow = false;
 	group.add(wash);
 	// On the oak ledge (the rail at 0.78 m becomes a ledge 9 cm deep where they stand): a spare propeller lying flat, a
@@ -174,10 +174,10 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 	// The CCNA lab, drawn from the console's own lab.
 	const L = lab();
 	const diagram = canvasPrint(1200, 840, (g) => drawLab(g, L));
-	print(diagram, onFront(5.55, 1.72), front, 0.86, 0.6, false);
+	print(diagram, onFront(5.55, 1.45), front, 0.86, 0.6, false);
 	// The patch panel on its wall bracket, and the leads from its ports into the cable manager under it.
 	const PX = 4.45;
-	const PY = 1.76;
+	const PY = 1.5;
 	trim.box(0.5, 0.18, 0.14, PX, PY - 0.02, z0 + 0.07, GRAPHITE, 0.004); // the bracket
 	trim.box(0.483, 0.044, 0.01, PX, PY + 0.03, z0 + 0.145, 0x1d2230); // 1U: 24 ports
 	trim.box(0.483, 0.044, 0.04, PX, PY - 0.035, z0 + 0.13, 0x1b2029, 0.003); // the cable manager
@@ -189,6 +189,26 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 		trim.add(barGeometry(new Vector3(x, PY + 0.022, z0 + 0.158), new Vector3(x + 0.004, PY - 0.016, z0 + 0.155), 0.0028, 6), c, 0, 0, 0);
 	}
 	for (const s of [-1, 1]) for (const dy of [0.015, 0.045]) trim.add(new CylinderGeometry(0.004, 0.004, 0.003, 8).rotateX(Math.PI / 2), 0xc0c6d0, PX + s * 0.232, PY + dy, z0 + 0.152);
+	// On the lower half, under the patch panel: an oak shelf on two steel brackets, a spare 24-port switch lying on it and
+	// two reels of patch cable in the VLANs' two colours.
+	const SY = 0.86;
+	const SX = 4.55;
+	boxAt(group, 1.1, 0.03, 0.26, oak, SX, SY, z0 + 0.13, 0.005);
+	for (const s of [-1, 1]) {
+		trim.box(0.022, 0.004, 0.22, SX + s * 0.4, SY - 0.017, z0 + 0.11, GRAPHITE);
+		trim.box(0.022, 0.16, 0.004, SX + s * 0.4, SY - 0.095, z0 + 0.002, GRAPHITE);
+		trim.add(barGeometry(new Vector3(SX + s * 0.4, SY - 0.15, z0 + 0.004), new Vector3(SX + s * 0.4, SY - 0.02, z0 + 0.17), 0.004, 6), GRAPHITE, 0, 0, 0);
+	}
+	const top = SY + 0.015;
+	trim.box(0.44, 0.044, 0.22, SX - 0.22, top + 0.022, z0 + 0.13, 0x3a4152, 0.003); // the switch
+	trim.box(0.44, 0.044, 0.002, SX - 0.22, top + 0.022, z0 + 0.241, 0x1d2230);
+	for (let i = 0; i < 24; i++) trim.box(0.011, 0.01, 0.003, SX - 0.42 + (i % 12) * 0.026 + (i >= 12 ? 0.03 : 0), top + 0.016 + (i % 2) * 0.014, z0 + 0.242, 0x07090e);
+	for (const [i, c] of [BLUE, YELLOW].entries()) {
+		const rx = SX + 0.2 + i * 0.19;
+		for (const y of [0.006, 0.084]) trim.add(new CylinderGeometry(0.08, 0.08, 0.012, 24), GRAPHITE, rx, top + y, z0 + 0.13);
+		trim.add(new CylinderGeometry(0.025, 0.025, 0.09, 12), 0x8a93a3, rx, top + 0.045, z0 + 0.13);
+		for (let k = 0; k < 7; k++) trim.add(new TorusGeometry(0.058, 0.0055, 6, 24).rotateX(Math.PI / 2), c, rx, top + 0.017 + k * 0.0094, z0 + 0.13);
+	}
 	// The cable tray: a steel ladder on brackets from over the rack to over the panel, with the bundle in it, and the
 	// bundle's two drops: into the rack's top and behind the panel.
 	const TY = 2.32;
@@ -206,19 +226,17 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 		trim.add(barGeometry(new Vector3(TX0 + 0.25, y, z0 + dz), new Vector3(3.3 + (dz - 0.13), 1.92, z0 + dz + 0.06), 0.009, 8), c, 0, 0, 0); // into the rack
 		trim.add(barGeometry(new Vector3(TX1 - 0.25, y, z0 + dz), new Vector3(PX + (dz - 0.13) * 2, PY + 0.07, z0 + 0.05), 0.009, 8), c, 0, 0, 0); // behind the panel
 	}
-	// Felt panels, where a room full of fans and keyboards needs them: two rows, navy with yellow among them.
-	const panels: [number, number, boolean][] = [
-		[6.55, 2.34, false],
-		[7.15, 2.34, true],
-		[7.75, 2.34, false],
-		[6.85, 1.74, false],
-		[7.45, 1.74, false],
-		[8.05, 1.74, true],
-	];
+	// Felt panels, where a room full of fans and keyboards needs them: one block of three by two, even gaps, its top
+	// lined up with the diagram's, the yellow two on a diagonal.
+	const S = 0.5;
+	const GAP = 0.05;
+	const feltTop = 1.45 + 0.3 + 0.05 + 0.028; // the diagram's frame's top edge
+	const panels: [number, number, boolean][] = [];
+	for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) panels.push([6.5 + c * (S + GAP), feltTop - S / 2 - r * (S + GAP), (r === 0 && c === 1) || (r === 1 && c === 2)]);
 	for (const [x, y, yellow] of panels) {
-		const geometry = new BoxGeometry(0.54, 0.54, 0.035);
+		const geometry = new BoxGeometry(S, S, 0.035);
 		const uv = geometry.getAttribute("uv");
-		for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * 0.54) / 0.27, (uv.getY(i) * 0.54) / 0.27);
+		for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * S) / 0.27, (uv.getY(i) * S) / 0.27);
 		const m = new Mesh(geometry, yellow ? felt.yellow : felt.navy);
 		m.position.set(x, y, z0 + 0.0185);
 		m.receiveShadow = true;
@@ -235,16 +253,17 @@ export function buildGallery(group: Group, blueprint: CanvasTexture, felt: { nav
 			const image = await loadImage(path, w);
 			g.drawImage(image, 0, 0, w, h);
 		});
-	print(svgPrint("/assets/mini-drone.svg", 800, 600), onRight(4.2, 1.62), -side, 0.8, 0.6, true);
-	print(svgPrint("/assets/cybersecurity.svg", 1200, 750), onRight(5.45, 1.62), -side, 0.88, 0.55, true);
-	shine.add(new CylinderGeometry(0.018, 0.018, 2.0, 18).rotateX(Math.PI / 2), BRASS, x1 - 0.17, 2.24, 4.82);
-	for (const z of [4.1, 5.55]) {
+	// (What shows of this wall, past the project wall's edge, runs from about z 4.35 to the window at 6.35.)
+	print(svgPrint("/assets/mini-drone.svg", 800, 600), onRight(4.89, 1.62), -side, 0.56, 0.42, true);
+	print(svgPrint("/assets/cybersecurity.svg", 1200, 750), onRight(5.79, 1.62), -side, 0.64, 0.4, true);
+	shine.add(new CylinderGeometry(0.018, 0.018, 1.5, 18).rotateX(Math.PI / 2), BRASS, x1 - 0.17, 2.14, 5.35);
+	for (const z of [4.85, 5.85]) {
 		shine.add(new CylinderGeometry(0.007, 0.007, 0.17, 10).rotateZ(Math.PI / 2), BRASS, x1 - 0.085, 2.24, z);
 		shine.add(new CylinderGeometry(0.03, 0.03, 0.01, 18).rotateZ(Math.PI / 2), BRASS, x1 - 0.005, 2.24, z);
 	}
-	const wash2 = new Mesh(new PlaneGeometry(2.6, 1.1), washMat);
+	const wash2 = new Mesh(new PlaneGeometry(2.0, 1.0), washMat);
 	wash2.rotation.y = -side;
-	wash2.position.set(x1 - 0.002, 1.75, 4.82);
+	wash2.position.set(x1 - 0.002, 1.7, 5.35);
 	wash2.userData.shadow = false;
 	group.add(wash2);
 
