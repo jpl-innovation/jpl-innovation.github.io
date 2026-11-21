@@ -7,10 +7,10 @@
  * Put it first inside <BaseLayout>; the layout's <main> is its frame.
  */
 interface Props {
-	/** The project's id (the file name in src/text/projects/): drone, frc, cybersecurity, mini-drone, lifetime. */
+	/** The project's id (the file name in src/text/projects/): drone, frc, cybersecurity, mini-drone, lifetime, addc. */
 	project: string;
 }
-const scenes: Record<string, string> = { drone: "drones", frc: "robotics", cybersecurity: "networks", "mini-drone": "sketch", lifetime: "software" };
+const scenes: Record<string, string> = { drone: "drones", frc: "robotics", cybersecurity: "networks", "mini-drone": "sketch", lifetime: "software", addc: "software" };
 const scene = scenes[Astro.props.project] ?? "sketch";
 ---
 

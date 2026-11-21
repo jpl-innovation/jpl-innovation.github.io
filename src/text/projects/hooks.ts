@@ -27,6 +27,28 @@ export const caseLabels = {
 };
 
 export const hooks: Record<string, ProjectCase> = {
+	addc: {
+		problem: {
+			title: "A builder’s best work was invisible online.",
+			text: "ADDC designs, builds and fits out homes and offices, but its website was a ready-made template: a photo slider, the same blocks as every builder’s site, and nothing a client could use to picture a project or its cost.",
+		},
+		alternatives: [
+			{ option: "A new template with fresh photos", catch: "It looks newer for a year, and still says nothing a competitor’s site doesn’t." },
+			{ option: "A website builder’s ready-made theme", catch: "Fast to set up, but no 3D, no price estimate, and the same layout as thousands of other businesses." },
+			{ option: "Social media pages only", catch: "Good for news, but no structure: no services, no process, no prices a client can find again." },
+		],
+		answer: {
+			title: "Show the building, not a brochure.",
+			text: "A site built around how ADDC actually works: three services on their own pages, a townhouse that goes up in 3D as you scroll, a room the visitor furnishes, and prices worked out on the spot.",
+		},
+		pros: [
+			{ title: "Clients can picture it", text: "Seven 3D views: the house as a drawing or in real materials, seven construction stages, a room to furnish, materials to turn." },
+			{ title: "Prices before the first call", text: "The price tables and a quick estimate from the floor area, so a visitor arrives knowing the range." },
+			{ title: "ADDC’s own work", text: "161 photos from its own sites and projects, its licence, equipment and site diary, in the section each belongs to." },
+			{ title: "Steady and smooth", text: "Nothing jumps while the page loads (layout shift 0.002), and scrolling holds about 220 frames a second with the 3D." },
+			{ title: "Made for phones too", text: "Every page reflows for a phone, with call, Zalo and quote buttons always at hand." },
+		],
+	},
 	drone: {
 		problem: {
 			title: "The picture ends where the radio ends.",

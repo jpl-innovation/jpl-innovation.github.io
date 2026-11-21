@@ -154,6 +154,13 @@ export const services: Service[] = [
 		verb: "build",
 	},
 	{
+		icon: "code",
+		title: "Web design & rebuild",
+		desc: "Websites for businesses and individuals: new ones, and old ones rebuilt with 3D, real photos and tools visitors use.",
+		proof: { label: "ADDC website", href: "/work/addc/" },
+		verb: "sketch",
+	},
+	{
 		icon: "shield",
 		title: "Networking & cybersecurity",
 		desc: "Designing, configuring and hardening networks: Cisco routing and switching, Windows Server infrastructure, access control.",
