@@ -1,10 +1,9 @@
 /**
- * ADDC WEBSITE PAGE TEXT (/work/addc/): the title block, the before-and-after, the measured numbers, the 3D model and
- * the screens of the new site.
+ * ADDC WEBSITE PAGE TEXT (/work/addc/): the title block, the before-and-after, the old site against the new point by
+ * point, the measured numbers and the 3D model.
  *
  * Edit the words between the quotes. Keep the quotes and the commas at the end of lines.
  *   - The page title, intro sentence and the write-up: src/text/projects/addc.md
- *   - The case at the top (problem, alternatives, answer): the `addc` entry in src/text/projects/hooks.ts
  *
  * Every number on this page was measured (see `numbers.method`): change them only by measuring again.
  */
@@ -65,20 +64,60 @@ export const addcPage = {
 		fallback: "The walnut coffee table from ADDC’s interiors page.",
 	},
 
-	/** The new site's screens, as whole-width plates. */
-	plates: {
-		heading: "What a visitor finds now",
-		intro: "Every screen below is the live site.",
-		items: [
-			{ src: "/work/addc/loader.webp", alt: "The loader: a counter at 87 and a photo of a finished living room in a window, captioned 'Hoàn thiện'." },
-			{ src: "/work/addc/hook-plan.webp", alt: "The first screen, scrolled: the house drawn in 3D lines over the plot, with the words 'Bản vẽ thành hình'." },
-			{ src: "/work/addc/hook-build.webp", alt: "Further down the same screen: the townhouse going up, scaffolding and netting on its face, with the words 'Từng tầng được dựng lên'." },
-			{ src: "/work/addc/hook-inside.webp", alt: "At the end of the flight the camera is inside: the finished living room, with the words 'Và bước vào nhà'." },
-			{ src: "/work/addc/blueprint.webp", alt: "The architecture page: the house as a line drawing in 3D, with its view, finish and facade colour to choose." },
-			{ src: "/work/addc/materials.webp", alt: "The construction page's materials: a concrete column with steel starter bars in 3D, beside its specification." },
-			{ src: "/work/addc/price.webp", alt: "The price tables and a quick estimate: choose the service and the floor area, and the cost is worked out at once." },
-			{ src: "/work/addc/viewer.webp", alt: "A team photo opened large over the page, with arrows to the section's other photos." },
-			{ src: "/work/addc/reel.webp", alt: "The home page's project reel: photos of finished work sliding sideways as the visitor scrolls down." },
+	/**
+	 * Old site against new, point by point: for each subject, the same part of both sites (a crop of each, in
+	 * public/work/addc/vs/), what each one says or does, then what changed. Old: addc.vn; new: the new site; both
+	 * read on 21 November 2026. Words in quotes are the sites' own.
+	 */
+	versus: {
+		heading: "Old site, new site, point by point",
+		intro: "The same subjects on both websites, side by side: what a visitor found on addc.vn, and what they find now.",
+		before: "Before · addc.vn",
+		after: "After · the new site",
+		changed: "What changed",
+		rows: [
+			{
+				id: "services",
+				topic: "What ADDC does",
+				old: { img: "/work/addc/vs/services-old.webp", alt: "The old home page's 'Lĩnh vực hoạt động': three stock photos over three services, each with two lines and a 'Xem chi tiết' link.", text: "Three blocks named after the company’s departments (Thiết kế kiến trúc, Thi công công trình, Thi công nội thất), two general lines each, such as “Nghiên cứu và phát triển gia tăng giá trị công trình”. The construction link opens a page called service-lighting.html." },
+				new: { img: "/work/addc/vs/services-new.webp", alt: "The new home page's 'Bạn đang ở bước nào?': three photos from ADDC's own work over the three situations a client can be in.", text: "“Bạn đang ở bước nào?” The same three services, sorted by where the client is: land but no drawings, drawings but nothing built, a finished house that needs its interior. Each leads to its own page with its process, prices, 3D and projects." },
+				changed: "The services start from the client’s situation, not from the company’s departments.",
+			},
+			{
+				id: "process",
+				topic: "How a project runs",
+				old: { img: "/work/addc/vs/process-old.webp", alt: "The old home page's 'Triết lý hoạt động': a paragraph of values beside a photo of a dining room.", text: "No steps. A paragraph of values instead: “Chất lượng - An toàn - Hiệu quả - Chuyên nghiệp - Thẩm mỹ”, and a promise to meet “mọi yêu cầu của khách hàng”." },
+				new: { img: "/work/addc/vs/process-new.webp", alt: "The new home page's 'Cách ADDC làm một công trình': the first of six steps, 'Lắng nghe và khảo sát', beside a 3D drawing of a house.", text: "Six steps, from the first survey to handover, with photos from ADDC’s own sites. Promises a client can check: an engineer on site, the steel inspected before every concrete pour, a reply within 24 hours after handover." },
+				changed: "Adjectives became steps and promises a client can check.",
+			},
+			{
+				id: "prices",
+				topic: "Prices",
+				old: { img: "/work/addc/vs/prices-old.webp", alt: "The old price page: three price cards for the 2021 rough build, from 3.5 to 4.2 million dong a square metre, each with a 'Learn more' button.", text: "A separate page of 2021 construction prices by house type: the rough build from 3.5 to 4.2 million ₫/m², turnkey from 6.5 to 9.0 million ₫/m², each card with an English “Learn More” button." },
+				new: { img: "/work/addc/vs/prices-new.webp", alt: "The new home page's 'Chi phí tham khảo': four prices per square metre, from design to turnkey, with the date of each source.", text: "Prices on the home page and on each service page, from 150,000 ₫/m² for architectural design to turnkey, each with its source and date (the 2021 table, ADDC’s quote of 24/02/2022), and a quick estimate from the floor area." },
+				changed: "The prices were already there; now they sit where the client reads, dated, and worked out for their floor area.",
+			},
+			{
+				id: "projects",
+				topic: "Projects",
+				old: { img: "/work/addc/vs/projects-old.webp", alt: "The old home page's 'Công trình tiêu biểu': a collage of blurred building-site photos.", text: "A collage of blurred site photos on the home page. The projects page lists 12 cards with English tags such as “Planning” and “Clean / Store”, with “Zangzak Residential Tower” listed twice." },
+				new: { img: "/work/addc/vs/projects-new.webp", alt: "The new home page's full project list: each project's name, place, the work ADDC did and the building type.", text: "21 projects, each with its place, the work ADDC did and the building type, filtered by type (villa, townhouse, interior, office). Five are featured with photos, one of them still being built." },
+				changed: "Every project says where it is and what ADDC did there.",
+			},
+			{
+				id: "news",
+				topic: "News",
+				old: { img: "/work/addc/vs/news-old.webp", alt: "The old home page's 'Tin tức & Sự kiện': three articles about other firms' buildings, the third with a grey '700x430' placeholder for its picture.", text: "“Tin tức & Sự kiện”: three articles about other firms’ buildings (a house in Hà Tĩnh from Kienviet.net, Naia House in Costa Rica from ArchDaily, a pavilion on a Belgian canal), two signed “John Smith”, one still showing a grey “700x430” placeholder." },
+				new: { img: "/work/addc/vs/news-new.webp", alt: "The new home page's 'Mới từ công trường': three dated entries from ADDC's own building sites, each with a photo.", text: "“Mới từ công trường”: ADDC’s own site diary, dated. 18.11.2026, the Le Linh showroom’s rough build in An Nhơn; 03.11.2026, a villa’s piling begins in An Khánh; 21.09.2026, the showroom’s site sign goes up, with its permit date." },
+				changed: "Borrowed articles gave way to ADDC’s own sites, with dates.",
+			},
+			{
+				id: "contact",
+				topic: "Getting in touch",
+				old: { img: "/work/addc/vs/contact-old.webp", alt: "The old home page's 'Thư Ngỏ': a long letter to clients, with the hotline inside its second paragraph.", text: "The hotline sits inside a letter to clients (“Thư Ngỏ”) in the middle of the home page. Email, address and a message form are on a separate contact page." },
+				new: { img: "/work/addc/vs/contact-new.webp", alt: "The new home page's 'Bắt đầu công trình của bạn': a short form beside the hotline, Zalo, email, office and hours.", text: "“Bắt đầu công trình của bạn”: a short form where the client picks the service, next to the hotline, Zalo, email, office and hours. On a phone, call, Zalo and quote buttons stay along the bottom of every page." },
+				changed: "Getting in touch is one step away from anywhere on the site.",
+			},
 		],
 	},
 };

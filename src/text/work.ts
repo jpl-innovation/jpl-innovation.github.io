@@ -79,7 +79,7 @@ export const register = {
 		addc: {
 			discipline: "Web design & rebuild",
 			revision: "Version 2, live",
-			picture: { src: "/work/addc/hook-build.webp", alt: "The new ADDC home page: a townhouse going up in 3D, scaffolding and safety netting on its face, with the words 'Từng tầng được dựng lên'", fit: "cover" },
+			picture: { src: "/work/addc/cover.webp", alt: "The new ADDC home page's 'Bạn đang ở bước nào?': three photos from ADDC's own work, a 3D drawing of a house, piling on a building site and a finished meeting room", fit: "cover" },
 		},
 	} as Record<string, { discipline: string; revision: string; picture: { src: string; alt: string; fit: "cover" | "contain" } }>,
 };
