@@ -62,6 +62,10 @@ const labels: { x: number; z: number; text: string; stage: number }[] = [
 ---
 
 <div class="sl" role="status" aria-live="polite" data-studio-loader>
+	<!-- Chrome sets up its drawing of a picture clipped to a circle the first time it draws one, a 75 to 100 ms freeze; the
+	     team's round portraits at the crew stop were the first. One tiny round picture here, under the loading screen,
+	     pays that once while nothing moves. -->
+	<img class="sl-warm" src="/assets/Jayden_pfp-160.webp" alt="" aria-hidden="true" width="8" height="8" decoding="async" />
 	<div class="sl-sheet">
 		<p class="sl-title">{t.heading}</p>
 		<div class="sl-plan" aria-hidden="true">
@@ -116,6 +120,17 @@ const labels: { x: number; z: number; text: string; stage: number }[] = [
 </div>
 
 <style is:global>
+	.sl-warm {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		width: 8px;
+		height: 8px;
+		border-radius: 999px;
+		object-fit: cover;
+		opacity: 0.02;
+		pointer-events: none;
+	}
 	/* Shown only while the 3D is coming (Studio.astro sets data-live when it is in). */
 	.sl {
 		display: none;

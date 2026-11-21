@@ -250,7 +250,7 @@ const organization = {
 				{
 					members.map((m) => (
 						<li>
-							<img src={copyUpTo(m.data.img, 160)} srcset={srcset(m.data.img)} sizes="48px" alt="" width="48" height="48" loading="lazy" />
+							<img src={copyUpTo(m.data.img, 160)} srcset={srcset(m.data.img)} sizes="48px" alt="" width="48" height="48" loading="lazy" decoding="async" />
 							<span>
 								<a href={`/members/${m.id}/`}>{m.data.title}</a>
 								<span class="studio-role">{toBadge(m).title}</span>

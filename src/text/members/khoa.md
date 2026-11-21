@@ -1,6 +1,6 @@
 ---
 title: Khoa Le
-img: /assets/members/khoa-768.webp
+img: /assets/members/khoa.webp
 img_alt: Khoa Le portrait, in the workshop in front of the tool wall
 greeting: Xin chào, mình là Khoa.
 leadership:

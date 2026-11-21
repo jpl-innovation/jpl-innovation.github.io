@@ -10,7 +10,8 @@
  * public/assets/frc/<id>.webp, with its 640-wide copy. Safe to run again: it always starts from original/.
  * Others: the photos in public/assets that src/lib/images.ts lists stay as they are (they are the sources and the
  * "open full size" files); their WebP copies are made from them with the same edit, at the widths images.ts lists.
- * Khoa's portrait: assets-src/members/khoa.jpg, cropped round his face -> public/assets/members/khoa-768.webp.
+ * Khoa's portrait: assets-src/members/khoa.jpg, cropped round his face -> public/assets/members/khoa.webp, with 160, 480
+ * and 768 copies (the avatar on the home page is 48 px: a small copy, not the whole portrait to scale down).
  */
 import { readdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
@@ -66,6 +67,8 @@ if (only === "all") {
 	// His portrait is the 768 x 960 crop round his face (the source is 1440 x 960, wider than the frame).
 	const face = await sharp("assets-src/members/khoa.jpg").extract({ left: 332, top: 0, width: 768, height: 960 }).toBuffer();
 	const khoa = await edit(face, 768, 74);
+	await writeFile("public/assets/members/khoa.webp", khoa);
 	await writeFile("public/assets/members/khoa-768.webp", khoa);
-	console.log("khoa-768", `${Math.round(khoa.length / 1024)} KB`);
+	for (const width of [160, 480]) await writeFile(`public/assets/members/khoa-${width}.webp`, await edit(khoa, width, 74));
+	console.log("khoa", `${Math.round(khoa.length / 1024)} KB`);
 }
