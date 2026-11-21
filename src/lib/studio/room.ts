@@ -64,6 +64,7 @@ import { type PageScreen, pageScreen } from "./screens";
 import { buildStations, type Stations } from "./stations";
 import { buildBench, type BuildBench } from "./build-bench";
 import { Batch, deskMouse, lampBody, lampShade, tableFrame } from "./furniture";
+import { buildWalls, wallLook } from "./walls";
 
 export const ROOM = { x0: -8.5, x1: 8.5, z0: -3.4, z1: 6.4, h: 3.4 };
 /** The desk (scenes 0 to 2): its middle and the height of its top; the sketchbook lies open on it at `book`. */
@@ -121,7 +122,7 @@ const WOOD_TILE = 1.83; // metres one repeat of a veneer covers (the scans' own 
  * stretched once over each face; the grain runs along each face's longer side, and `shift` starts every box somewhere
  * else on the sheet.
  */
-function metreUv(geometry: BufferGeometry, size: [number, number, number], shift: number) {
+export function metreUv(geometry: BufferGeometry, size: [number, number, number], shift: number) {
 	const position = geometry.getAttribute("position");
 	const normal = geometry.getAttribute("normal");
 	const uv = geometry.getAttribute("uv");
@@ -766,6 +767,10 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	);
 	slogan.position.set(deskX, 1.76, z0 + 0.02);
 	group.add(slogan);
+	// The walls' own looks (walls.ts), where the tier allows.
+	let logoAlwaysLight = false;
+	const look = detail ? wallLook() : undefined;
+	const walls = look ? buildWalls(group, look, logo, slogan, (yes) => (logoAlwaysLight = yes)) : undefined;
 
 	await tick();
 
@@ -878,9 +883,10 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 			stations.applyPalette(p);
 			bench.applyPalette(dark);
 			ambience.applyPalette(p);
-			(logo.material as MeshBasicMaterial).map = dark ? logoLight : logoDark;
+			(logo.material as MeshBasicMaterial).map = dark || logoAlwaysLight ? logoLight : logoDark;
+			walls?.applyPalette(dark);
 			(logo.material as MeshBasicMaterial).needsUpdate = true;
-			(slogan.material as MeshBasicMaterial).color.set(dark ? 0xf2eedf : 0x0a174e);
+			(slogan.material as MeshBasicMaterial).color.set(dark || logoAlwaysLight ? 0xf2eedf : 0x0a174e);
 			(ctx.scene.fog as Fog).color.set(dark ? 0x02050f : 0xf2eedf);
 			(ctx.scene.fog as Fog).near = dark ? 5 : 12;
 			(ctx.scene.fog as Fog).far = dark ? 16 : 32;
