@@ -1,0 +1,242 @@
+---
+/**
+ * The ADDC page's before-and-after (/work/addc/): the first screen of ADDC's old website and of the new one, stacked,
+ * with a divider to drag. The divider is a native range input laid over the pictures, so a mouse, a finger and the
+ * arrow keys all move it and screen readers announce it. Desktop or phone screens, switched by two buttons.
+ * Words: the `compare` block of src/text/projects/addc.ts.
+ */
+import { addcPage } from "@/text/projects/addc";
+
+const t = addcPage.compare;
+const views = [
+	{ id: "desktop", before: "/work/addc/before-desktop.webp", after: "/work/addc/after-desktop.webp", w: 1440, h: 900 },
+	{ id: "phone", before: "/work/addc/before-phone.webp", after: "/work/addc/after-phone.webp", w: 780, h: 1688 },
+] as const;
+---
+
+<section class="ac wrapper" aria-labelledby="ac-heading" data-ac>
+	<div class="ac-head">
+		<h2 id="ac-heading" class="ac-h">{t.heading}</h2>
+		<p class="ac-lead">{t.intro}</p>
+		<div class="ac-views" role="group" aria-label={t.views.label}>
+			{views.map((v, i) => (
+				<button type="button" class="ac-view" data-ac-view={v.id} aria-pressed={i === 0 ? "true" : "false"}>
+					{t.views[v.id]}
+				</button>
+			))}
+		</div>
+	</div>
+	{
+		views.map((v, i) => (
+			<figure class:list={["ac-stage", `ac-stage--${v.id}`]} data-ac-stage={v.id} hidden={i !== 0} style={`--ratio: ${v.w} / ${v.h}`}>
+				<img class="ac-img" src={v.after} alt={t.afterAlt[v.id]} width={v.w} height={v.h} loading={i ? "lazy" : "eager"} decoding="async" />
+				<div class="ac-before">
+					<img class="ac-img" src={v.before} alt={t.beforeAlt[v.id]} width={v.w} height={v.h} loading={i ? "lazy" : "eager"} decoding="async" />
+				</div>
+				<span class="ac-tag ac-tag--before" aria-hidden="true">{t.before}</span>
+				<span class="ac-tag ac-tag--after" aria-hidden="true">{t.after}</span>
+				<span class="ac-line" aria-hidden="true"><span class="ac-grip" /></span>
+				<input class="ac-range" type="range" min="0" max="100" step="0.5" value="50" aria-label={t.slider} data-ac-range />
+			</figure>
+		))
+	}
+</section>
+
+<script>
+	// The divider: the range input's value is the share of the old site shown, from the left. A short eased glide
+	// shows the idea the first time the pictures come into view (skipped under reduced motion).
+	function mount(root: HTMLElement) {
+		const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const stages = [...root.querySelectorAll<HTMLElement>("[data-ac-stage]")];
+		const set = (stage: HTMLElement, v: number) => stage.style.setProperty("--pos", `${v}%`);
+		stages.forEach((stage) => {
+			const range = stage.querySelector<HTMLInputElement>("[data-ac-range]")!;
+			set(stage, +range.value);
+			range.addEventListener("input", () => set(stage, +range.value));
+		});
+		root.querySelectorAll<HTMLButtonElement>("[data-ac-view]").forEach((btn) =>
+			btn.addEventListener("click", () => {
+				root.querySelectorAll("[data-ac-view]").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+				stages.forEach((s) => (s.hidden = s.dataset.acStage !== btn.dataset.acView));
+			}),
+		);
+		if (reduce || !("IntersectionObserver" in window)) return;
+		const first = stages[0];
+		const io = new IntersectionObserver(([e]) => {
+			if (!e.isIntersecting) return;
+			io.disconnect();
+			const range = first.querySelector<HTMLInputElement>("[data-ac-range]")!;
+			const t0 = performance.now();
+			const path = (t: number) => 50 + Math.sin(t * Math.PI * 2) * 22 * (1 - t);
+			const step = (now: number) => {
+				const t = Math.min(1, (now - t0) / 1600);
+				const v = path(1 - Math.pow(1 - t, 2));
+				range.value = String(v);
+				set(first, v);
+				if (t < 1 && document.activeElement !== range) requestAnimationFrame(step);
+			};
+			requestAnimationFrame(step);
+		}, { threshold: 0.6 });
+		io.observe(first);
+		document.addEventListener("astro:before-swap", () => io.disconnect(), { once: true });
+	}
+	const start = () => document.querySelectorAll<HTMLElement>("[data-ac]").forEach(mount);
+	document.addEventListener("astro:page-load", start);
+</script>
+
+<style>
+	.ac {
+		padding-block: clamp(2.5rem, 7dvh, 5rem);
+	}
+	.ac-head {
+		display: grid;
+		gap: 0.75rem 2rem;
+		margin-bottom: 1.75rem;
+	}
+	@media (min-width: 900px) {
+		.ac-head {
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: end;
+		}
+		.ac-head .ac-views {
+			grid-row: 1 / span 2;
+			grid-column: 2;
+		}
+	}
+	.ac-h {
+		font-size: clamp(1.9rem, 1.2rem + 2.4vw, 3.4rem);
+		font-weight: 850;
+		font-stretch: 116%;
+		line-height: 1;
+		letter-spacing: -0.01em;
+		text-wrap: balance;
+	}
+	.ac-lead {
+		font-size: var(--step-lead);
+		color: var(--ink-soft);
+		max-width: 46ch;
+	}
+	.ac-views {
+		display: inline-flex;
+		gap: 0.25rem;
+		padding: 0.25rem;
+		border-radius: 999px;
+		background: var(--sheet, rgb(255 255 255 / 0.6));
+		border: 1px solid var(--sheet-edge);
+		justify-self: start;
+	}
+	.ac-view {
+		padding: 0.55rem 1.1rem;
+		border-radius: 999px;
+		font-weight: 600;
+		color: var(--ink-soft);
+		transition: background-color 0.2s, color 0.2s;
+	}
+	.ac-view[aria-pressed="true"] {
+		background: var(--ink);
+		color: var(--paper, #fff);
+	}
+	.ac-stage {
+		--pos: 50%;
+		position: relative;
+		margin: 0 auto;
+		aspect-ratio: var(--ratio);
+		overflow: hidden;
+		border-radius: 1rem;
+		border: 1px solid var(--sheet-edge);
+		background: #1e3326;
+		box-shadow: 0 30px 60px -30px rgb(20 30 25 / 0.45);
+		touch-action: pan-y;
+	}
+	.ac-stage[hidden] {
+		display: none;
+	}
+	.ac-stage--phone {
+		max-width: min(390px, 82vw);
+		border-radius: 2rem;
+	}
+	.ac-img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		user-select: none;
+		-webkit-user-drag: none;
+	}
+	.ac-before {
+		position: absolute;
+		inset: 0;
+		clip-path: inset(0 calc(100% - var(--pos)) 0 0);
+	}
+	.ac-line {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: var(--pos);
+		width: 2px;
+		margin-left: -1px;
+		background: #fff;
+		pointer-events: none;
+	}
+	.ac-grip {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 2.75rem;
+		height: 2.75rem;
+		margin: -1.375rem 0 0 -1.375rem;
+		border-radius: 50%;
+		background: #fff;
+		box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+	}
+	.ac-grip::before,
+	.ac-grip::after {
+		content: "";
+		position: absolute;
+		top: 50%;
+		width: 0.45rem;
+		height: 0.45rem;
+		margin-top: -0.225rem;
+		border-top: 2px solid #1e3326;
+		border-left: 2px solid #1e3326;
+	}
+	.ac-grip::before {
+		left: 0.8rem;
+		transform: rotate(-45deg);
+	}
+	.ac-grip::after {
+		right: 0.8rem;
+		transform: rotate(135deg);
+	}
+	.ac-tag {
+		position: absolute;
+		top: 1rem;
+		padding: 0.4rem 0.75rem;
+		border-radius: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		background: rgb(15 20 18 / 0.72);
+		color: #fff;
+		pointer-events: none;
+	}
+	.ac-tag--before {
+		left: 1rem;
+	}
+	.ac-tag--after {
+		right: 1rem;
+	}
+	.ac-range {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		opacity: 0;
+		cursor: ew-resize;
+	}
+	.ac-stage:has(.ac-range:focus-visible) .ac-grip {
+		outline: 3px solid var(--ink);
+		outline-offset: 3px;
+	}
+</style>

@@ -16,7 +16,7 @@ interface Props {
 
 export async function getStaticPaths() {
 	// These projects have their own pages in src/pages/work/; any other project gets this page.
-	const custom = ["frc", "drone", "cybersecurity", "mini-drone", "lifetime"];
+	const custom = ["frc", "drone", "cybersecurity", "mini-drone", "lifetime", "addc"];
 	const work = await getCollection("work", (entry) => !custom.includes(entry.id));
 	return work.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
 }

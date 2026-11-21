@@ -10,7 +10,7 @@ import { roadmap as miniRoadmap } from "./projects/mini-drone";
 export const workPage = {
 	/** Browser tab title and the description Google shows. */
 	seoTitle: "Work | JPL Innovation",
-	seoDescription: "JPL Innovation's projects: the F450 4G drone, Lifetime, FRC Team 10951, the mini Arduino drone and cybersecurity.",
+	seoDescription: "JPL Innovation's projects: the F450 4G drone, Lifetime, FRC Team 10951, the mini Arduino drone, cybersecurity and the ADDC website.",
 	title: "Work",
 	lede: "What we've built, what's on the bench now, and what's coming next.",
 	/** The title block under the lede: the drawing set's own details. "Sheets" is counted from the projects. */
@@ -26,7 +26,7 @@ export const workPage = {
 /** The Work page's 3D project wall (the words around it; the projects come from src/text/projects/*.md). */
 export const workWall = {
 	/** Read by screen readers for the 3D view. */
-	canvasLabel: "A curved wall of project panels in 3D: the F450 4G drone, Lifetime, FIRST Robotics, the mini Arduino drone and cybersecurity.",
+	canvasLabel: "A curved wall of project panels in 3D: the F450 4G drone, Lifetime, FIRST Robotics, the mini Arduino drone, cybersecurity and the ADDC website.",
 	rulerLabel: "Projects on the wall",
 	hint: "Scroll to move along the wall · click a panel to open it",
 	/** Heading over the register of projects (the same projects, as ordinary links). */
@@ -75,6 +75,11 @@ export const register = {
 			/** [CHECK] What stage is the cybersecurity track at (a CCNA module, a lab number)? Left empty: the cell shows nothing. */
 			revision: "",
 			picture: { src: "/assets/cybersecurity.svg", alt: "Diagram of the lab network: internet, an ACL shield, a router, a Layer 3 switch, two Layer 2 switches, four PCs and a Windows Server", fit: "cover" },
+		},
+		addc: {
+			discipline: "Web design & rebuild",
+			revision: "Version 2, live",
+			picture: { src: "/work/addc/after-desktop.webp", alt: "The new ADDC home page: two men in hard hats shake hands at a groundbreaking, beside the headline 'Từ bản vẽ đến chìa khóa trao tay'", fit: "cover" },
 		},
 	} as Record<string, { discipline: string; revision: string; picture: { src: string; alt: string; fit: "cover" | "contain" } }>,
 };

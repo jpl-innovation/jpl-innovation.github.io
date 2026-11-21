@@ -156,6 +156,7 @@ export const footer = {
 		{ label: "Lifetime", href: "/work/lifetime/" },
 		{ label: "Cybersecurity", href: "/work/cybersecurity/" },
 		{ label: "FIRST Robotics", href: "/work/frc/" },
+		{ label: "ADDC website", href: "/work/addc/" },
 		{ label: "Members", href: "/members/" },
 		{ label: "About", href: "/about/" },
 	],

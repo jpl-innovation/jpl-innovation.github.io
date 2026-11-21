@@ -22,6 +22,7 @@ const models = {
 	drone: () => import("@/lib/three/models/drone"),
 	network: () => import("@/lib/three/models/network"),
 	badges: () => import("@/lib/three/models/badges"),
+	"addc-table": () => import("@/lib/three/models/addc-table"),
 };
 
 export type ModelName = keyof typeof models;
