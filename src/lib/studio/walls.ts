@@ -13,6 +13,7 @@
 import { BoxGeometry, CanvasTexture, CylinderGeometry, type Group, type Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { Batch } from "./furniture";
+import { hardware } from "../three/finish";
 import { loadImage, metreUv, ROOM, surface, tiled, tint, woodMaterial } from "./room";
 
 export type WallLook = "a" | "b" | "c";
@@ -73,8 +74,9 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 	const band = paint("painted_plaster_wall", bandLight, bandDark, 0.5, 0.9);
 	panel(band, DOOR.a, DOOR.gap0, SKIRT, RAIL, 2.4, true, 0.003);
 	panel(band, DOOR.gap1, DOOR.b, SKIRT, RAIL, 2.4, true, 0.003);
-	panel(band, x0, DOOR.a, SKIRT, 0.85, 2.4, true, 0.0025); // under the sill, the rest of the back wall
-	panel(band, DOOR.b, x1, SKIRT, 0.85, 2.4, true, 0.0025);
+	const sill = look === "b" ? 0.3 : 0.85; // (look b's glass comes down to a low ledge: room.ts)
+	panel(band, x0, DOOR.a, SKIRT, sill, 2.4, true, 0.0025); // under the sill, the rest of the back wall
+	panel(band, DOOR.b, x1, SKIRT, sill, 2.4, true, 0.0025);
 	const railMat = look === "c" ? new MeshStandardMaterial({ color: 0x262c3a, roughness: 0.6 }) : woodMaterial("oak_veneer_01");
 	group.add(new Mesh(railGeometry([[DOOR.a, DOOR.gap0 - 0.06], [DOOR.gap1 + 0.06, DOOR.b]], RAIL, z1), railMat));
 
@@ -147,19 +149,43 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		// Oak slats on a dark ground behind the desk; the workshop's formed concrete, an F450 drawn large on it.
 		panel(paint("painted_plaster_wall", 0x0b1230, 0x070c22, 0.3, 1), x0, DESK_END, 0, h, 2.4);
 		const slats: BoxGeometry[] = [];
+		// (Round the corkboard (room.ts, desk-sheets.ts) the slats stop, so the board sits inset in the panel.)
+		const CORK = { x0: -7.55, x1: -6.83, y0: 1.27, y1: 2.35 };
+		const slat = (x: number, y0: number, y1: number) => {
+			const g = new BoxGeometry(0.046, y1 - y0, 0.022);
+			metreUv(g, [0.046, y1 - y0, 0.022], (x * 7.31) % 1);
+			slats.push(g.translate(x, (y0 + y1) / 2, z0 + 0.012) as BoxGeometry);
+		};
 		for (let x = x0 + 0.04; x < DESK_END - 0.03; x += 0.064) {
-			const g = new BoxGeometry(0.046, h - 0.05, 0.022);
-			metreUv(g, [0.046, h - 0.05, 0.022], (x * 7.31) % 1);
-			slats.push(g.translate(x, h / 2 - 0.01, z0 + 0.012) as BoxGeometry);
+			if (x > CORK.x0 && x < CORK.x1) {
+				slat(x, 0.015, CORK.y0);
+				slat(x, CORK.y1, h - 0.035);
+			} else slat(x, 0.015, h - 0.035);
 		}
-		const oak = new Mesh(mergeGeometries(slats, false)!, woodMaterial("oak_veneer_01"));
+		const oak = new Mesh(mergeGeometries(slats, false)!, woodMaterial("walnut_veneer"));
 		oak.receiveShadow = true;
 		group.add(oak);
-		// The logo and its line on a navy powder-coated plate, standing off the slats.
-		const plate = new Mesh(new BoxGeometry(2.1, 0.98, 0.012), paint("painted_plaster_wall", 0x14235e, 0x101b4a, 0.25, 0.8));
+		// The logo and its line on a navy powder-coated plate, standing off the slats (clear of the corkboard on its left).
+		const PW = 1.72;
+		const plate = new Mesh(new BoxGeometry(PW, 0.98, 0.012), paint("painted_plaster_wall", 0x14235e, 0x101b4a, 0.25, 0.8));
 		plate.position.set(logo.position.x, 2.0, z0 + 0.034);
 		plate.receiveShadow = true;
 		group.add(plate);
+		// Brass: a fine edge round the plate, a cap on each of its four stand-off pins, and above it a brass picture light
+		// on its arm (the warm wash down the slats is its light: room.ts, the title's lamp).
+		const brass = hardware({ color: 0xc09a5b, roughness: 0.32, metalness: 1 }, "metal");
+		const fittings: BoxGeometry[] = [];
+		const px = logo.position.x;
+		for (const s of [-1, 1]) {
+			fittings.push(new BoxGeometry(PW + 0.02, 0.01, 0.016).translate(px, 2.0 + s * 0.495, z0 + 0.034));
+			fittings.push(new BoxGeometry(0.01, 1.0, 0.016).translate(px + s * (PW / 2 + 0.005), 2.0, z0 + 0.034));
+		}
+		const caps = [-1, 1].flatMap((sx) => [-1, 1].map((sy) => new CylinderGeometry(0.014, 0.014, 0.008, 16).rotateX(Math.PI / 2).translate(px + sx * (PW / 2 - 0.045), 2.0 + sy * 0.42, z0 + 0.044)));
+		const bar = new CylinderGeometry(0.022, 0.022, 0.72, 20).rotateZ(Math.PI / 2).translate(px, 2.62, z0 + 0.2);
+		const arm = new CylinderGeometry(0.008, 0.008, 0.2, 10).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.1);
+		const rose = new CylinderGeometry(0.035, 0.035, 0.012, 20).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.03);
+		const brassMesh = new Mesh(mergeGeometries([...fittings, ...caps, bar, arm, rose].map((g) => (g.index ? g.toNonIndexed() : g)), false)!, brass);
+		group.add(brassMesh);
 		logo.position.z = z0 + 0.075;
 		shadow.position.z = z0 + 0.0405;
 		panel(paint("concrete_wall_008", 0xdcd7c9, 0x2d3346, 0.7, 1), DESK_END, SHOP_END, 0, h, 2.7);

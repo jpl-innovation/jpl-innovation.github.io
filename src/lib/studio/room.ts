@@ -54,7 +54,7 @@ import { deskSheets, type SketchText } from "../../text/studio";
 import type { DroneRig } from "../three/models/drone";
 import { contactShadow, type Palette, type StageContext } from "../three/stage";
 import { buildAmbience } from "./ambience";
-import { buildBackdrop } from "./backdrop";
+import { BACKDROP, buildBackdrop } from "./backdrop";
 import { buildProps } from "./props";
 import { createLightPool, type LightSpec } from "./lights";
 import { model } from "./models";
@@ -411,6 +411,9 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 		.catch(() => undefined);
 	// Real shadows (the desk lamp's) and real contact shadows, on the medium and high tiers.
 	const detail = ctx.tier !== "low";
+	// The walls' own looks (walls.ts, preview), where the tier allows. Look b makes the back wall glass nearly to the floor.
+	const look = detail ? wallLook() : undefined;
+	const tall = look === "b";
 
 	/* ---------- Shell ---------- */
 	// Real plaster and concrete (surface()), tinted by the theme (applyPalette).
@@ -443,7 +446,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	wall(width, 0, z0, 0); // front, facing +z
 	// The back wall: solid below the sill, around the door and its sign, and behind the whiteboard and the binders
 	// (stations.ts); glass everywhere else, onto the night outside (backdrop.ts).
-	const SILL = 0.85;
+	const SILL = tall ? 0.3 : 0.85;
 	const piers: [number, number][] = [
 		[-6.3, -4.2], // the door, its sign and the badge by it
 		[3.7, 7.4], // the whiteboard and the shelf of binders
@@ -458,16 +461,34 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	backPlane(x0, x1, 0, SILL, wallMat);
 	for (const [a, b] of piers) backPlane(a, b, SILL, h, wallMat);
 	const glassMat = new MeshStandardMaterial({ color: 0x0b1424, roughness: 0.06, metalness: 0, transparent: true, opacity: 0.14, depthWrite: false });
-	const mullionMat = new MeshStandardMaterial({ color: 0x1b2440, roughness: 0.5, metalness: 0.3 });
+	const mullionMat = new MeshStandardMaterial({ color: tall ? 0x262c3a : 0x1b2440, roughness: tall ? 0.45 : 0.5, metalness: tall ? 0.5 : 0.3 });
 	const edges = [x0, ...piers.flat(), x1];
 	for (let i = 0; i < edges.length; i += 2) {
 		const [a, b] = [edges[i], edges[i + 1]];
 		backPlane(a, b, SILL, h, glassMat);
-		boxAt(group, b - a, 0.06, 0.14, mullionMat, (a + b) / 2, SILL, z1 - 0.06); // the sill
-		boxAt(group, b - a, 0.05, 0.08, mullionMat, (a + b) / 2, h - 0.03, z1 - 0.04); // the head
+		if (tall) {
+			// Slim graphite frames: a sill and a head 4 cm deep, and a low oak ledge in front of the glass to sit on.
+			boxAt(group, b - a, 0.035, 0.06, mullionMat, (a + b) / 2, SILL + 0.0175, z1 - 0.03);
+			boxAt(group, b - a, 0.035, 0.06, mullionMat, (a + b) / 2, h - 0.0175, z1 - 0.03);
+			boxAt(group, b - a, 0.036, 0.3, woodMaterial("oak_veneer_01"), (a + b) / 2, SILL - 0.018, z1 - 0.15, 0.006);
+		} else {
+			boxAt(group, b - a, 0.06, 0.14, mullionMat, (a + b) / 2, SILL, z1 - 0.06); // the sill
+			boxAt(group, b - a, 0.05, 0.08, mullionMat, (a + b) / 2, h - 0.03, z1 - 0.04); // the head
+		}
 	}
 	// Mullions, clear of the long window (it has its own, stations.ts) and of the portraits' middles.
-	for (const x of [-7.4, -3.55, -1.6]) boxAt(group, 0.05, h - SILL, 0.08, mullionMat, x, SILL + (h - SILL) / 2, z1 - 0.04);
+	for (const x of tall ? [-8.0, -7.4, -3.55, -1.6, 7.95] : [-7.4, -3.55, -1.6]) boxAt(group, tall ? 0.035 : 0.05, h - SILL, tall ? 0.06 : 0.08, mullionMat, x, SILL + (h - SILL) / 2, z1 - (tall ? 0.03 : 0.04));
+	if (tall) {
+		// Golden hour and a warm night outside (backdrop.ts's palettes, warmed for this look).
+		Object.assign(BACKDROP.night, { haze: "#3b2a2e", lights: ["#ffd7a0", "#ffb46a", "#ff9a45", "#ff3b30"], off: "#101522" });
+		Object.assign(BACKDROP.dusk, {
+			haze: "#e8b47e",
+			tones: ["#5a4436", "#3f4258", "#3a4a3e", "#6a5236", "#4a4850", "#22301f", "#8a6a4a"],
+			lights: ["#ffe2b0", "#ffc27a", "#ffb070", "#ff4d40"],
+			off: "#c79a6e",
+		});
+		BACKDROP.lit.light = 0.3;
+	}
 	const backdrop = buildBackdrop(group);
 	wall(depth, x0, (z0 + z1) / 2, Math.PI / 2);
 	wall(depth, x1, (z0 + z1) / 2, -Math.PI / 2);
@@ -700,7 +721,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	const bulb = new Mesh(new SphereGeometry(0.03, 16, 12), new MeshBasicMaterial({ color: 0xfff0d0, toneMapped: false }));
 	bulb.position.set(shade.position.x + 0.012, shade.position.y - 0.03, shade.position.z);
 	group.add(bulb);
-	const lamp = new SpotLight(0xffd59a, 0, 5, 0.95, 0.95, 1.6);
+	const lamp = new SpotLight(tall ? 0xffc278 : 0xffd59a, 0, 5, 0.95, 0.95, 1.6); // (warmer in look b)
 	lamp.position.copy(bulb.position);
 	lamp.target.position.set(deskX - 0.25, deskTop, deskZ + 0.12);
 	group.add(lamp, lamp.target);
@@ -769,7 +790,6 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	group.add(slogan);
 	// The walls' own looks (walls.ts), where the tier allows.
 	let logoAlwaysLight = false;
-	const look = detail ? wallLook() : undefined;
 	const walls = look ? buildWalls(group, look, logo, slogan, (yes) => (logoAlwaysLight = yes)) : undefined;
 
 	await tick();
@@ -783,6 +803,8 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	// The bench lamps: a warm spot over each scene's subject (lights.ts), hung toward the room so the pool spills forward.
 	const lamps: Record<string, LightSpec> = {};
 	for (const [id, l] of Object.entries(SCENE_LAMPS)) lamps[id] = { at: l.at, aim: l.aim, angle: l.angle, color: 0xffcf96, dark: l.power, light: l.power * 0.5, distance: 6, decay: 2 };
+	// Look b: at the title the room's bench lamp becomes a warm wash down the walnut slats from the picture light.
+	if (tall) lamps.title = { at: [-6, 2.75, -3.05], aim: [-6, 1.0, -3.4], angle: 0.95, color: 0xffc27a, dark: 7, light: 4, distance: 4, decay: 2 };
 	const bulbs = buildFixtures(group, steel, detail);
 	const pool = createLightPool(group, accents, lamps);
 	const ambience = buildAmbience(group, detail);
