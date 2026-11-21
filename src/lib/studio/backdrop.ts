@@ -79,9 +79,9 @@ export const BACKDROP = {
 	photo: {
 		on: false,
 		sky: { radius: 40, bottom: -6, height: 33, size: [2048, 683] },
-		skyline: { radius: 38, bottom: -1.8, height: 16.5, size: [2048, 639] },
-		river: { radius: 31, bottom: -9, height: 19, size: [2048, 598] },
-		near: { radius: 26, bottom: -11.4, height: 3.4, size: [2048, 129] },
+		skyline: { radius: 38, bottom: -1.8, height: 16.5, size: [2560, 622] },
+		river: { radius: 31, bottom: -9, height: 19, size: [2560, 744] },
+		near: { radius: 26, bottom: -11.4, height: 3.4, size: [2560, 159] },
 		/** In the river picture (0 to 1 across it, and down from its top): the far bank's road, the water, the bridge's deck and span. */
 		/** How far the river picture is turned round the room (radians): its bridge, at the picture's right, into the back wall's view. */
 		turn: 0.41,

@@ -4,15 +4,15 @@
   "height": 683
  },
  "skyline": {
-  "width": 2048,
-  "height": 639
+  "width": 2560,
+  "height": 622
  },
  "river": {
-  "width": 2048,
-  "height": 598
+  "width": 2560,
+  "height": 744
  },
  "near": {
-  "width": 2048,
-  "height": 129
+  "width": 2560,
+  "height": 159
  }
 }

@@ -1,7 +1,7 @@
 """
 The city outside the studio's glass (look b, backdrop.ts) from the pictures in assets-src/studio/city/:
 
-    sky-, skyline-, river-, near-  each -night.png and -golden.png
+    sky-, skyline-…-wide, river-, near-  each -night.png and -golden.png   (the skyline from skyline-THEME-wide.png)
 
 made on a flat bright green (#00FF00) where the layers behind should show (the sky has none). For each:
   - the green is keyed out: each pixel's coverage from how much greener than red and blue it is, then its own colour
@@ -10,32 +10,35 @@ made on a flat bright green (#00FF00) where the layers behind should show (the s
   - the empty rows above the layer's top are cropped off (the same rows for both versions), so a layer is as wide round
     the arc as it can be without stretching a building; backdrop.ts sizes each layer's arc from its proportions;
   - the golden version is lined up on the night one (the scale and shift that best overlay their outlines);
-  - written at WIDTH px wide to public/studio/window/city-LAYER-THEME.webp, with each layer's size in city.json.
+  - written at its layer's width (WIDTHS: the wide skyline gets the most) to public/studio/window/city-LAYER-THEME.webp,
+    with each layer's size in city.json.
 A picture that does not key cleanly (too little green, or see-through holes inside the city) is named, with what to
 change in its prompt.
 
-    python scripts/studio-city.py [--width 2048] [--quality 78]
+    python scripts/studio-city.py [--quality 70]
 """
 import argparse, json, os
 import numpy as np
 from PIL import Image
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--width", type=int, default=2048)
-ap.add_argument("--quality", type=int, default=78)
+ap.add_argument("--quality", type=int, default=70)
 args = ap.parse_args()
 SRC = os.path.join("assets-src", "studio", "city")
 OUT = os.path.join("public", "studio", "window")
 os.makedirs(OUT, exist_ok=True)
 LAYERS = ["sky", "skyline", "river", "near"]
 THEMES = ["night", "golden"]
+WIDTHS = {"sky": 2048, "skyline": 2560, "river": 2560, "near": 2560}
+SOURCES = {"skyline": "skyline-{theme}-wide"}  # (the wider skyline, from 3840 x 1280)
 E0, E1 = 0.2, 0.7  # excess green (share of 255) at which a pixel starts to go see-through, and is wholly so
 
 
 def load(layer, theme):
-    im = Image.open(os.path.join(SRC, f"{layer}-{theme}.png")).convert("RGB")
-    h = round(im.height * args.width / im.width)
-    return np.asarray(im.resize((args.width, h), Image.LANCZOS), np.float32) / 255
+    name = SOURCES.get(layer, "{layer}-{theme}").format(layer=layer, theme=theme)
+    im = Image.open(os.path.join(SRC, name + ".png")).convert("RGB")
+    w = WIDTHS[layer]
+    return np.asarray(im.resize((w, round(im.height * w / im.width)), Image.LANCZOS), np.float32) / 255
 
 
 def key(rgb):
@@ -94,7 +97,7 @@ for layer in LAYERS:
     if layer == "sky":
         for t in THEMES:
             Image.fromarray((pics[t] * 255).astype(np.uint8)).save(os.path.join(OUT, f"city-sky-{t}.webp"), quality=args.quality - 6, method=6)
-        meta["sky"] = {"width": args.width, "height": pics["night"].shape[0]}
+        meta["sky"] = {"width": WIDTHS["sky"], "height": pics["night"].shape[0]}
         continue
     keyed = {t: key(pics[t]) for t in THEMES}
     for t in THEMES:
@@ -105,7 +108,7 @@ for layer in LAYERS:
     colour, alpha = keyed["golden"]
     rgba = Image.fromarray(np.dstack([colour * 255, alpha * 255]).astype(np.uint8), "RGBA")
     rgba = rgba.resize((round(rgba.width * s), round(rgba.height * s)), Image.LANCZOS)
-    placed = Image.new("RGBA", (args.width, pics["night"].shape[0]), (0, 0, 0, 0))
+    placed = Image.new("RGBA", (WIDTHS[layer], pics["night"].shape[0]), (0, 0, 0, 0))
     placed.paste(rgba, (dx, dy))
     arr = np.asarray(placed, np.float32) / 255
     keyed["golden"] = (arr[..., :3], arr[..., 3])
@@ -115,7 +118,7 @@ for layer in LAYERS:
         colour, alpha = keyed[t]
         out = np.dstack([colour[top:] * 255, alpha[top:] * 255]).astype(np.uint8)
         Image.fromarray(out, "RGBA").save(os.path.join(OUT, f"city-{layer}-{t}.webp"), quality=args.quality, alpha_quality=90, method=6)
-    meta[layer] = {"width": args.width, "height": pics["night"].shape[0] - top}
+    meta[layer] = {"width": WIDTHS[layer], "height": pics["night"].shape[0] - top}
 
 json.dump(meta, open(os.path.join(OUT, "city.json"), "w"), indent=1)
 for layer in LAYERS:
