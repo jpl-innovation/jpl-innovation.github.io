@@ -84,7 +84,7 @@ export const BACKDROP = {
 		near: { radius: 26, bottom: -11.4, height: 3.4, size: [2048, 129] },
 		/** In the river picture (0 to 1 across it, and down from its top): the far bank's road, the water, the bridge's deck and span. */
 		/** How far the river picture is turned round the room (radians): its bridge, at the picture's right, into the back wall's view. */
-		turn: 0.45,
+		turn: 0.41,
 		road: 0.66,
 		water: 0.8,
 		deck: 0.585,
@@ -107,6 +107,14 @@ export const BACKDROP = {
 		off: "#7d7193",
 		glow: 0.6,
 	},
+};
+
+/** The city's pictures (look b), named in full so the site's check for unused files finds them. */
+const CITY = {
+	sky: { night: "/studio/window/city-sky-night.webp", golden: "/studio/window/city-sky-golden.webp" },
+	skyline: { night: "/studio/window/city-skyline-night.webp", golden: "/studio/window/city-skyline-golden.webp" },
+	river: { night: "/studio/window/city-river-night.webp", golden: "/studio/window/city-river-golden.webp" },
+	near: { night: "/studio/window/city-near-night.webp", golden: "/studio/window/city-near-golden.webp" },
 };
 
 type Palette = typeof BACKDROP.night;
@@ -537,8 +545,8 @@ export function buildBackdrop(parent: Group): Backdrop {
 	const photoArc = (spec: { radius: number; height: number; size: number[] }) => Math.min(arc, (spec.height * spec.size[0]) / spec.size[1] / spec.radius);
 	if (P.on) {
 		const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-		const load = (name: string) => {
-			const t = new TextureLoader().load(`${base}/studio/window/city-${name}.webp`);
+		const load = (path: string) => {
+			const t = new TextureLoader().load(base + path);
 			t.colorSpace = SRGBColorSpace;
 			t.anisotropy = 4;
 			return t;
@@ -546,8 +554,8 @@ export function buildBackdrop(parent: Group): Backdrop {
 		(["sky", "skyline", "river", "near"] as const).forEach((name, i) => {
 			const spec = P[name];
 			const a = name === "sky" ? arc : photoArc(spec);
-			const night = load(`${name}-night`);
-			const golden = load(`${name}-golden`);
+			const night = load(CITY[name].night);
+			const golden = load(CITY[name].golden);
 			const material = new MeshBasicMaterial({ map: night, transparent: name !== "sky", depthWrite: name === "sky", toneMapped: false, fog: false });
 			const mesh = new Mesh(new CylinderGeometry(spec.radius, spec.radius, spec.height, 96, 1, true, -a / 2, a).scale(-1, 1, 1), material);
 			mesh.position.set(cx, spec.bottom + spec.height / 2, cz);

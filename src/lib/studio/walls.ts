@@ -152,6 +152,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		services();
 	} else if (look === "b") {
 		// Oak slats on a dark ground behind the desk; the workshop's formed concrete, an F450 drawn large on it.
+		const RETURN = 0.6; // (m: how far the slats turn the corner; 1 m reached the opening words)
 		const darkGround = paint("painted_plaster_wall", 0x0b1230, 0x070c22, 0.3, 1);
 		panel(darkGround, x0, DESK_END, 0, h, 2.4);
 		const slats: BoxGeometry[] = [];
@@ -168,9 +169,21 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 				slat(x, CORK.y1, h - 0.035);
 			} else slat(x, 0.015, h - 0.035);
 		}
-		// The left wall by the shelves: the door's lower band and oak rail all along it, plaster above. (The page's opening
-		// words lie over this wall at the title: slats there made them hard to read in the light theme.)
-		const WRAP = z0;
+		// The left wall by the shelves: the slats turn the corner for a short return on their dark ground, ending on a brass
+		// edge, so the panel reads as wrapping the corner; beyond, the door's lower band and oak rail all along that wall,
+		// plaster above. (The page's opening words lie over the rest of this wall at the title: slats behind them were
+		// hard to read in the light theme, so the return stays short.)
+		const WRAP = z0 + RETURN;
+		for (let z = z0 + 0.04; z < WRAP - 0.02; z += 0.064) {
+			const g = new BoxGeometry(0.022, h - 0.05, 0.046);
+			metreUv(g, [0.022, h - 0.05, 0.046], (z * 5.17) % 1);
+			slats.push(g.translate(x0 + 0.012, h / 2 - 0.01, z) as BoxGeometry);
+		}
+		const returnGround = new Mesh(tiled(new PlaneGeometry(RETURN, h), 2.4), darkGround);
+		returnGround.rotation.y = Math.PI / 2;
+		returnGround.position.set(x0 + 0.002, h / 2, z0 + RETURN / 2);
+		group.add(returnGround);
+		brassy.box(0.03, h - 0.05, 0.012, x0 + 0.015, h / 2 - 0.01, WRAP + 0.006, 0xc09a5b);
 		const SIDE = 0.78; // (lower than the door's: clear of the opening words at the title)
 		const side = new Mesh(tiled(new PlaneGeometry(z1 - WRAP, SIDE - SKIRT), 2.4), band);
 		side.rotation.y = Math.PI / 2;
