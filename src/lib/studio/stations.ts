@@ -42,6 +42,7 @@ import {
 	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
+import { brass, wallLook } from "./walls";
 import { tick } from "../three/yield";
 import type { DroneRig } from "../three/models/drone";
 import type { Palette, StageContext } from "../three/stage";
@@ -141,6 +142,7 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	const cartTop = 0.36;
 	// (The cart keeps its shape, size and place: it carries the robot. Where the tier allows it is painted steel on rubber castors.)
 	const detail = ctx.tier !== "low";
+	const tall = detail && wallLook() === "b"; // look b (walls.ts, preview): the back wall glass to a low ledge, a few brass touches
 	const cartSteel = detail ? hardware({ color: 0x262c3a, roughness: 0.55, metalness: 0.1 }, "plastic") : steel;
 	const cartRubber = detail ? hardware({ color: 0x101216, roughness: 0.9 }, "rubber") : dark;
 	boxAt(group, 1.1, 0.04, 0.86, cartSteel, robotX, cartTop - 0.02, -2.55, 0.008);
@@ -926,18 +928,27 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	windowGlass.position.set(winX, winY, z1 - 0.01);
 	windowGlass.rotation.y = Math.PI;
 	group.add(windowGlass);
-	const frameMat = hardware({ color: 0x1b2440, roughness: 0.5, metalness: 0.3 }, "anodised");
-	themed.push({ mat: frameMat as MeshStandardMaterial, dark: 0x13235f, light: 0xfffdf4 });
-	boxAt(group, winW + 0.12, 0.06, 0.1, frameMat, winX, winY + winH / 2 + 0.03, z1 - 0.05);
-	boxAt(group, winW + 0.2, 0.05, 0.22, frameMat, winX, winY - winH / 2 - 0.025, z1 - 0.1);
+	const frameMat = hardware({ color: tall ? 0x262c3a : 0x1b2440, roughness: tall ? 0.45 : 0.5, metalness: tall ? 0.5 : 0.3 }, "anodised");
+	if (!tall) themed.push({ mat: frameMat as MeshStandardMaterial, dark: 0x13235f, light: 0xfffdf4 });
 	const panes = content.milestones.length || 6;
-	for (let i = 0; i <= panes; i++) boxAt(group, 0.045, winH, 0.07, frameMat, winX + winW / 2 - (winW * i) / panes, winY, z1 - 0.04);
+	if (tall) {
+		// Look b: the glass runs from the low ledge to the ceiling (room.ts), so the timeline's panes are that wall's own
+		// bays: its uprights run the full height in the same slim graphite as every other frame, with a transom where
+		// the old window's head was. The years stay on their panes.
+		const LEDGE = 0.3;
+		for (let i = 0; i <= panes; i++) boxAt(group, 0.035, ROOM.h - LEDGE, 0.06, frameMat, winX + winW / 2 - (winW * i) / panes, LEDGE + (ROOM.h - LEDGE) / 2, z1 - 0.03);
+		boxAt(group, winW, 0.03, 0.05, frameMat, winX, winY + winH / 2 + 0.015, z1 - 0.025);
+	} else {
+		boxAt(group, winW + 0.12, 0.06, 0.1, frameMat, winX, winY + winH / 2 + 0.03, z1 - 0.05);
+		boxAt(group, winW + 0.2, 0.05, 0.22, frameMat, winX, winY - winH / 2 - 0.025, z1 - 0.1);
+		for (let i = 0; i <= panes; i++) boxAt(group, 0.045, winH, 0.07, frameMat, winX + winW / 2 - (winW * i) / panes, winY, z1 - 0.04);
+	}
 	if (detail) {
 		// A handle on its rose on two of the uprights, and a rubber seal down each side of every upright.
 		const fittings = new Batch([winX, winY, z1 - 0.04]);
 		for (let i = 0; i <= panes; i++) {
 			const ux = winX + winW / 2 - (winW * i) / panes;
-			for (const s of [-1, 1]) fittings.box(0.005, winH, 0.01, ux + s * 0.025, winY, z1 - 0.012, 0x0a0d14);
+			if (!tall) for (const s of [-1, 1]) fittings.box(0.005, winH, 0.01, ux + s * 0.025, winY, z1 - 0.012, 0x0a0d14);
 			if (i !== 1 && i !== panes - 1) continue;
 			fittings.box(0.026, 0.07, 0.006, ux, winY - 0.25, z1 - 0.078, 0xaab2c0, 0.003);
 			fittings.box(0.018, 0.11, 0.014, ux, winY - 0.31, z1 - 0.09, 0xaab2c0, 0.006);
@@ -1092,10 +1103,12 @@ export async function buildStations(ctx: StageContext, parent: Group, content: R
 	if (detail) {
 		// On the door (it swings with it): a lever handle on its rose and the lock under it, three hinges, a kick plate.
 		const fittings = new Batch([0, 0, 0]);
-		fittings.add(new CylinderGeometry(0.027, 0.027, 0.008, 20).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.027);
-		fittings.add(new CylinderGeometry(0.009, 0.009, 0.045, 10).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.05);
-		fittings.box(0.13, 0.018, 0.014, -0.845, 1.0, -0.07, 0xaab2c0, 0.006);
-		fittings.add(new CylinderGeometry(0.018, 0.018, 0.006, 16).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 0.9, -0.026);
+		const handle = tall ? new Batch([0, 0, 0]) : fittings; // (brass in look b)
+		handle.add(new CylinderGeometry(0.027, 0.027, 0.008, 20).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.027);
+		handle.add(new CylinderGeometry(0.009, 0.009, 0.045, 10).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 1.0, -0.05);
+		handle.box(0.13, 0.018, 0.014, -0.845, 1.0, -0.07, 0xaab2c0, 0.006);
+		handle.add(new CylinderGeometry(0.018, 0.018, 0.006, 16).rotateX(Math.PI / 2), 0xaab2c0, -0.9, 0.9, -0.026);
+		if (handle !== fittings) doorPivot.add(handle.mesh(group, brass()));
 		fittings.box(0.006, 0.012, 0.007, -0.9, 0.9, -0.027, 0x0a0d14);
 		for (const y of [0.25, 1.04, 1.85]) fittings.add(new CylinderGeometry(0.009, 0.009, 0.1, 10), 0xaab2c0, -0.004, y, -0.03);
 		fittings.box(0.94, 0.18, 0.002, -0.49, 0.11, -0.0235, 0x8a93a3);

@@ -64,7 +64,7 @@ import { type PageScreen, pageScreen } from "./screens";
 import { buildStations, type Stations } from "./stations";
 import { buildBench, type BuildBench } from "./build-bench";
 import { Batch, deskMouse, lampBody, lampShade, tableFrame } from "./furniture";
-import { buildWalls, wallLook } from "./walls";
+import { brass, buildWalls, wallLook } from "./walls";
 
 export const ROOM = { x0: -8.5, x1: 8.5, z0: -3.4, z1: 6.4, h: 3.4 };
 /** The desk (scenes 0 to 2): its middle and the height of its top; the sketchbook lies open on it at `book`. */
@@ -488,6 +488,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 			off: "#c79a6e",
 		});
 		BACKDROP.lit.light = 0.3;
+		BACKDROP.river.on = true; // boats on the river, lamps along its far bank
 	}
 	const backdrop = buildBackdrop(group);
 	wall(depth, x0, (z0 + z1) / 2, Math.PI / 2);
@@ -699,17 +700,18 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	group.add(coffee);
 
 	// The lamp: a base, an arm, a shade; it switches on as the first scene opens.
-	const lampBase = new Mesh(new CylinderGeometry(0.09, 0.1, 0.025, 24), steel);
+	const lampMetal = tall ? brass() : steel; // (brass in look b)
+	const lampBase = new Mesh(new CylinderGeometry(0.09, 0.1, 0.025, 24), lampMetal);
 	lampBase.position.set(deskX - 0.78, deskTop + 0.012, deskZ - 0.22);
 	group.add(lampBase);
 	if (detail) {
 		// A stepped top on the base, and its switch.
-		const cap = new Mesh(new CylinderGeometry(0.05, 0.085, 0.012, 24), steel);
+		const cap = new Mesh(new CylinderGeometry(0.05, 0.085, 0.012, 24), lampMetal);
 		cap.position.set(deskX - 0.78, deskTop + 0.031, deskZ - 0.22);
 		group.add(cap);
 		boxAt(group, 0.02, 0.007, 0.012, hardware({ color: 0xe9e4d6, roughness: 0.5 }, "plastic"), deskX - 0.73, deskTop + 0.036, deskZ - 0.19, 0.002);
 	}
-	const arm = new Mesh(new CylinderGeometry(0.01, 0.01, 0.62, 8), steel);
+	const arm = new Mesh(new CylinderGeometry(0.01, 0.01, 0.62, 8), lampMetal);
 	arm.position.set(deskX - 0.66, deskTop + 0.3, deskZ - 0.14);
 	arm.rotation.z = -0.4;
 	group.add(arm);
@@ -727,7 +729,7 @@ export async function buildRoom(ctx: StageContext, content: RoomContent): Promis
 	group.add(lamp, lamp.target);
 	// Its joints, and its cord over the back of the desk.
 	for (const [jx, jy, jz, r] of [[deskX - 0.78, deskTop + 0.035, deskZ - 0.22, 0.016], [deskX - 0.54, deskTop + 0.585, deskZ - 0.06, 0.018]]) {
-		const joint = new Mesh(new SphereGeometry(r, 14, 10), steel);
+		const joint = new Mesh(new SphereGeometry(r, 14, 10), lampMetal);
 		joint.position.set(jx, jy, jz);
 		group.add(joint);
 	}

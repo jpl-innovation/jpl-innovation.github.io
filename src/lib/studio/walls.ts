@@ -17,6 +17,9 @@ import { hardware } from "../three/finish";
 import { loadImage, metreUv, ROOM, surface, tiled, tint, woodMaterial } from "./room";
 
 export type WallLook = "a" | "b" | "c";
+let brassMat: Material | undefined;
+/** Brass, a few touches of it (look b): the picture light, the plate's edge, the desk lamp, the tray's brackets, the coat pegs, the door handle. */
+export const brass = () => (brassMat ??= hardware({ color: 0xc09a5b, roughness: 0.32, metalness: 1 }, "metal"));
 export function wallLook(): WallLook | undefined {
 	const v = new URLSearchParams(location.search).get("walls");
 	return v === "a" || v === "b" || v === "c" ? v : undefined;
@@ -48,6 +51,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		return mesh;
 	};
 	const trim = new Batch([0, 0, 0]);
+	const brassy = new Batch([0, 0, 0]); // (look b's brass touches: one mesh)
 
 	/* ---------- Every look: skirting, the shadow gap under the ceiling ---------- */
 	const SKIRT = 0.12;
@@ -113,9 +117,10 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		const run = SHOP_END - 0.05 - DESK_END;
 		trim.box(run, 0.004, 0.16, (DESK_END + SHOP_END) / 2, y, z0 + 0.1, 0x8a93a3);
 		for (const s of [0, 1]) trim.box(run, 0.05, 0.003, (DESK_END + SHOP_END) / 2, y + 0.025, z0 + 0.02 + s * 0.16, 0x8a93a3);
+		const brackets = look === "b" ? brassy : trim;
 		for (let x = DESK_END + 0.3; x < SHOP_END; x += 1.2) {
-			trim.box(0.03, 0.12, 0.004, x, y - 0.04, z0 + 0.004, 0x5d6577);
-			trim.box(0.03, 0.004, 0.18, x, y - 0.004, z0 + 0.09, 0x5d6577);
+			brackets.box(0.03, 0.12, 0.004, x, y - 0.04, z0 + 0.004, 0x5d6577);
+			brackets.box(0.03, 0.004, 0.18, x, y - 0.004, z0 + 0.09, 0x5d6577);
 		}
 		const pipe = (xa: number, ya: number, xb: number, yb: number) => {
 			const g = new CylinderGeometry(0.011, 0.011, Math.hypot(xb - xa, yb - ya), 10);
@@ -147,7 +152,8 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		services();
 	} else if (look === "b") {
 		// Oak slats on a dark ground behind the desk; the workshop's formed concrete, an F450 drawn large on it.
-		panel(paint("painted_plaster_wall", 0x0b1230, 0x070c22, 0.3, 1), x0, DESK_END, 0, h, 2.4);
+		const darkGround = paint("painted_plaster_wall", 0x0b1230, 0x070c22, 0.3, 1);
+		panel(darkGround, x0, DESK_END, 0, h, 2.4);
 		const slats: BoxGeometry[] = [];
 		// (Round the corkboard (room.ts, desk-sheets.ts) the slats stop, so the board sits inset in the panel.)
 		const CORK = { x0: -7.55, x1: -6.83, y0: 1.27, y1: 2.35 };
@@ -162,6 +168,18 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 				slat(x, CORK.y1, h - 0.035);
 			} else slat(x, 0.015, h - 0.035);
 		}
+		// The left wall by the shelves: the door's lower band and oak rail all along it, plaster above. (The page's opening
+		// words lie over this wall at the title: slats there made them hard to read in the light theme.)
+		const WRAP = z0;
+		const SIDE = 0.78; // (lower than the door's: clear of the opening words at the title)
+		const side = new Mesh(tiled(new PlaneGeometry(z1 - WRAP, SIDE - SKIRT), 2.4), band);
+		side.rotation.y = Math.PI / 2;
+		side.position.set(x0 + 0.003, (SKIRT + SIDE) / 2, (WRAP + z1) / 2);
+		side.receiveShadow = true;
+		group.add(side);
+		const sideRail = new BoxGeometry(0.022, 0.045, z1 - WRAP - 0.02);
+		metreUv(sideRail, [0.022, 0.045, z1 - WRAP], 0.4);
+		group.add(new Mesh(sideRail.translate(x0 + 0.011, SIDE, (WRAP + z1) / 2), woodMaterial("oak_veneer_01")));
 		const oak = new Mesh(mergeGeometries(slats, false)!, woodMaterial("walnut_veneer"));
 		oak.receiveShadow = true;
 		group.add(oak);
@@ -173,7 +191,6 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		group.add(plate);
 		// Brass: a fine edge round the plate, a cap on each of its four stand-off pins, and above it a brass picture light
 		// on its arm (the warm wash down the slats is its light: room.ts, the title's lamp).
-		const brass = hardware({ color: 0xc09a5b, roughness: 0.32, metalness: 1 }, "metal");
 		const fittings: BoxGeometry[] = [];
 		const px = logo.position.x;
 		for (const s of [-1, 1]) {
@@ -184,7 +201,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 		const bar = new CylinderGeometry(0.022, 0.022, 0.72, 20).rotateZ(Math.PI / 2).translate(px, 2.62, z0 + 0.2);
 		const arm = new CylinderGeometry(0.008, 0.008, 0.2, 10).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.1);
 		const rose = new CylinderGeometry(0.035, 0.035, 0.012, 20).rotateX(Math.PI / 2).translate(px, 2.62, z0 + 0.03);
-		const brassMesh = new Mesh(mergeGeometries([...fittings, ...caps, bar, arm, rose].map((g) => (g.index ? g.toNonIndexed() : g)), false)!, brass);
+		const brassMesh = new Mesh(mergeGeometries([...fittings, ...caps, bar, arm, rose].map((g) => (g.index ? g.toNonIndexed() : g)), false)!, brass());
 		group.add(brassMesh);
 		logo.position.z = z0 + 0.075;
 		shadow.position.z = z0 + 0.0405;
@@ -220,6 +237,7 @@ export function buildWalls(group: Group, look: WallLook, logo: Mesh, slogan: Mes
 	slogan.position.z = logo.position.z;
 	logoOnDark(logoDark);
 	trim.mesh(group);
+	if (look === "b") brassy.mesh(group, brass());
 
 	return {
 		applyPalette(dark: boolean) {

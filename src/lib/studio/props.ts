@@ -19,6 +19,7 @@ import {
 	Vector3,
 } from "three";
 import { hardware } from "../three/finish";
+import { brass, wallLook } from "./walls";
 import { Batch, bin, binder, cardboard, cardboardBox, keyDeck, lipo, mug as realMug, notebook, shelvingFrame, spool as realSpool, toolbox, wallBracket, wheel } from "./furniture";
 import { contactShadow } from "../three/stage";
 import { model } from "./models";
@@ -385,10 +386,12 @@ export function buildProps(parent: Group, real: boolean): Props {
 		// A coat rail of three pegs; the lanyard loops over the middle one, its two sides meeting at a steel clip on the
 		// badge's sleeve.
 		const pegs = new Batch([doorX + 1.15, 1.72, z1 - 0.04]);
+		const knobs = wallLook() === "b" ? new Batch([doorX + 1.15, 1.72, z1 - 0.06]) : pegs; // (brass in look b)
 		for (const px of [-0.17, 0, 0.17]) {
-			pegs.add(new CylinderGeometry(0.007, 0.007, 0.05, 10).rotateX(Math.PI / 2), 0xaab2c0, doorX + 1.15 + px, 1.72, z1 - 0.062);
-			pegs.add(new SphereGeometry(0.011, 12, 8), 0xaab2c0, doorX + 1.15 + px, 1.72, z1 - 0.088);
+			knobs.add(new CylinderGeometry(0.007, 0.007, 0.05, 10).rotateX(Math.PI / 2), 0xaab2c0, doorX + 1.15 + px, 1.72, z1 - 0.062);
+			knobs.add(new SphereGeometry(0.011, 12, 8), 0xaab2c0, doorX + 1.15 + px, 1.72, z1 - 0.088);
 		}
+		if (knobs !== pegs) knobs.mesh(parent, brass());
 		for (const s of [-1, 1]) pegs.box(0.012, 0.042, 0.034, doorX + 1.15 + s * 0.25, 1.72, z1 - 0.025, 0x262c3a, 0.004);
 		pegs.mesh(parent);
 		boxAt(badgeHolder, 0.016, 0.034, 0.006, steel, 0, -0.345, 0, 0.002);

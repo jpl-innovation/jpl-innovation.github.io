@@ -31,6 +31,7 @@ import {
 	CylinderGeometry,
 	type Group,
 	Mesh,
+	MeshBasicMaterial,
 	Points,
 	RepeatWrapping,
 	ShaderMaterial,
@@ -63,6 +64,12 @@ export const BACKDROP = {
 	cars: 150,
 	carSize: 2.4,
 	carSpeed: 9,
+	/**
+	 * On the river (the middle layer's): boats, each a short row of deck lights drifting along it, and the riverside
+	 * road's street lamps along the far bank. Radius and height (m) in the layers' own space, the stretch of the arc
+	 * (0 to 1), how many, and the boats' speed (m/s). Off unless `river.on` (look b, walls.ts).
+	 */
+	river: { on: false, radius: 30.4, water: -1.05, bank: -0.72, from: 0.04, to: 0.96, boats: 7, perBoat: 5, lamps: 48, speed: 0.55 },
 	night: {
 		haze: "#3a2433",
 		tones: ["#2a1d17", "#1b2333", "#1a271f", "#2e2416", "#24252b", "#0a120c", "#0a1022"],
@@ -502,6 +509,16 @@ export function buildBackdrop(parent: Group): Backdrop {
 	const far = layer(BACKDROP.far, drawFar, true, -30);
 	const mid = layer(BACKDROP.mid, drawMid, false, -29);
 	const near = layer(BACKDROP.near, drawNear, false, -28);
+	// With glass nearly to the floor (look b) the eye sees below the layers' foot: the riverside there, plain, in each
+	// theme's tone, so the page behind the canvas never shows through.
+	const foot = BACKDROP.river.on ? new MeshBasicMaterial({ color: 0x0a0f1e, toneMapped: false }) : undefined; // (the light strips. kind: no new shader)
+	if (foot) {
+		const depth = 9;
+		const band = new Mesh(new CylinderGeometry(BACKDROP.near.radius - 0.4, BACKDROP.near.radius - 0.4, depth, 64, 1, true, -arc / 2, arc).scale(-1, 1, 1), foot); // (turned inside out: seen from within)
+		band.position.set(cx, ground - depth / 2 + 0.3, cz);
+		band.renderOrder = -27.5;
+		parent.add(band);
+	}
 	// The two skies (the theme picks one; both load at once, 43 KB in all, so a theme switch never waits).
 	const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 	const skies: Record<"night" | "dusk", Texture> = {
@@ -514,13 +531,28 @@ export function buildBackdrop(parent: Group): Backdrop {
 	}
 
 	/* ---------- The traffic: the street in front, and across the bridge ---------- */
-	const n = BACKDROP.cars;
+	const R = BACKDROP.river;
+	const boatLights = R.on ? R.boats * R.perBoat : 0;
+	const lampLights = R.on ? R.lamps : 0;
+	const n = BACKDROP.cars + boatLights + lampLights;
 	const seeds = new Float32Array(n);
 	const lanes = new Float32Array(n);
 	const rand = seeded(5);
-	for (let i = 0; i < n; i++) {
+	for (let i = 0; i < BACKDROP.cars; i++) {
 		seeds[i] = rand();
 		lanes[i] = Math.floor(rand() * 4); // 0, 1: the street, both ways; 2, 3: the bridge, both ways
+	}
+	// 4.x: a boat's lights (the boat in the seed, the light's place along its deck in the fraction); 5: a street lamp.
+	for (let b = 0; b < boatLights / Math.max(1, R.perBoat); b++) {
+		const at = rand();
+		for (let k = 0; k < R.perBoat; k++) {
+			seeds[BACKDROP.cars + b * R.perBoat + k] = at;
+			lanes[BACKDROP.cars + b * R.perBoat + k] = 4 + k / R.perBoat;
+		}
+	}
+	for (let i = 0; i < lampLights; i++) {
+		seeds[BACKDROP.cars + boatLights + i] = (i + 0.5) / lampLights;
+		lanes[BACKDROP.cars + boatLights + i] = 5;
 	}
 	const carGeometry = new BufferGeometry();
 	carGeometry.setAttribute("position", new BufferAttribute(new Float32Array(n * 3), 3));
@@ -544,6 +576,9 @@ export function buildBackdrop(parent: Group): Backdrop {
 				uBridge: { value: [BACKDROP.mid.radius - 0.3, deck + 0.05, from, to] },
 				uSpeed: { value: BACKDROP.carSpeed },
 				uBright: { value: 1 },
+				uRiver: { value: [R.radius, R.water, R.from, R.to] },
+				uBank: { value: R.bank },
+				uBoatSpeed: { value: R.speed },
 			},
 			vertexShader: /* glsl */ `
 				attribute float seed;
@@ -556,9 +591,29 @@ export function buildBackdrop(parent: Group): Backdrop {
 				uniform vec4 uBridge;
 				uniform float uSpeed;
 				uniform float uBright;
+				uniform vec4 uRiver;
+				uniform float uBank;
+				uniform float uBoatSpeed;
 				varying vec3 vColour;
 				varying float vAlpha;
 				void main() {
+					if (lane > 3.5) {
+						// The river: a boat's deck lights drifting downstream in a short row, or a street lamp on the far bank.
+						bool lamp = lane > 4.75;
+						float r = uRiver.x;
+						float span = r * uArc * (uRiver.w - uRiver.z);
+						float dir = fract(seed * 17.0) < 0.5 ? 1.0 : -1.0;
+						float u = lamp ? seed : fract(seed + dir * uTime * uBoatSpeed * (0.6 + 0.8 * fract(seed * 29.0)) / span);
+						float along = lamp ? 0.0 : (fract(lane) - 0.4) * 0.9 / span; // the deck: about 0.9 m on this scale
+						float a = (uRiver.z + (uRiver.w - uRiver.z) * (u + along) - 0.5) * uArc;
+						float y = lamp ? uBank : uRiver.y + (fract(lane) > 0.5 ? 0.06 : 0.0);
+						vec3 p = vec3(uCentre.x + r * sin(a), y, uCentre.y + r * cos(a));
+						gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+						gl_PointSize = uSize * (lamp ? 0.8 : 0.65);
+						vColour = lamp ? vec3(1.0, 0.74, 0.38) : (fract(lane) < 0.1 ? vec3(1.0, 0.2, 0.12) : vec3(1.0, 0.86, 0.6));
+						vAlpha = uBright * (lamp ? 0.9 : smoothstep(0.0, 0.03, u) * smoothstep(1.0, 0.97, u));
+						return;
+					}
 					bool bridge = lane > 1.5;
 					float dir = mod(lane, 2.0) < 1.0 ? 1.0 : -1.0;
 					float r = (bridge ? uBridge.x : uStreet.x) + (dir > 0.0 ? 0.0 : 0.6);
@@ -603,6 +658,7 @@ export function buildBackdrop(parent: Group): Backdrop {
 		near.uniforms.uGlow.value = p.glow;
 		carMaterial.uniforms.uBright.value = p === BACKDROP.night ? 1 : 0.6;
 		far.uniforms.uSkyMap.value = p === BACKDROP.night ? skies.night : skies.dusk;
+		foot?.color.set(p === BACKDROP.night ? 0x0a0f1e : 0x3a3036);
 	};
 	apply(BACKDROP.night, BACKDROP.lit.dark);
 
